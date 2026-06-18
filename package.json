@@ -1,0 +1,10 @@
+{
+  "name": "verano-carlitos-spin-academy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static learning app for Spin Academy.",
+  "scripts": {
+    "check": "node tests/check-syntax.cjs",
+    "test": "node tests/core-smoke.test.cjs && node tests/product-validation.test.cjs"
+  }
+}

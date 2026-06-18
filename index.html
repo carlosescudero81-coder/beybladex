@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beyblade X Academy: Torneo del Conocimiento</title>
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <!-- Parent Gate Lock Modal (For entering Parents Panel) -->
+  <div id="parent-gate-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="parent-gate-title" style="display: none;">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+      <h3 id="parent-gate-title" style="font-family: var(--font-display); font-size: 2rem; margin-bottom: 12px; color: var(--pink);">ÁREA DE PADRES</h3>
+      <p id="parent-gate-help" style="margin-bottom: 20px; font-size: 0.95rem; color: rgba(255,255,255,0.7);">Introduce el PIN parental. PIN inicial: 2468.</p>
+      <div id="parent-gate-question" style="font-size: 0.95rem; font-weight: bold; margin-bottom: 16px; color: var(--yellow);">PIN parental</div>
+      <input type="password" inputmode="numeric" autocomplete="current-password" maxlength="8" id="parent-gate-input" placeholder="PIN" aria-describedby="parent-gate-help" style="width: 100%; padding: 12px; border-radius: 8px; border: 2px solid var(--border-neon); background: rgba(0,0,0,0.4); color: white; font-size: 1.2rem; text-align: center; margin-bottom: 20px; outline: none;">
+      <div style="display: flex; gap: 12px;">
+        <button id="btn-parent-gate-cancel" class="btn-action secondary" style="flex: 1;">Cancelar</button>
+        <button id="btn-parent-gate-submit" class="btn-action" style="flex: 1;">Entrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App Container -->
+  <div id="app-container">
+
+    <!-- Global App Header -->
+    <header id="app-header" style="display: none;">
+      <div class="header-left">
+        <div class="avatar-mini" id="header-avatar-btn" style="cursor: pointer;">
+          <img id="header-avatar-img" src="" alt="Avatar">
+        </div>
+        <div class="profile-info">
+          <span class="player-name" id="header-player-name">cargando...</span>
+          <span class="player-level" id="header-player-level">Nivel 1</span>
+        </div>
+      </div>
+      <div class="header-center">Beyblade X Academy</div>
+      <div class="header-right">
+        <div class="stat-pill coins">
+          <span style="font-size: 1.2rem;">⚡</span>
+          <span id="header-coins">0</span>
+        </div>
+        <div class="stat-pill xp">
+          <span style="font-size: 1.2rem;">⭐</span>
+          <span id="header-xp">0</span>
+        </div>
+        <button id="btn-goto-map" class="btn-header">X Tower</button>
+        <button id="btn-goto-language" class="btn-header">Lectura</button>
+        <button id="btn-goto-english" class="btn-header">Ingles</button>
+        <button id="btn-goto-science" class="btn-header">Medio</button>
+        <button id="btn-goto-workshop" class="btn-header">Taller</button>
+        <button id="btn-goto-cards" class="btn-header">Beys</button>
+        <button id="btn-goto-parents" class="btn-header" style="border-color: var(--pink); color: var(--pink);">Padres</button>
+        <button id="btn-goto-modules" class="btn-header" style="border-color: var(--purple); color: var(--purple);">Mundos</button>
+      </div>
+    </header>
+
+    <!-- Screen Container -->
+    <main id="screen-container">
+
+      <!-- 1. START SCREEN -->
+      <section id="screen-start" class="screen active">
+        <div class="game-title-container">
+          <div class="game-title-sub">Torneo del Conocimiento</div>
+          <h1 class="game-title-main">Beyblade X Academy</h1>
+          <p class="game-title-copy">Entrena tu mente. Domina la X Tower.</p>
+        </div>
+        <div class="start-asset-strip">
+          <figure>
+            <img src="assets/torre/torre_x_del_conocimiento.png" alt="X Tower del Conocimiento" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/torre/torre_x_del_conocimiento.png'}))">
+            <figcaption>X Tower</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/peonzas/01_sword_dran.png" alt="Sword Dran" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/peonzas/01_sword_dran.png'}))">
+            <figcaption>Cada respuesta carga tu Bey</figcaption>
+          </figure>
+        </div>
+        
+        <div class="start-interactive">
+          <button id="btn-start-game" class="btn-massive">¡LANZAR BEY!</button>
+          <div id="btn-parents-gate-trigger" class="parent-portal-hint">Acceso para Padres ⚙️</div>
+        </div>
+      </section>
+
+      <!-- 2. AVATAR SELECTION SCREEN -->
+      <section id="screen-avatar" class="screen">
+        <h2 class="screen-title">Crea tu Blader del Conocimiento</h2>
+        <div style="display: flex; flex-direction: row; gap: 24px; width: 100%; max-width: 1050px; margin: auto; flex: 1; min-height: 0;">
+          <!-- Left: selected character preview -->
+          <div class="workshop-left" style="flex: 2; height: 100%; min-height: 300px; justify-content: center; align-items: center;">
+            <div id="avatar-preview-container" style="width: 200px; height: 200px;">
+              <!-- Selected character render -->
+            </div>
+            <div style="margin-top: 20px; width: 100%;">
+              <input type="text" id="avatar-name-input" placeholder="Nombre de Blader" style="width: 100%; padding: 12px; border-radius: 8px; border: 2px solid var(--border-neon); background: rgba(0,0,0,0.4); color: white; font-size: 1.1rem; text-align: center; outline: none; font-weight: bold;">
+            </div>
+          </div>
+          <!-- Right: character avatar selection -->
+          <div class="workshop-right" style="flex: 3; height: 100%; min-height: 300px;">
+            <div class="workshop-tabs" id="avatar-customizer-tabs" hidden>
+              <button class="workshop-tab active" data-part="expression">ROSTRO</button>
+              <button class="workshop-tab" data-part="hairStyle">PEINADO</button>
+              <button class="workshop-tab" data-part="hairColor">COLOR</button>
+              <button class="workshop-tab" data-part="hat">GORRA</button>
+              <button class="workshop-tab" data-part="glasses">GAFAS</button>
+            </div>
+            <div class="workshop-items-grid" id="avatar-customizer-items">
+              <!-- Items loaded by JS -->
+            </div>
+          </div>
+        </div>
+        <div class="visual-reference-panel">
+          <div>
+            <h3>Avatar de personaje</h3>
+            <p>Elige un personaje como Blader. Podras cambiarlo cuando quieras tocando tu avatar del encabezado.</p>
+          </div>
+          <img src="assets/personajes/01_jaxon_cross_blader_x.png" alt="Jaxon Cross / Blader X" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/personajes/01_jaxon_cross_blader_x.png'}))">
+        </div>
+        <button id="btn-confirm-avatar" class="btn-action" style="padding: 14px 40px; font-size: 1.2rem; margin-top: 20px; align-self: center;">¡GUARDAR BLADER!</button>
+      </section>
+
+      <!-- 3. DIAGNOSTIC SCREEN -->
+      <section id="screen-diagnostic" class="screen">
+        <div class="diagnostic-shell">
+          <div class="diagnostic-brief">
+            <div class="diagnostic-kicker" id="diagnostic-step-label">Prueba de calibracion</div>
+            <h2>Calibracion inicial</h2>
+            <p>Vamos a medir tu energia de giro para ponerte en la planta correcta. La app mantiene el diagnostico pedagogico para recomendar repasos y ajustar la ruta.</p>
+            <div class="diagnostic-meter">
+              <span id="diagnostic-progress-label">0/0</span>
+              <div class="diagnostic-progress-box">
+                <div id="diagnostic-progress-bar" class="diagnostic-progress-fill"></div>
+              </div>
+            </div>
+          </div>
+          <div class="diagnostic-work">
+            <div id="diagnostic-question-list" class="diagnostic-question-list"></div>
+            <div id="diagnostic-result-panel" class="diagnostic-result-panel" style="display: none;"></div>
+            <button id="btn-diagnostic-complete" class="btn-action" type="button">Completar calibracion</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. MAP SCREEN -->
+      <section id="screen-map" class="screen">
+        <div class="tower-kid-header">
+          <div>
+            <div class="tower-kid-eyebrow">Tu aventura de hoy</div>
+            <h2 class="screen-title">Sube la X Tower</h2>
+            <p>Haz un reto, gana energía para tu Bey y desbloquea la siguiente planta.</p>
+          </div>
+          <div class="tower-help-card">
+            <span>1</span> Elige reto
+            <span>2</span> Responde
+            <span>3</span> Sube planta
+          </div>
+        </div>
+
+        <div class="tower-screen" id="x-tower-panel">
+          <section class="tower-command-card" aria-labelledby="tower-current-title">
+            <div class="tower-command-copy">
+              <div class="tower-kicker">Ahora toca</div>
+              <h3 id="tower-current-title">Reto de la planta</h3>
+              <p id="tower-current-mission">Preparando tu siguiente combate de aprendizaje.</p>
+              <div class="tower-progress-row">
+                <div>
+                  <span>Planta</span>
+                  <strong id="tower-current-floor">1/50</strong>
+                </div>
+                <div class="tower-progress-track" aria-hidden="true">
+                  <div id="tower-progress-fill" class="tower-progress-fill"></div>
+                </div>
+              </div>
+              <button class="btn-action tower-main-action" id="btn-tower-enter" type="button">Empezar mi reto</button>
+            </div>
+            <figure class="tower-command-art">
+              <img class="tower-image" src="assets/torre/torre_x_del_conocimiento.png" alt="X Tower del Conocimiento" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/torre/torre_x_del_conocimiento.png'}))">
+            </figure>
+          </section>
+
+          <aside class="tower-side-panel">
+            <div class="tower-progress-panel">
+              <div class="tower-kicker">Tu equipo</div>
+              <span id="tower-current-block">Base de Entrenamiento</span>
+              <div id="tower-current-rival">Rival: Robin Kazami</div>
+              <div id="tower-current-bey">Bey equipado: Sword Dran</div>
+              <div id="tower-current-reward" class="tower-current-reward">Premio: Capsula de piezas</div>
+              <div class="tower-quick-actions">
+                <button class="btn-action secondary" id="btn-tower-recalibrate" type="button">Ayuda</button>
+                <button class="btn-action secondary" id="btn-tower-rivals" type="button">Rivales</button>
+                <button class="btn-action secondary" id="btn-tower-beys" type="button">Mis Beys</button>
+              </div>
+            </div>
+          </aside>
+
+          <div class="summer-planner-panel" id="summer-planner-panel">
+            <div class="planner-head">
+              <div>
+                <div class="planner-kicker" id="planner-week-label">Plan de hoy</div>
+                <h3 id="planner-today-title">Reto recomendado</h3>
+                <p id="planner-today-detail">Preparando ruta de aprendizaje.</p>
+              </div>
+              <button id="btn-planner-primary" class="btn-action planner-primary" type="button">Hacer este reto</button>
+            </div>
+            <div class="planner-grid">
+              <div class="planner-track" id="planner-week-track"></div>
+              <div class="planner-actions" id="planner-actions-list"></div>
+            </div>
+            <div id="spaced-review-strip" class="spaced-review-strip"></div>
+          </div>
+
+          <section class="tower-path-panel" aria-labelledby="tower-path-title">
+            <div class="tower-path-head">
+              <div>
+                <div class="tower-kicker">Camino de plantas</div>
+                <h3 id="tower-path-title">Mira por donde vas</h3>
+              </div>
+              <span id="tower-next-step">Completa el reto para avanzar.</span>
+            </div>
+            <div class="map-container">
+              <div class="map-grid-bg"></div>
+              <div class="map-scroll-content" id="map-scroll-content">
+                <!-- Nodes and lines generated dynamically -->
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- 5. DAILY MISSION MODAL -->
+      <div id="daily-mission-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mission-modal-title" style="display: none;">
+        <div class="modal-content">
+          <button class="modal-close" id="btn-close-missions">✖</button>
+          <div class="arena-preview-header">
+            <h3 class="arena-title" id="mission-modal-title">Arena de Entrenamiento</h3>
+            <p class="arena-subtitle" id="mission-modal-subtitle">Semana 1: Entrenamiento Básico</p>
+          </div>
+          <div class="mission-list" id="mission-list-container">
+            <!-- Populated by JS -->
+          </div>
+          <div class="boss-readiness-panel" id="boss-readiness-panel">
+            <div class="boss-readiness-head">
+              <div>
+                <div class="boss-readiness-kicker">Preparacion del rival de la X Tower</div>
+                <h4 id="boss-readiness-title">Rival de la X Tower</h4>
+              </div>
+              <div class="boss-readiness-score" id="boss-readiness-score">0%</div>
+            </div>
+            <div class="boss-readiness-progress">
+              <div id="boss-readiness-bar" class="boss-readiness-fill"></div>
+            </div>
+            <div id="boss-readiness-detail" class="boss-readiness-detail"></div>
+          </div>
+          <div style="display: flex; gap: 16px; justify-content: center;">
+            <button id="btn-start-training" class="btn-action" style="flex: 1;">Entrenamiento Diario</button>
+            <button id="btn-start-boss" class="btn-action secondary" style="flex: 1;">Duelo Final</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. COMBAT ARENA -->
+      <section id="screen-combat" class="screen">
+        <!-- Main Combat View (Left) -->
+        <div class="arena-left-pane">
+          <!-- Top HUD -->
+          <div class="combat-hud">
+            <div class="hud-player-block" id="hud-player">
+              <div class="avatar-mini" style="width: 40px; height: 40px;">
+                <img id="combat-player-img" src="" alt="Jugador">
+              </div>
+              <div style="flex: 1;">
+                <div class="hud-name" id="combat-player-name">Jugador</div>
+                <div class="hud-hp-container">
+                  <div class="hud-hp-bar" id="combat-player-hp"></div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="vs-badge">VS</div>
+
+            <div class="hud-player-block rival" id="hud-rival">
+              <div class="avatar-mini" style="width: 40px; height: 40px; border-color: var(--pink); box-shadow: var(--glow-pink);">
+                <img id="combat-rival-img" src="" alt="Rival">
+              </div>
+              <div style="flex: 1;">
+                <div class="hud-name" id="combat-rival-name">Rival</div>
+                <div class="hud-hp-container">
+                  <div class="hud-hp-bar" id="combat-rival-hp"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="battle-context-strip">
+            <span id="combat-floor-label">X Tower Planta 1</span>
+            <span id="combat-stadium-name">Estadio de Entrenamiento</span>
+            <span id="combat-player-bey-name">Sword Dran</span>
+            <span id="combat-rival-bey-name">Scythe Incendio</span>
+          </div>
+
+          <!-- The Arena Stadium -->
+          <div class="stadium-wrapper">
+            <img class="battle-stadium-img" src="assets/estadios/01_estadio_de_entrenamiento.png" alt="Estadio de Entrenamiento" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/estadios/01_estadio_de_entrenamiento.png'}))">
+            <!-- Perfect Launch Overlay -->
+            <div class="launch-gauge-overlay" id="launch-overlay">
+              <h2 style="font-family: var(--font-display); font-size: 3rem; color: var(--cyan); margin-bottom: 24px; text-shadow: var(--glow-cyan);">LANZAMIENTO PERFECTO</h2>
+              <p style="margin-bottom: 20px; font-weight: 600; text-align: center;">Resuelve rápido para conseguir el máximo poder de giro</p>
+              <div class="gauge-bar-outer" style="margin-bottom: 30px;">
+                <div class="gauge-sweet-spot"></div>
+                <div class="gauge-bar-inner" id="launch-gauge-bar"></div>
+              </div>
+              <div id="launch-question-box" class="question-card" style="width: 80%; max-width: 400px; margin-bottom: 24px;">
+                <div class="question-text" id="launch-question-text" style="font-size: 3rem;">3 x 4</div>
+              </div>
+              <div style="display: flex; gap: 12px; width: 80%; max-width: 400px;" id="launch-answers">
+                <!-- Answer buttons dynamically generated -->
+              </div>
+            </div>
+
+            <!-- Battlefield Arena -->
+            <div class="battlefield-arena" id="battle-field">
+              <!-- Player Spinning Top -->
+              <div class="top-sprite spinning" id="player-top" style="left: 20%; top: 45%;">
+                <!-- Dynamic SVG will be rendered here -->
+              </div>
+
+              <!-- Rival Spinning Top -->
+              <div class="top-sprite spinning" id="rival-top" style="left: 70%; top: 45%;">
+                <!-- Dynamic SVG will be rendered here -->
+              </div>
+
+              <!-- Spark Clash Overlay -->
+              <div class="clash-spark" id="clash-spark"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Math Input / Answer Selection Panel (Right) -->
+        <div class="arena-right-pane">
+          <!-- Question display -->
+          <div class="question-card">
+            <div class="question-meta" id="question-index-label">Reto 1 de 10</div>
+            <div class="question-text" id="combat-question-text">8 x 7</div>
+          </div>
+
+          <!-- Answer options -->
+          <div class="answer-grid" id="combat-answers">
+            <button class="btn-answer">54</button>
+            <button class="btn-answer">56</button>
+            <button class="btn-answer">63</button>
+          </div>
+
+          <!-- Attack Multiplier Combo Dots -->
+          <div class="combo-streak-container">
+            <div class="combo-dot" id="dot-1"></div>
+            <div class="combo-dot" id="dot-2"></div>
+            <div class="combo-dot" id="dot-3"></div>
+            <span style="font-size: 0.8rem; font-weight: 800; color: var(--yellow); margin-left: 6px;" id="combo-streak-label">Ataque Especial</span>
+          </div>
+          
+          <div style="display: flex; gap: 8px;">
+            <button id="btn-combat-hint" class="btn-action" style="flex: 1; padding: 10px; font-size: 0.85rem;">Pista 💡</button>
+            <button id="btn-combat-pause" class="btn-action secondary" style="flex: 1; padding: 10px; font-size: 0.85rem;">Salir 🚪</button>
+          </div>
+        </div>
+
+        <!-- Pedagogical Feedback Overlay -->
+        <div class="feedback-overlay" id="combat-feedback" style="display: none;">
+          <div class="feedback-card">
+            <div class="feedback-avatar">
+              <img id="feedback-coach-img" class="feedback-avatar-img" src="" alt="Coach">
+            </div>
+            <div class="feedback-content">
+              <div>
+                <h3 class="feedback-title" id="feedback-coach-title">¡Casi lo tienes!</h3>
+                <p class="feedback-explanation" id="feedback-coach-text">8 x 7 es como sumar 7 ocho veces.</p>
+                <div class="visual-multiplication-aid" id="feedback-coach-visual">
+                  7 + 7 + 7 + 7 + 7 + 7 + 7 + 7 = 56
+                </div>
+              </div>
+              <button id="btn-feedback-close" class="btn-action" style="width: 100%;">¡Entendido! Volver al combate</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. TOYSHOP SCREEN (TALLER DE PEONZAS) -->
+      <section id="screen-workshop" class="screen">
+        <!-- Preview and statistics (Left) -->
+        <div class="workshop-left">
+          <h2 class="screen-title" style="margin-bottom: 8px;">Taller de Beys</h2>
+          <p style="color: var(--cyan); font-weight: 600; margin-bottom: 20px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px;">Equipa tu energia de giro</p>
+          <div class="visual-reference-panel compact">
+            <img src="assets/peonzas/04_scythe_incendio.png" alt="Scythe Incendio" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/peonzas/04_scythe_incendio.png'}))">
+          </div>
+          
+          <div class="workshop-top-viewer">
+            <div class="top-large-sprite" id="workshop-top-preview">
+              <!-- SVG preview rendered dynamically -->
+            </div>
+          </div>
+
+          <div class="workshop-stats-panel">
+            <div class="workshop-stat-row">
+              <div class="workshop-stat-label">
+                <span>Ataque (Fuerza de Choque)</span>
+                <span id="stat-val-attack">40</span>
+              </div>
+              <div class="workshop-stat-bar-outer">
+                <div class="workshop-stat-bar-inner" id="stat-bar-attack" style="width: 40%;"></div>
+              </div>
+            </div>
+            <div class="workshop-stat-row">
+              <div class="workshop-stat-label">
+                <span>Defensa (Fricción de Rebote)</span>
+                <span id="stat-val-defense">50</span>
+              </div>
+              <div class="workshop-stat-bar-outer">
+                <div class="workshop-stat-bar-inner" id="stat-bar-defense" style="width: 50%;"></div>
+              </div>
+            </div>
+            <div class="workshop-stat-row">
+              <div class="workshop-stat-label">
+                <span>Resistencia (Velocidad de Giro)</span>
+                <span id="stat-val-stamina">60</span>
+              </div>
+              <div class="workshop-stat-bar-outer">
+                <div class="workshop-stat-bar-inner" id="stat-bar-stamina" style="width: 60%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inventory customizer (Right) -->
+        <div class="workshop-right">
+          <div class="workshop-tabs">
+            <button class="workshop-tab active" data-part="core">NÚCLEO</button>
+            <button class="workshop-tab" data-part="ring">ANILLO</button>
+            <button class="workshop-tab" data-part="driver">PUNTA</button>
+            <button class="workshop-tab" data-part="color">ENERGÍA</button>
+          </div>
+          <div class="workshop-items-grid" id="workshop-items-container">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. LANGUAGE / READING SCREEN -->
+      <section id="screen-language" class="screen">
+        <div class="language-shell">
+          <div class="language-reader">
+            <div class="language-kicker" id="language-mission-label">Mision lectora</div>
+            <h2 id="language-reading-title">Biblioteca de Historias</h2>
+            <p id="language-reading-meta"></p>
+            <div id="language-reading-text" class="language-text"></div>
+          </div>
+
+          <div class="language-panel">
+            <div class="language-progress">
+              <span id="language-progress-label">0/0 respuestas</span>
+              <div class="language-progress-track">
+                <div id="language-progress-bar" class="language-progress-bar"></div>
+              </div>
+            </div>
+            <div id="language-question-list" class="language-question-list"></div>
+            <div class="language-writing-box">
+              <label for="language-writing-input">Respuesta escrita</label>
+              <textarea id="language-writing-input" rows="4" placeholder="Escribe una frase completa sobre lo que has leido."></textarea>
+            </div>
+            <button id="btn-language-complete" class="btn-action" type="button">Completar mision</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. ENGLISH / SCIENCE SHORT MISSIONS -->
+      <section id="screen-subject" class="screen">
+        <div class="subject-mission-shell">
+          <div class="subject-mission-brief">
+            <div class="subject-mission-kicker" id="subject-mission-world">Mundo</div>
+            <h2 id="subject-mission-title">Mision breve</h2>
+            <p id="subject-mission-focus"></p>
+            <div class="subject-mission-evidence" id="subject-mission-evidence"></div>
+          </div>
+          <div class="subject-mission-work">
+            <div class="subject-mission-progress">
+              <span id="subject-mission-progress-label">0/0 retos</span>
+              <div class="language-progress-track">
+                <div id="subject-mission-progress-bar" class="language-progress-bar"></div>
+              </div>
+            </div>
+            <div id="subject-question-list" class="language-question-list"></div>
+            <div class="language-writing-box">
+              <label for="subject-evidence-input">Evidencia breve</label>
+              <textarea id="subject-evidence-input" rows="3" placeholder="Escribe una frase, ejemplo o conclusion."></textarea>
+            </div>
+            <button id="btn-subject-complete" class="btn-action" type="button">Completar mundo</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. OFFLINE / FAMILY PROJECT SCREEN -->
+      <section id="screen-offline" class="screen">
+        <div class="offline-shell">
+          <div class="offline-brief">
+            <div class="offline-kicker" id="offline-mission-world">Reto familiar</div>
+            <h2 id="offline-mission-title">Actividad fuera de pantalla</h2>
+            <p id="offline-mission-instructions"></p>
+            <div class="offline-parent-note" id="offline-parent-prompt"></div>
+          </div>
+          <div class="offline-work">
+            <label for="offline-evidence-input">Evidencia del alumno</label>
+            <textarea id="offline-evidence-input" rows="6" placeholder="Escribe que has hecho, observado o creado."></textarea>
+            <button id="btn-offline-submit" class="btn-action" type="button">Enviar para validar</button>
+            <div id="offline-status-message" class="offline-status-message"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 10. REWARD SCREEN MODAL -->
+      <div id="reward-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="reward-header-text" style="display: none;">
+        <div class="modal-content" style="max-width: 450px; text-align: center;">
+          <h2 style="font-family: var(--font-display); font-size: 3rem; color: var(--yellow); text-shadow: var(--glow-yellow); margin-bottom: 8px;" id="reward-header-text">¡VICTORIA EN LA ARENA!</h2>
+          <p style="margin-bottom: 24px; font-weight: 600;" id="reward-desc-text">Has derrotado al rival. ¡Abre tu capsula de piezas!</p>
+          <div id="reward-boss-summary" class="reward-boss-summary" style="display: none;"></div>
+          
+          <div class="chest-display" id="reward-chest-area">
+            <div class="chest-icon" id="reward-chest-btn" style="font-size: 6rem;">🎁</div>
+            <p style="color: var(--cyan); font-weight: 800; animation: pulse-glow 1s infinite alternate;">¡ABRE LA CAPSULA!</p>
+          </div>
+
+          <div class="reward-card-reveal" id="reward-reveal-area" style="display: none;">
+            <div style="font-size: 1.1rem; font-weight: 800; color: var(--yellow);" id="reward-rarity-badge">LEGENDARIO</div>
+            <div style="font-size: 4rem;" id="reward-item-icon">🌀</div>
+            <h3 style="font-family: var(--font-display); font-size: 1.8rem; color: white;" id="reward-item-name">Núcleo Ígneo</h3>
+            <p style="font-size: 0.9rem; color: rgba(255,255,255,0.6);" id="reward-item-desc">Desbloqueado para tu taller</p>
+            <button id="btn-reward-collect" class="btn-action" style="width: 100%; margin-top: 10px;">¡Añadir a mi Colección!</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8. ALBUM / CROMOS SCREEN -->
+      <section id="screen-cards" class="screen">
+        <h2 class="screen-title">Album de Beys y Rivales</h2>
+        <div class="collection-reference-grid">
+          <div class="visual-reference-panel compact">
+            <h3>Personajes / Rivales</h3>
+            <img src="assets/personajes/02_robin_kazami.png" alt="Robin Kazami" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/personajes/02_robin_kazami.png'}))">
+          </div>
+          <div class="visual-reference-panel compact">
+            <h3>Coleccion de Beys</h3>
+            <img src="assets/peonzas/01_sword_dran.png" alt="Sword Dran" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/peonzas/01_sword_dran.png'}))">
+          </div>
+          <div class="visual-reference-panel compact">
+            <h3>Estadios de Combate</h3>
+            <img src="assets/estadios/01_estadio_de_entrenamiento.png" alt="Estadio de Entrenamiento" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/estadios/01_estadio_de_entrenamiento.png'}))">
+          </div>
+        </div>
+        <div id="bey-type-grid" class="bey-type-grid"></div>
+        <div class="cards-grid" id="cards-grid-container">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- 9. PARENTS PANEL -->
+      <section id="screen-parents" class="screen">
+        <h2 class="screen-title">Panel de Control de Padres</h2>
+        <div class="parent-theme-note">
+          Tema visual Beyblade X activado: la capa de juego motiva, pero las metricas educativas permanecen intactas.
+          Equivalencias: Arena Numerica = Matematicas; Biblioteca Estrategica = Lengua; Puerto Internacional = Ingles; Laboratorio Elemental = Medio; Forja Creativa = Arte; Gimnasio de Estamina = Movimiento/Habitos. Planta actual X Tower = progreso visual; semana curricular = progreso pedagogico real.
+        </div>
+        
+        <div class="parents-grid">
+          <!-- Column 1: Core Stats -->
+          <div class="parents-card">
+            <h3>Resumen Académico</h3>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div>
+                <div class="stats-number" id="parent-stat-days">0</div>
+                <div class="stats-sub">Días entrenados este verano</div>
+              </div>
+              <div>
+                <div class="stats-number" id="parent-stat-time">0m</div>
+                <div class="stats-sub">Tiempo de estudio de hoy</div>
+              </div>
+              <div>
+                <div class="stats-number" id="parent-stat-accuracy">0%</div>
+                <div class="stats-sub">Tasa media de aciertos</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: Progress & Weak Operations -->
+          <div class="parents-card">
+            <h3>Tablas y Operaciones</h3>
+            <div style="margin-bottom: 20px;">
+              <h4 style="font-size: 0.9rem; font-weight: 800; margin-bottom: 8px; color: rgba(255,255,255,0.7);">Tablas Dominadas:</h4>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="parent-mastered-tables">
+                <span class="stat-pill" style="border-color: var(--green); color: var(--green);">Tabla del 2</span>
+                <span class="stat-pill" style="border-color: var(--green); color: var(--green);">Tabla del 10</span>
+              </div>
+            </div>
+            <div>
+              <h4 style="font-size: 0.9rem; font-weight: 800; margin-bottom: 8px; color: var(--pink);">Operaciones que más fallas:</h4>
+              <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px;" id="parent-weak-operations">
+                <li>Ninguna registrada todavía. ¡Buen trabajo!</li>
+              </ul>
+            </div>
+            <button id="btn-parent-generate-reinforcement" class="btn-action" style="width: 100%; margin-top: 24px; font-size: 0.9rem;">Crear Sesión de Refuerzo</button>
+          </div>
+
+          <!-- Column 3: Configuration settings -->
+          <div class="parents-card">
+            <h3>Ajustes Generales</h3>
+            <div class="parents-config-row">
+              <label for="toggle-parent-sounds">Efectos de sonido y música</label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggle-parent-sounds" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            
+            <div class="parents-config-row">
+              <label for="select-parent-difficulty">Adaptabilidad de Dificultad</label>
+              <select id="select-parent-difficulty" style="background: rgba(0,0,0,0.4); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 8px; outline: none;">
+                <option value="auto">Automática (Pedagógica)</option>
+                <option value="easy">Suave (Sin presión)</option>
+                <option value="normal">Normal</option>
+                <option value="hard">Modo Desafío (Veloz)</option>
+              </select>
+            </div>
+
+            <div class="parents-config-row">
+              <label for="select-parent-timelimit">Límite diario de juego</label>
+              <select id="select-parent-timelimit" style="background: rgba(0,0,0,0.4); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 8px; outline: none;">
+                <option value="10">10 minutos</option>
+                <option value="15" selected>15 minutos</option>
+                <option value="20">20 minutos</option>
+                <option value="30">30 minutos</option>
+                <option value="999">Sin límite</option>
+              </select>
+            </div>
+
+            <div style="margin-top: 24px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px;">
+              <h4 style="font-size: 0.9rem; font-weight: 800; margin-bottom: 8px; color: var(--cyan);">Seguridad parental:</h4>
+              <input id="input-parent-pin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" placeholder="Nuevo PIN parental" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.4); color: white; margin-bottom: 8px;">
+              <button id="btn-parent-save-pin" class="btn-action" style="width: 100%; padding: 8px; font-size: 0.85rem; margin-bottom: 8px;">Actualizar PIN parental</button>
+              <div id="parent-security-log" style="font-size: 0.78rem; color: rgba(255,255,255,0.55); line-height: 1.4; margin-bottom: 16px;">Sin cambios sensibles registrados.</div>
+              <h4 style="font-size: 0.9rem; font-weight: 800; margin-bottom: 8px; color: var(--yellow);">Datos y Progreso:</h4>
+              <button id="btn-parent-export-data" class="btn-action" style="width: 100%; padding: 8px; font-size: 0.85rem; margin-bottom: 8px;">Exportar progreso JSON</button>
+              <button id="btn-parent-import-data" class="btn-action secondary" style="width: 100%; padding: 8px; font-size: 0.85rem; margin-bottom: 8px;">Importar progreso JSON</button>
+              <input id="input-parent-import-data" type="file" accept="application/json,.json" style="display: none;">
+              <button id="btn-parent-reset-data" class="btn-action secondary" style="width: 100%; padding: 8px; font-size: 0.85rem;">Restaurar Datos del Alumno</button>
+            </div>
+          </div>
+
+          <div class="parents-card parents-card-wide">
+            <h3>Informe Semanal del Temario</h3>
+            <div id="parent-weekly-evidence" class="weekly-evidence-list"></div>
+            <div id="parent-boss-summary" class="parent-boss-summary"></div>
+            <div id="parent-weekly-recommendations" class="weekly-recommendations"></div>
+            <button id="btn-parent-export-weekly-report" class="btn-action" style="width: 100%; margin-top: 14px; font-size: 0.9rem;">Descargar informe semanal</button>
+          </div>
+
+          <div class="parents-card parents-card-wide">
+            <h3>Alertas de Repaso Espaciado</h3>
+            <div id="parent-spaced-alerts" class="parent-spaced-alerts"></div>
+          </div>
+
+          <div class="parents-card parents-card-wide">
+            <h3>Linea Temporal del Verano</h3>
+            <div id="parent-summer-timeline" class="summer-timeline"></div>
+          </div>
+
+          <div class="parents-card parents-card-wide">
+            <h3>Validaciones Familiares Pendientes</h3>
+            <div id="parent-offline-validation-list" class="offline-validation-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 10. FUTURE MODULES PORTALS -->
+      <section id="screen-modules" class="screen">
+        <h2 class="screen-title">Selección de Mundos de Aprendizaje</h2>
+        <div class="modules-grid">
+          <!-- Active Module -->
+          <div class="module-card active-module">
+            <span class="module-badge ready">DISPONIBLE</span>
+            <div class="module-icon">📐</div>
+            <h3>Matemáticas</h3>
+            <p>Liga de Multiplicación, series lógicas y problemas de cálculo mental.</p>
+            <button class="btn-action" style="width: 100%; margin-top: 8px; font-size: 0.9rem;" onclick="app.showScreen('map')">Entrar</button>
+          </div>
+
+          <!-- Locked Modules -->
+          <div class="module-card locked-module">
+            <span class="module-badge upcoming">MUNDO 2</span>
+            <div class="module-icon">📚</div>
+            <h3>Lengua y Ortografía</h3>
+            <p>Combates de palabras, corrección ortográfica y comprensión de lectura.</p>
+            <button class="btn-action secondary" style="width: 100%; margin-top: 8px; font-size: 0.9rem; cursor: not-allowed;" disabled>Cerrado</button>
+          </div>
+
+          <div class="module-card locked-module">
+            <span class="module-badge upcoming">MUNDO 3</span>
+            <div class="module-icon">🇬🇧</div>
+            <h3>Inglés Astral</h3>
+            <p>Vocabulario elemental, listening de combate y traducción de conjuros.</p>
+            <button class="btn-action secondary" style="width: 100%; margin-top: 8px; font-size: 0.9rem; cursor: not-allowed;" disabled>Cerrado</button>
+          </div>
+
+          <div class="module-card locked-module">
+            <span class="module-badge upcoming">MUNDO 4</span>
+            <div class="module-icon">🔬</div>
+            <h3>Ciencias y Naturaleza</h3>
+            <p>Misiones de laboratorio elemental, ecosistemas y geografía galáctica.</p>
+            <button class="btn-action secondary" style="width: 100%; margin-top: 8px; font-size: 0.9rem; cursor: not-allowed;" disabled>Cerrado</button>
+          </div>
+
+          <div class="module-card locked-module">
+            <span class="module-badge upcoming">MUNDO 5</span>
+            <div class="module-icon">🎨</div>
+            <h3>Creatividad y Arte</h3>
+            <p>Taller de diseño de estandartes, pintura digital y forja de avatares.</p>
+            <button class="btn-action secondary" style="width: 100%; margin-top: 8px; font-size: 0.9rem; cursor: not-allowed;" disabled>Cerrado</button>
+          </div>
+
+          <div class="module-card locked-module">
+            <span class="module-badge upcoming">MUNDO 6</span>
+            <div class="module-icon">🤝</div>
+            <h3>Sociales e Historia</h3>
+            <p>Preguntas sobre mapas, historia y cultura general del mundo.</p>
+            <button class="btn-action secondary" style="width: 100%; margin-top: 8px; font-size: 0.9rem; cursor: not-allowed;" disabled>Cerrado</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div id="app-dialog" class="modal-overlay app-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="app-dialog-title" aria-describedby="app-dialog-message" style="display: none;">
+    <div class="modal-content app-dialog-content">
+      <h3 id="app-dialog-title">Aviso</h3>
+      <p id="app-dialog-message"></p>
+      <div class="app-dialog-actions">
+        <button id="app-dialog-cancel" class="btn-action secondary" type="button">Cancelar</button>
+        <button id="app-dialog-confirm" class="btn-action" type="button">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/audio.js"></script>
+  <script src="js/assets.js"></script>
+  <script src="js/curriculum-data.js"></script>
+  <script src="js/learning-engine.js"></script>
+  <script src="js/services.js"></script>
+  <script src="js/combat-session.js"></script>
+  <script src="index.js"></script>
+</body>
+</html>
