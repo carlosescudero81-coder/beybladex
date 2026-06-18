@@ -1,0 +1,279 @@
+{
+  "personajes": [
+    {
+      "id": "jaxon_cross_blader_x",
+      "nombre": "Jaxon Cross - Blader X",
+      "file": "personajes/01_jaxon_cross_blader_x.jpg"
+    },
+    {
+      "id": "robin_kazami",
+      "nombre": "Robin Kazami",
+      "file": "personajes/02_robin_kazami.jpg"
+    },
+    {
+      "id": "multi_nana_iro",
+      "nombre": "Multi Nana-iro",
+      "file": "personajes/03_multi_nana_iro.jpg"
+    },
+    {
+      "id": "tenka_shiroboshi",
+      "nombre": "Tenka Shiroboshi",
+      "file": "personajes/04_tenka_shiroboshi.jpg"
+    },
+    {
+      "id": "khrome_ryugu",
+      "nombre": "Khrome Ryugu",
+      "file": "personajes/05_khrome_ryugu.jpg"
+    },
+    {
+      "id": "sigrid_nana_iro",
+      "nombre": "Sigrid Nana-iro",
+      "file": "personajes/06_sigrid_nana_iro.jpg"
+    },
+    {
+      "id": "ciel_kaminari",
+      "nombre": "Ciel Kaminari",
+      "file": "personajes/07_ciel_kaminari.jpg"
+    },
+    {
+      "id": "burn_fujiwara",
+      "nombre": "Burn Fujiwara",
+      "file": "personajes/08_burn_fujiwara.jpg"
+    },
+    {
+      "id": "yuni_nanase",
+      "nombre": "Yuni Nanase",
+      "file": "personajes/09_yuni_nanase.jpg"
+    },
+    {
+      "id": "takumi_ishiyama",
+      "nombre": "Takumi Ishiyama",
+      "file": "personajes/10_takumi_ishiyama.jpg"
+    },
+    {
+      "id": "meiden",
+      "nombre": "Meiden",
+      "file": "personajes/11_meiden.jpg"
+    },
+    {
+      "id": "omega_shiroboshi",
+      "nombre": "Omega Shiroboshi",
+      "file": "personajes/12_omega_shiroboshi.jpg"
+    },
+    {
+      "id": "blaze_fujiwara",
+      "nombre": "Blaze Fujiwara",
+      "file": "personajes/13_blaze_fujiwara.jpg"
+    },
+    {
+      "id": "rex_jura",
+      "nombre": "Rex Jura",
+      "file": "personajes/14_rex_jura.jpg"
+    },
+    {
+      "id": "quinn_manju",
+      "nombre": "Quinn Manju",
+      "file": "personajes/15_quinn_manju.jpg"
+    },
+    {
+      "id": "packun",
+      "nombre": "Packun",
+      "file": "personajes/16_packun.jpg"
+    },
+    {
+      "id": "yoko_kyubi",
+      "nombre": "Yoko Kyubi",
+      "file": "personajes/17_yoko_kyubi.jpg"
+    },
+    {
+      "id": "ryu_isshin",
+      "nombre": "Ryu Isshin",
+      "file": "personajes/18_ryu_isshin.jpg"
+    },
+    {
+      "id": "enga_fugazaru",
+      "nombre": "Enga Fugazaru",
+      "file": "personajes/19_enga_fugazaru.jpg"
+    },
+    {
+      "id": "lantz_roji",
+      "nombre": "Lantz Roji",
+      "file": "personajes/20_lantz_roji.jpg"
+    },
+    {
+      "id": "kadovar",
+      "nombre": "Kadovar",
+      "file": "personajes/21_kadovar.jpg"
+    },
+    {
+      "id": "toguro_okunaga",
+      "nombre": "Toguro Okunaga",
+      "file": "personajes/22_toguro_okunaga.jpg"
+    },
+    {
+      "id": "zonamos",
+      "nombre": "Zonamos",
+      "file": "personajes/23_zonamos.jpg"
+    },
+    {
+      "id": "niko",
+      "nombre": "Niko",
+      "file": "personajes/24_niko.jpg"
+    }
+  ],
+  "peonzas": [
+    {
+      "id": "sword_dran",
+      "nombre": "Sword Dran",
+      "file": "peonzas/01_sword_dran.jpg"
+    },
+    {
+      "id": "dagger_dran",
+      "nombre": "Dagger Dran",
+      "file": "peonzas/02_dagger_dran.jpg"
+    },
+    {
+      "id": "buster_dran",
+      "nombre": "Buster Dran",
+      "file": "peonzas/03_buster_dran.jpg"
+    },
+    {
+      "id": "scythe_incendio",
+      "nombre": "Scythe Incendio",
+      "file": "peonzas/04_scythe_incendio.jpg"
+    },
+    {
+      "id": "chain_incendio",
+      "nombre": "Chain Incendio",
+      "file": "peonzas/05_chain_incendio.jpg"
+    },
+    {
+      "id": "hammer_incendio",
+      "nombre": "Hammer Incendio",
+      "file": "peonzas/06_hammer_incendio.jpg"
+    },
+    {
+      "id": "arrow_wizard",
+      "nombre": "Arrow Wizard",
+      "file": "peonzas/07_arrow_wizard.jpg"
+    },
+    {
+      "id": "wand_wizard",
+      "nombre": "Wand Wizard",
+      "file": "peonzas/08_wand_wizard.jpg"
+    },
+    {
+      "id": "helm_knight",
+      "nombre": "Helm Knight",
+      "file": "peonzas/09_helm_knight.jpg"
+    },
+    {
+      "id": "lance_knight",
+      "nombre": "Lance Knight",
+      "file": "peonzas/10_lance_knight.jpg"
+    },
+    {
+      "id": "soar_phoenix",
+      "nombre": "Soar Phoenix",
+      "file": "peonzas/11_soar_phoenix.jpg"
+    },
+    {
+      "id": "shark_edge",
+      "nombre": "Shark Edge",
+      "file": "peonzas/12_shark_edge.jpg"
+    },
+    {
+      "id": "leon_claw",
+      "nombre": "Leon Claw",
+      "file": "peonzas/13_leon_claw.jpg"
+    },
+    {
+      "id": "viper_tail",
+      "nombre": "Viper Tail",
+      "file": "peonzas/14_viper_tail.jpg"
+    },
+    {
+      "id": "unicorn_sting",
+      "nombre": "Unicorn Sting",
+      "file": "peonzas/15_unicorn_sting.jpg"
+    },
+    {
+      "id": "rhino_horn",
+      "nombre": "Rhino Horn",
+      "file": "peonzas/16_rhino_horn.jpg"
+    },
+    {
+      "id": "tyranno_beat",
+      "nombre": "Tyranno Beat",
+      "file": "peonzas/17_tyranno_beat.jpg"
+    },
+    {
+      "id": "samurai_saber",
+      "nombre": "Samurai Saber",
+      "file": "peonzas/18_samurai_saber.jpg"
+    },
+    {
+      "id": "cobalt_dragoon",
+      "nombre": "Cobalt Dragoon",
+      "file": "peonzas/19_cobalt_dragoon.jpg"
+    },
+    {
+      "id": "cobalt_drake",
+      "nombre": "Cobalt Drake",
+      "file": "peonzas/20_cobalt_drake.jpg"
+    },
+    {
+      "id": "shelter_drake",
+      "nombre": "Shelter Drake",
+      "file": "peonzas/21_shelter_drake.jpg"
+    },
+    {
+      "id": "impact_drake",
+      "nombre": "Impact Drake",
+      "file": "peonzas/22_impact_drake.jpg"
+    },
+    {
+      "id": "aero_pegasus",
+      "nombre": "Aero Pegasus",
+      "file": "peonzas/23_aero_pegasus.jpg"
+    },
+    {
+      "id": "silver_wolf",
+      "nombre": "Silver Wolf",
+      "file": "peonzas/24_silver_wolf.jpg"
+    }
+  ],
+  "estadios": [
+    {
+      "id": "training",
+      "nombre": "Estadio de Entrenamiento",
+      "file": "estadios/01_estadio_de_entrenamiento.jpg",
+      "ficha": "estadios_fichas/01_estadio_de_entrenamiento_ficha.jpg"
+    },
+    {
+      "id": "standard",
+      "nombre": "Estadio Estándar",
+      "file": "estadios/02_estadio_est_ndar.jpg",
+      "ficha": "estadios_fichas/02_estadio_est_ndar_ficha.jpg"
+    },
+    {
+      "id": "advanced",
+      "nombre": "Estadio Xtreme Dash",
+      "file": "estadios/03_estadio_xtreme_dash.jpg",
+      "ficha": "estadios_fichas/03_estadio_xtreme_dash_ficha.jpg"
+    },
+    {
+      "id": "final",
+      "nombre": "Estadio Final",
+      "file": "estadios/04_estadio_final.jpg",
+      "ficha": "estadios_fichas/04_estadio_final_ficha.jpg"
+    }
+  ],
+  "torre": [
+    {
+      "id": "x_tower",
+      "nombre": "X Tower del Conocimiento",
+      "file": "torre/torre_x_del_conocimiento.jpg"
+    }
+  ]
+}
