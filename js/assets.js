@@ -692,6 +692,276 @@ const BEYBLADE_BEYS = [
 
 const BEYBLADE_X_BEYS = BEYBLADE_BEYS;
 
+const NEW_AVATAR_FILES = [
+  "Arce.png",
+  "Bariki jinnai.png",
+  "Blaze Fujiwara.png",
+  "ChatGPT Image 19 jun 2026, 15_25_21 (10).png",
+  "ChatGPT Image 19 jun 2026, 15_25_21 (8).png",
+  "ChatGPT Image 19 jun 2026, 15_25_21 (9).png",
+  "ChatGPT Image 19 jun 2026, 15_25_35 (1).png",
+  "ChatGPT Image 19 jun 2026, 15_25_35 (2).png",
+  "Ciel Kaminiari.png",
+  "eight cross.png",
+  "Enga Fugazaru.png",
+  "Five cross.png",
+  "Four cross.png",
+  "Genri sayo.png",
+  "Ginro.png",
+  "iwao gogo.png",
+  "Jaxon cross.png",
+  "Jian strong.png",
+  "karla konjiki.png",
+  "Khrome Ryugu.png",
+  "Kiwami Miyazukae.png",
+  "Lantz Roji.png",
+  "Meiko myoden.png",
+  "millon mizu.png",
+  "multi nanairo.png",
+  "nanase.png",
+  "Nine Cross.png",
+  "Number One.png",
+  "Numero Zero.png",
+  "Nunmber two.png",
+  "Omega Shiroboshi.png",
+  "One cross.png",
+  "Packun.png",
+  "reiyu kuwabara.png",
+  "Robin kazami.png",
+  "Ryu isshin.png",
+  "Seven cross.png",
+  "Shiguru Nanairo.png",
+  "Six cross.png",
+  "Suzaki.png",
+  "Takumi ishiyama.png",
+  "tenka shiroboshi.png",
+  "Three cross.png",
+  "tisho sushiya.png",
+  "Titus Manju.png",
+  "Toguro Okunaga.png",
+  "Tsuru.png",
+  "Two cross.png",
+  "Warden.png",
+  "yoko kyubi.png",
+  "Zero Cross.png",
+  "zonamos nekoyama.png"
+];
+
+const NEW_BEY_FILES = [
+  "blackshell 4.png",
+  "cobaltdragon 2.png",
+  "dranbuster 1.png",
+  "dranbuster.png",
+  "drandagger 4 gor.png",
+  "drandagger 4.png",
+  "dransword 3.png",
+  "hellschain 5.png",
+  "hellshammer 3.png",
+  "hellssythe 4.png",
+  "knightlance 4.png",
+  "knightshield 3.png",
+  "leonclaw 5.png",
+  "phenixrudder 9.png",
+  "poenixwing 9.png",
+  "rhinohorn 3.png",
+  "samuraisaber.png",
+  "sharkedge 3.png",
+  "vipertail 5.png",
+  "wizardarrow 4.png",
+  "wizardrod.png",
+  "wyverngale 5.png"
+];
+
+function cleanAssetName(fileName) {
+  const baseName = String(fileName || '')
+    .replace(/\.[^.]+$/, '')
+    .trim();
+  const generatedAvatarMatch = baseName.match(/^ChatGPT Image.*\((\d+)\)$/i);
+  if (generatedAvatarMatch) return `Blader Especial ${generatedAvatarMatch[1]}`;
+  return baseName
+    .replace(/\bpoenix\b/i, 'phenix')
+    .replace(/\bNunmber\b/i, 'Number')
+    .replace(/\s+\d+\s*gor$/i, ' Gold')
+    .replace(/\s+\d+$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function titleCaseAssetName(value) {
+  return cleanAssetName(value)
+    .split(' ')
+    .filter(Boolean)
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function camelAssetId(value) {
+  const words = cleanAssetName(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (words.length === 0) return 'asset';
+  return words
+    .map((word, index) => {
+      const lower = word.toLowerCase();
+      return index === 0 ? lower : lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join('');
+}
+
+function statProfile(index, style = 'balance', base = 58) {
+  const spread = [
+    { attack: 12, defense: -2, stamina: -4, speed: 10, focus: 0 },
+    { attack: -3, defense: 12, stamina: 6, speed: -4, focus: 3 },
+    { attack: -5, defense: 4, stamina: 14, speed: 0, focus: 6 },
+    { attack: 6, defense: 6, stamina: 6, speed: 6, focus: 5 }
+  ][index % 4];
+  const tier = Math.floor(index / 8) * 3;
+  const styleBoost = style === 'ataque'
+    ? { attack: 10, speed: 7, defense: -3, stamina: -2, focus: 0 }
+    : style === 'defensa'
+      ? { attack: -4, speed: -2, defense: 12, stamina: 6, focus: 2 }
+      : style === 'estamina'
+        ? { attack: -3, speed: 2, defense: 4, stamina: 13, focus: 4 }
+        : { attack: 4, speed: 4, defense: 4, stamina: 4, focus: 4 };
+  return {
+    attack: Math.max(35, Math.min(99, base + spread.attack + styleBoost.attack + tier)),
+    defense: Math.max(35, Math.min(99, base + spread.defense + styleBoost.defense + tier)),
+    stamina: Math.max(35, Math.min(99, base + spread.stamina + styleBoost.stamina + tier)),
+    speed: Math.max(35, Math.min(99, base + spread.speed + styleBoost.speed + tier)),
+    focus: Math.max(35, Math.min(99, base + spread.focus + styleBoost.focus + tier))
+  };
+}
+
+function getBeyStyleFromName(name, index) {
+  const key = name.toLowerCase();
+  if (key.includes('shield') || key.includes('shell') || key.includes('chain')) return 'defensa';
+  if (key.includes('wizard') || key.includes('rod') || key.includes('tail') || key.includes('gale')) return 'estamina';
+  if (key.includes('buster') || key.includes('sword') || key.includes('dagger') || key.includes('shark') || key.includes('hammer')) return 'ataque';
+  return ['ataque', 'defensa', 'estamina', 'balance'][index % 4];
+}
+
+function getCharacterStyleFromName(name, index) {
+  const key = name.toLowerCase();
+  if (key.includes('blaze') || key.includes('khrome') || key.includes('cross') || key.includes('ryu')) return 'ataque';
+  if (key.includes('warden') || key.includes('strong') || key.includes('iwao') || key.includes('titus')) return 'defensa';
+  if (key.includes('meiko') || key.includes('nanairo') || key.includes('sayo') || key.includes('yoko')) return 'estamina';
+  return ['ataque', 'defensa', 'estamina', 'balance'][index % 4];
+}
+
+function getCharacterSpecialStats(id, stats) {
+  const specialStats = {
+    omegaShiroboshi: { attack: 88, defense: 84, stamina: 86, speed: 87, focus: 90 },
+    khromeRyugu: { attack: 96, defense: 89, stamina: 91, speed: 94, focus: 95 }
+  };
+  return specialStats[id] || stats;
+}
+
+function buildAvatarCharactersFromFiles() {
+  const teams = ['X Tower', 'Team Persona', 'Pendragon', 'Zooganic', 'Liga Escolar'];
+  const subjects = ['Matematicas', 'Lengua', 'Ingles', 'Medio', 'Arte', 'Movimiento', 'Retos mixtos'];
+  const beys = NEW_BEY_FILES.map(file => titleCaseAssetName(file));
+  return NEW_AVATAR_FILES.map((file, index) => {
+    const name = titleCaseAssetName(file);
+    const id = camelAssetId(file);
+    const style = getCharacterStyleFromName(name, index);
+    const stats = getCharacterSpecialStats(id, statProfile(index, style, 56));
+    const difficulty = id === 'khromeRyugu' || id === 'omegaShiroboshi' ? 'legendaria' : index < 8 ? 'baja' : index < 22 ? 'media' : index < 40 ? 'alta' : 'legendaria';
+    return {
+      id,
+      nombre: name,
+      equipo: teams[index % teams.length],
+      rol: style === 'ataque' ? 'Rival ofensivo' : style === 'defensa' ? 'Muro tactico' : style === 'estamina' ? 'Especialista de resistencia' : 'Blader equilibrado',
+      dificultad: difficulty,
+      fraseEntrada: 'Mi avatar tambien tiene nivel. Demuestra lo que sabes.',
+      fraseVictoria: 'Tu personaje ha subido un poco mas.',
+      fraseDerrota: 'Aprende del choque y vuelve a lanzar.',
+      beyAsociado: beys[index % beys.length],
+      materiaRecomendada: subjects[index % subjects.length],
+      colorPrincipal: ['#00f0ff', '#ff0055', '#ffea00', '#00ff66', '#8b5cf6', '#f97316'][index % 6],
+      image: `imagenes_limpias/avatares/${file}`,
+      style,
+      stats
+    };
+  });
+}
+
+function buildBeysFromFiles() {
+  const owners = NEW_AVATAR_FILES.map(file => titleCaseAssetName(file));
+  return NEW_BEY_FILES.map((file, index) => {
+    const name = titleCaseAssetName(file);
+    const style = getBeyStyleFromName(name, index);
+    const stats = statProfile(index, style, 54);
+    const id = name.toLowerCase().includes('dransword') ? 'swordDran' : camelAssetId(file);
+    const rarity = index < 5 ? 'comun' : index < 11 ? 'rara' : index < 17 ? 'epica' : 'legendaria';
+    return {
+      id,
+      nombre: name,
+      tipo: style,
+      rareza: rarity,
+      ataque: stats.attack,
+      defensa: stats.defense,
+      estamina: stats.stamina,
+      velocidad: stats.speed,
+      nivelRequerido: Math.max(1, Math.min(50, 1 + index * 2)),
+      habilidad: style === 'ataque' ? 'X Impact' : style === 'defensa' ? 'Guard Rail' : style === 'estamina' ? 'Long Spin' : 'Balance Shift',
+      descripcion: `Peonza ${style} con estadisticas reales para combate.`,
+      personajeAsociado: owners[index % owners.length],
+      colorPrincipal: ['#00f0ff', '#ff0055', '#ffea00', '#00ff66', '#8b5cf6', '#f97316'][index % 6],
+      colorSecundario: ['#ffffff', '#111827', '#f8fafc', '#0f172a'][index % 4],
+      image: `imagenes_limpias/peonzas/${file}`
+    };
+  });
+}
+
+BEYBLADE_CHARACTERS.splice(0, BEYBLADE_CHARACTERS.length, ...buildAvatarCharactersFromFiles());
+BEYBLADE_BEYS.splice(0, BEYBLADE_BEYS.length, ...buildBeysFromFiles());
+
+function getCharacterBaseStats(character) {
+  return character?.stats || { attack: 55, defense: 55, stamina: 55, speed: 55, focus: 55 };
+}
+
+function getCharacterProgress(state, characterId) {
+  if (!state.player.characterProgress || typeof state.player.characterProgress !== 'object') {
+    state.player.characterProgress = {};
+  }
+  if (!state.player.characterProgress[characterId]) {
+    state.player.characterProgress[characterId] = { wins: 0, losses: 0, xp: 0, level: 1 };
+  }
+  const progress = state.player.characterProgress[characterId];
+  progress.wins = Math.max(0, parseInt(progress.wins, 10) || 0);
+  progress.losses = Math.max(0, parseInt(progress.losses, 10) || 0);
+  progress.xp = Math.max(0, parseInt(progress.xp, 10) || 0);
+  progress.level = Math.max(1, Math.min(30, parseInt(progress.level, 10) || (1 + Math.floor(progress.xp / 120))));
+  return progress;
+}
+
+function getEffectiveCharacterStats(character, state = null, isPlayer = false) {
+  const base = getCharacterBaseStats(character);
+  const progress = isPlayer && state ? getCharacterProgress(state, character.id) : null;
+  const levelBonus = progress ? Math.min(24, Math.floor(progress.xp / 120) + Math.floor(progress.wins / 3)) : 0;
+  return {
+    attack: Math.min(125, base.attack + levelBonus),
+    defense: Math.min(125, base.defense + levelBonus),
+    stamina: Math.min(125, base.stamina + levelBonus),
+    speed: Math.min(125, base.speed + levelBonus),
+    focus: Math.min(125, base.focus + levelBonus),
+    level: progress ? Math.max(1, 1 + levelBonus) : 1
+  };
+}
+
+function recordCharacterBattleResult(state, characterId, won, rewardXp = 0) {
+  const progress = getCharacterProgress(state, characterId);
+  if (won) progress.wins += 1;
+  else progress.losses += 1;
+  progress.xp += Math.max(10, Math.round(rewardXp || 20));
+  progress.level = Math.max(1, Math.min(30, 1 + Math.floor(progress.xp / 120) + Math.floor(progress.wins / 3)));
+  return progress;
+}
+
 const BEY_TYPES = [
   { id: "ataque", name: "Ataque", description: "Golpea fuerte y rapido.", example: "Sword Dran", color: "#f97316" },
   { id: "defensa", name: "Defensa", description: "Aguanta mejor los impactos.", example: "Helm Knight", color: "#38bdf8" },
@@ -763,7 +1033,35 @@ const TOWER_SUBJECT_NAMES = {
   movement: "Gimnasio de Estamina",
   mixed: "Duelo mixto"
 };
-const TOWER_RIVALS = ["robinKazami", "multiNanairo", "cielKaminari", "sigridNanairo", "jaxonCross", "yokoKyubi", "rexJura", "tenkaShiroboshi", "omegaShiroboshi", "khromeRyugu"];
+
+function getCharacterPowerScore(character) {
+  const stats = character && character.stats ? character.stats : {};
+  const attack = Number(stats.attack) || 0;
+  const defense = Number(stats.defense) || 0;
+  const stamina = Number(stats.stamina) || 0;
+  const speed = Number(stats.speed) || 0;
+  const focus = Number(stats.focus) || 0;
+  return Math.round(((attack * 1.08) + defense + stamina + speed + (focus * 0.92)) / 5);
+}
+
+function buildTowerRivalPlan() {
+  const towerSize = 50;
+  const finalBoss = BEYBLADE_X_CHARACTERS.find(character => character.id === "khromeRyugu")
+    || BEYBLADE_X_CHARACTERS[BEYBLADE_X_CHARACTERS.length - 1];
+  const sortedRivals = BEYBLADE_X_CHARACTERS
+    .filter(character => character && (!finalBoss || character.id !== finalBoss.id))
+    .sort((a, b) => {
+      const powerDiff = getCharacterPowerScore(a) - getCharacterPowerScore(b);
+      if (powerDiff !== 0) return powerDiff;
+      return a.nombre.localeCompare(b.nombre);
+    });
+  const plan = sortedRivals.slice(-(towerSize - 1));
+  if (finalBoss) plan.push(finalBoss);
+  return plan.slice(0, towerSize);
+}
+
+const TOWER_RIVAL_PLAN = buildTowerRivalPlan();
+const TOWER_RIVALS = TOWER_RIVAL_PLAN.map(character => character.id);
 
 function getTowerBlockForFloor(floorNumber) {
   return X_TOWER_BLOCKS.find(block => floorNumber >= block.min && floorNumber <= block.max) || X_TOWER_BLOCKS[0];
@@ -775,18 +1073,106 @@ function getFloorStadium(floorNumber) {
 }
 
 function getFloorRival(floorNumber) {
-  const bossMap = { 10: "multiNanairo", 20: "sigridNanairo", 30: "jaxonCross", 40: "omegaShiroboshi", 50: "khromeRyugu" };
-  const rivalId = bossMap[floorNumber] || TOWER_RIVALS[Math.floor((floorNumber - 1) / 5) % TOWER_RIVALS.length];
-  return BEYBLADE_X_CHARACTERS.find(character => character.id === rivalId) || BEYBLADE_X_CHARACTERS[0];
+  const floorIndex = Math.max(0, Math.min(49, (Number(floorNumber) || 1) - 1));
+  return TOWER_RIVAL_PLAN[floorIndex] || BEYBLADE_X_CHARACTERS[0];
+}
+
+function getFloorBattleType(floorNumber) {
+  if (floorNumber === 1) return "calibration-battle";
+  if (floorNumber === 50) return "final-boss";
+  if (floorNumber % 10 === 0) return "tower-boss";
+  if (floorNumber % 5 === 0) return "ascension-battle";
+  return "rival-battle";
+}
+
+function getFloorLegacyType(floorNumber) {
+  if (floorNumber === 1) return "diagnostic";
+  if (floorNumber === 50) return "final";
+  if (floorNumber % 10 === 0) return "tower-rival";
+  if (floorNumber % 5 === 0) return "ascension";
+  return "training";
+}
+
+function getFloorDifficultyTier(floorNumber) {
+  if (floorNumber <= 10) return "baja";
+  if (floorNumber <= 20) return "media";
+  if (floorNumber <= 35) return "alta";
+  if (floorNumber <= 45) return "experta";
+  return "legendaria";
+}
+
+function getFloorDifficulty(floorNumber) {
+  const milestoneBonus = floorNumber % 10 === 0 ? 2 : floorNumber % 5 === 0 ? 1 : 0;
+  return Math.min(10, Math.max(1, Math.ceil(floorNumber / 6) + milestoneBonus));
+}
+
+function getFloorTargetAccuracy(floorNumber) {
+  const milestoneBonus = floorNumber % 10 === 0 ? 4 : floorNumber % 5 === 0 ? 2 : 0;
+  return Math.min(95, 62 + Math.floor((floorNumber - 1) / 2) + milestoneBonus);
+}
+
+function getFloorMotivationalLabel(floorNumber) {
+  if (floorNumber === 1) return "Primer lanzamiento";
+  if (floorNumber === 50) return "Cima de la X Tower";
+  if (floorNumber % 10 === 0) return "Rival de Torre";
+  if (floorNumber % 5 === 0) return "Duelo de ascenso";
+  if (floorNumber >= 41) return "Sprint final";
+  if (floorNumber >= 31) return "Racha avanzada";
+  if (floorNumber >= 21) return "Xtreme Dash";
+  if (floorNumber >= 11) return "Control tecnico";
+  return "Entrenamiento base";
+}
+
+function getFloorRivalStrategy(floorNumber, rival, rivalBey) {
+  const styleByType = {
+    ataque: "presiona con ataques rapidos y castiga las dudas",
+    defensa: "resiste impactos y gana si pierdes precision",
+    estamina: "alarga el duelo y premia las rachas de aciertos",
+    balance: "cambia de ritmo entre ataque, defensa y estamina"
+  };
+  const tier = getFloorDifficultyTier(floorNumber);
+  return `${rival.nombre} usa ${rivalBey.nombre}: ${styleByType[rivalBey.tipo] || "mantiene una estrategia equilibrada"} en dificultad ${tier}.`;
+}
+
+function getFloorObjectives(floorNumber, subject, rival) {
+  const subjectLabel = TOWER_SUBJECT_NAMES[subject] || "Duelo mixto";
+  const primaryObjective = floorNumber === 1
+    ? "Completa la calibracion de combate para ajustar la torre a tu nivel."
+    : floorNumber === 50
+      ? `Derrota a ${rival.nombre} en el duelo final de la X Tower.`
+      : floorNumber % 10 === 0
+        ? `Vence a ${rival.nombre} para cerrar el bloque de la torre.`
+        : floorNumber % 5 === 0
+          ? `Gana el duelo de ascenso contra ${rival.nombre}.`
+          : `Supera un combate de ${subjectLabel} contra ${rival.nombre}.`;
+  const secondaryBySubject = {
+    diagnostic: "Responde sin prisa y deja que el sistema mida tu punto de partida.",
+    math: "Encadena 3 aciertos para cargar el ataque X.",
+    language: "Lee con atencion antes de lanzar el golpe final.",
+    english: "Reconoce las palabras clave para mantener la ventaja.",
+    science: "Relaciona pistas y conceptos para bloquear el contraataque.",
+    art: "Explica o elige con criterio para mejorar el combo creativo.",
+    movement: "Mantente activo y constante durante todo el reto.",
+    mixed: "Combina materias y evita dos fallos seguidos."
+  };
+  return {
+    primaryObjective,
+    secondaryObjective: secondaryBySubject[subject] || secondaryBySubject.mixed
+  };
 }
 
 function getFloorReward(floorNumber) {
   const bey = BEYBLADE_X_BEYS.find(item => item.nivelRequerido === floorNumber)
     || BEYBLADE_X_BEYS.find(item => item.nivelRequerido <= floorNumber && item.nivelRequerido > floorNumber - 3)
     || null;
+  const difficulty = getFloorDifficulty(floorNumber);
+  const rewardCoins = floorNumber % 10 === 0 ? 90 + difficulty * 8 : floorNumber % 5 === 0 ? 55 + difficulty * 6 : 18 + difficulty * 4;
+  const rewardXP = floorNumber % 10 === 0 ? 120 + difficulty * 10 : floorNumber % 5 === 0 ? 75 + difficulty * 8 : 28 + difficulty * 5;
   return {
     chips: floorNumber % 10 === 0 ? 40 : floorNumber % 5 === 0 ? 25 : 8,
     spinPoints: floorNumber % 10 === 0 ? 90 : floorNumber % 5 === 0 ? 55 : 18,
+    coins: rewardCoins,
+    xp: rewardXP,
     beyId: bey ? bey.id : null,
     label: bey ? bey.nombre : "Capsula de piezas"
   };
@@ -810,6 +1196,10 @@ const X_TOWER_FLOORS = Array.from({ length: 50 }, (_, index) => {
   const rival = getFloorRival(floor);
   const reward = getFloorReward(floor);
   const stadium = getFloorStadium(floor);
+  const rivalBey = BEYBLADE_X_BEYS.find(bey => bey.nombre === rival.beyAsociado) || BEYBLADE_X_BEYS[0];
+  const difficulty = getFloorDifficulty(floor);
+  const battleType = getFloorBattleType(floor);
+  const objectives = getFloorObjectives(floor, subject, rival);
   return {
     floor,
     title: floor === 1 ? "Calibracion inicial" : floor === 50 ? "Duelo final de la X Tower" : floor % 10 === 0 ? "Rival de Torre" : floor % 5 === 0 ? "Duelo de Ascenso" : `${TOWER_SUBJECT_NAMES[subject]} ${floor}`,
@@ -819,13 +1209,33 @@ const X_TOWER_FLOORS = Array.from({ length: 50 }, (_, index) => {
     focus: block.focus,
     rivalId: rival.id,
     rivalName: rival.nombre,
-    rivalBeyId: (BEYBLADE_X_BEYS.find(bey => bey.nombre === rival.beyAsociado) || BEYBLADE_X_BEYS[0]).id,
-    rivalBeyName: rival.beyAsociado,
+    rivalBeyId: rivalBey.id,
+    rivalBeyName: rivalBey.nombre,
     stadiumId: stadium.id,
     stadiumName: stadium.nombre,
+    battleType,
+    difficulty,
+    difficultyTier: getFloorDifficultyTier(floor),
+    targetAccuracy: getFloorTargetAccuracy(floor),
+    rewardCoins: reward.coins,
+    rewardXP: reward.xp,
+    objective: objectives.primaryObjective,
+    primaryObjective: objectives.primaryObjective,
+    secondaryObjective: objectives.secondaryObjective,
+    rivalStrategy: getFloorRivalStrategy(floor, rival, rivalBey),
+    motivationalLabel: getFloorMotivationalLabel(floor),
+    combat: {
+      battleType,
+      targetAccuracy: getFloorTargetAccuracy(floor),
+      rewardCoins: reward.coins,
+      rewardXP: reward.xp,
+      rivalStrategy: getFloorRivalStrategy(floor, rival, rivalBey),
+      objective: objectives.primaryObjective,
+      secondaryObjective: objectives.secondaryObjective
+    },
     reward,
     week: weekForTowerFloor(floor),
-    type: floor === 1 ? "diagnostic" : floor === 50 ? "final" : floor % 10 === 0 ? "tower-rival" : floor % 5 === 0 ? "ascension" : "training"
+    type: getFloorLegacyType(floor)
   };
 });
 
@@ -856,7 +1266,7 @@ function isBeyUnlocked(state, bey) {
   if (!bey) return false;
   const starter = ["swordDran", "scytheIncendio", "arrowWizard", "helmKnight"];
   const unlocked = state?.inventory?.beys || [];
-  return starter.includes(bey.id) || unlocked.includes(bey.id) || bey.nivelRequerido <= getCurrentTowerFloor(state);
+  return starter.includes(bey.id) || unlocked.includes(bey.id);
 }
 
 const CUSTOM_PARTS = {
@@ -890,6 +1300,107 @@ const CUSTOM_PARTS = {
   ]
 };
 
+const WORKSHOP_PART_FILES = {
+  core: [
+    "ChatGPT Image 19 jun 2026, 15_37_34 (1).png",
+    "ChatGPT Image 19 jun 2026, 15_37_34 (2).png",
+    "ChatGPT Image 19 jun 2026, 15_37_35 (3).png",
+    "ChatGPT Image 19 jun 2026, 15_37_35 (4).png",
+    "ChatGPT Image 19 jun 2026, 15_37_35 (5).png",
+    "ChatGPT Image 19 jun 2026, 15_37_35 (6).png",
+    "ChatGPT Image 19 jun 2026, 15_37_35 (7).png",
+    "ChatGPT Image 19 jun 2026, 15_37_36 (8).png",
+    "ChatGPT Image 19 jun 2026, 15_37_36 (9).png",
+    "ChatGPT Image 19 jun 2026, 15_37_36 (10).png"
+  ],
+  ring: [
+    "ChatGPT Image 19 jun 2026, 15_36_44 (1).png",
+    "ChatGPT Image 19 jun 2026, 15_36_44 (2).png",
+    "ChatGPT Image 19 jun 2026, 15_36_45 (3).png",
+    "ChatGPT Image 19 jun 2026, 15_36_45 (4).png",
+    "ChatGPT Image 19 jun 2026, 15_36_45 (5).png",
+    "ChatGPT Image 19 jun 2026, 15_36_45 (6).png",
+    "ChatGPT Image 19 jun 2026, 15_36_46 (7).png",
+    "ChatGPT Image 19 jun 2026, 15_36_46 (8).png",
+    "ChatGPT Image 19 jun 2026, 15_36_46 (9).png",
+    "ChatGPT Image 19 jun 2026, 15_36_47 (10).png",
+    "ChatGPT Image 19 jun 2026, 15_36_54 (1).png",
+    "ChatGPT Image 19 jun 2026, 15_36_54 (2).png",
+    "ChatGPT Image 19 jun 2026, 15_36_54 (3).png",
+    "ChatGPT Image 19 jun 2026, 15_36_54 (4).png",
+    "ChatGPT Image 19 jun 2026, 15_36_55 (5).png",
+    "ChatGPT Image 19 jun 2026, 15_36_55 (6).png",
+    "ChatGPT Image 19 jun 2026, 15_36_55 (7).png",
+    "ChatGPT Image 19 jun 2026, 15_36_55 (8).png",
+    "ChatGPT Image 19 jun 2026, 15_36_56 (9).png",
+    "ChatGPT Image 19 jun 2026, 15_36_56 (10).png"
+  ],
+  driver: [
+    "ChatGPT Image 19 jun 2026, 15_40_57 (1).png",
+    "ChatGPT Image 19 jun 2026, 15_40_57 (2).png",
+    "ChatGPT Image 19 jun 2026, 15_40_57 (3).png",
+    "ChatGPT Image 19 jun 2026, 15_40_58 (4).png",
+    "ChatGPT Image 19 jun 2026, 15_40_58 (5).png",
+    "ChatGPT Image 19 jun 2026, 15_40_58 (6).png",
+    "ChatGPT Image 19 jun 2026, 15_40_58 (7).png",
+    "ChatGPT Image 19 jun 2026, 15_40_59 (8).png",
+    "ChatGPT Image 19 jun 2026, 15_40_59 (9).png",
+    "ChatGPT Image 19 jun 2026, 15_40_59 (10).png",
+    "ChatGPT Image 19 jun 2026, 15_42_54 (1).png",
+    "ChatGPT Image 19 jun 2026, 15_42_54 (2).png",
+    "ChatGPT Image 19 jun 2026, 15_42_55 (3).png",
+    "ChatGPT Image 19 jun 2026, 15_42_55 (4).png",
+    "ChatGPT Image 19 jun 2026, 15_42_55 (5).png",
+    "ChatGPT Image 19 jun 2026, 15_42_55 (6).png",
+    "ChatGPT Image 19 jun 2026, 15_42_56 (7).png",
+    "ChatGPT Image 19 jun 2026, 15_42_56 (8).png",
+    "ChatGPT Image 19 jun 2026, 15_42_56 (9).png",
+    "ChatGPT Image 19 jun 2026, 15_42_56 (10).png"
+  ]
+};
+
+function buildWorkshopParts(type, files) {
+  const folder = type === 'core' ? 'Nucleo' : type === 'ring' ? 'Anillo' : 'Punta';
+  const prefix = type === 'core' ? 'Nucleo' : type === 'ring' ? 'Anillo' : 'Punta';
+  const rarityByIndex = ['comun', 'comun', 'raro', 'raro', 'epico', 'epico', 'legendario', 'legendario', 'cosmico', 'cosmico'];
+  return files.map((file, index) => {
+    const number = index + 1;
+    const id = type === 'core' && index === 0
+      ? 'core_wood'
+      : type === 'ring' && index === 0
+        ? 'ring_wood'
+        : type === 'driver' && index === 0
+          ? 'driver_wood'
+          : `${type}_${number}`;
+    const style = type === 'core' ? ['stamina', 'defense', 'attack'][index % 3] : type === 'ring' ? ['attack', 'defense', 'stamina'][index % 3] : ['speed', 'stamina', 'defense'][index % 3];
+    const value = 10 + Math.min(45, index * 3);
+    const stat = style === 'attack' || style === 'speed'
+      ? { attack: value, stamina: Math.round(value / 3) }
+      : style === 'defense'
+        ? { defense: value, stamina: Math.round(value / 4) }
+        : { stamina: value, defense: Math.round(value / 4) };
+    return {
+      id,
+      name: `${prefix} X-${String(number).padStart(2, '0')}`,
+      rarity: rarityByIndex[Math.min(rarityByIndex.length - 1, Math.floor(index / Math.max(1, files.length / rarityByIndex.length)))],
+      stat,
+      image: `imagenes_limpias/Taller/${folder}/${file}`,
+      svg: ''
+    };
+  });
+}
+
+CUSTOM_PARTS.core.splice(0, CUSTOM_PARTS.core.length, ...buildWorkshopParts('core', WORKSHOP_PART_FILES.core));
+CUSTOM_PARTS.ring.splice(0, CUSTOM_PARTS.ring.length, ...buildWorkshopParts('ring', WORKSHOP_PART_FILES.ring));
+CUSTOM_PARTS.driver.splice(0, CUSTOM_PARTS.driver.length, ...buildWorkshopParts('driver', WORKSHOP_PART_FILES.driver));
+CUSTOM_PARTS.color.splice(0, CUSTOM_PARTS.color.length,
+  { id: 'col_cyan', name: 'Energia Cian', rarity: 'comun', code: '#00f0ff' },
+  { id: 'col_pink', name: 'Fuerza Fucsia', rarity: 'raro', code: '#ff0055' },
+  { id: 'col_yellow', name: 'Trueno Amarillo', rarity: 'epico', code: '#ffea00' },
+  { id: 'col_emerald', name: 'Naturaleza Esmeralda', rarity: 'legendario', code: '#00ff66' },
+  { id: 'col_purple', name: 'Materia Oscura', rarity: 'cosmico', code: '#8b5cf6' }
+);
+
 // DYNAMIC SVG TOP DRAWING UTILITY
 // ----------------------------------------------------
 function generateTopSVG(coreId, ringId, driverId, colorId) {
@@ -899,6 +1410,16 @@ function generateTopSVG(coreId, ringId, driverId, colorId) {
   const driverObj = CUSTOM_PARTS.driver.find(d => d.id === driverId) || CUSTOM_PARTS.driver[0];
 
   const strokeColor = colorObj.code;
+
+  if (coreObj.image || ringObj.image || driverObj.image) {
+    return `
+      <div class="custom-top-image-stack" style="--top-accent:${strokeColor}">
+        <img class="custom-top-part custom-top-driver" src="${driverObj.image || ''}" alt="${driverObj.name}">
+        <img class="custom-top-part custom-top-ring" src="${ringObj.image || ''}" alt="${ringObj.name}">
+        <img class="custom-top-part custom-top-core" src="${coreObj.image || ''}" alt="${coreObj.name}">
+      </div>
+    `;
+  }
 
   return `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="100%" height="100%">

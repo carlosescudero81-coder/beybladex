@@ -40,6 +40,7 @@ class LearningEngine {
       bossSummaries: {},
       postBossReviewHistory: {},
       spacedReviewPlans: {},
+      questionHistory: {},
       spacedReviewStreak: {
         current: 0,
         best: 0,
@@ -90,6 +91,7 @@ class LearningEngine {
     profile.spacedReviewPlans = raw.spacedReviewPlans && typeof raw.spacedReviewPlans === 'object' && !Array.isArray(raw.spacedReviewPlans)
       ? raw.spacedReviewPlans
       : {};
+    profile.questionHistory = this.normalizeQuestionHistory(raw.questionHistory);
     profile.spacedReviewStreak = this.normalizeSpacedReviewStreak(raw.spacedReviewStreak);
     profile.spacedRecoveryNotes = Array.isArray(raw.spacedRecoveryNotes)
       ? raw.spacedRecoveryNotes.filter(item => item && typeof item === 'object').slice(-20)
@@ -181,6 +183,26 @@ class LearningEngine {
     };
   }
 
+  static normalizeQuestionHistory(rawHistory) {
+    const raw = rawHistory && typeof rawHistory === 'object' && !Array.isArray(rawHistory) ? rawHistory : {};
+    const knownQuestionIds = new Set(CurriculumData.questionBank.map(question => question.id));
+    return Object.entries(raw).reduce((history, [questionId, item]) => {
+      if (!knownQuestionIds.has(questionId) || !item || typeof item !== 'object') return history;
+      const attempts = Math.max(0, parseInt(item.attempts, 10) || 0);
+      const correct = Math.max(0, parseInt(item.correct, 10) || 0);
+      const incorrect = Math.max(0, parseInt(item.incorrect, 10) || 0);
+      history[questionId] = {
+        questionId,
+        attempts,
+        correct,
+        incorrect,
+        lastSeenAt: item.lastSeenAt || null,
+        lastResult: item.lastResult === 'correct' ? 'correct' : item.lastResult === 'incorrect' ? 'incorrect' : null
+      };
+      return history;
+    }, {});
+  }
+
   static getProfile(state) {
     if (!state.pedagogy) state.pedagogy = {};
     state.pedagogy.learning = this.normalizeProfile(state.pedagogy.learning);
@@ -256,27 +278,73 @@ class LearningEngine {
 
   static selectQuestionsForMission(state, mission = this.getCurrentMission(state), count = 5) {
     if (!mission || !mission.skill) return [];
-    const dueReview = this.getDueReviewItems(state)
-      .filter(item => item.skillId === mission.skill.id || mission.subject.id === 'math')
+    const profile = this.getProfile(state);
+    const dueReviewItems = this.getDueReviewItems(state)
+      .filter(item => item.skillId === mission.skill.id || mission.subject.id === 'math');
+    const dueReview = dueReviewItems
       .map(item => CurriculumData.questionBank.find(question => question.id === item.questionId))
       .filter(Boolean);
     const fresh = CurriculumData.getQuestionsBySkill(mission.skill.id);
     const fallback = CurriculumData.questionBank.filter(question => question.subject === mission.subject.id);
-    return this.uniqueQuestions([...dueReview, ...fresh, ...fallback]).slice(0, count);
+    return this.selectLeastRepeatedQuestions([...dueReview, ...fresh, ...fallback], profile, count, mission.key, dueReviewItems.map(item => item.questionId));
   }
 
   static selectQuestionsForWeeklyBoss(state, week, count = 10) {
     const weekData = CurriculumData.summerWeeks.find(item => item.week === week);
     if (!weekData) return [];
-    const dueReview = this.getDueReviewItems(state)
-      .filter(item => weekData.skills.includes(item.skillId))
+    const profile = this.getProfile(state);
+    const dueReviewItems = this.getDueReviewItems(state)
+      .filter(item => weekData.skills.includes(item.skillId));
+    const dueReview = dueReviewItems
       .map(item => CurriculumData.questionBank.find(question => question.id === item.questionId))
       .filter(Boolean);
     const skillQuestions = weekData.skills
       .flatMap(skillId => CurriculumData.getQuestionsBySkill(skillId));
     const subjectQuestions = weekData.subjects
       .flatMap(subjectId => CurriculumData.questionBank.filter(question => question.subject === subjectId));
-    return this.uniqueQuestions([...dueReview, ...skillQuestions, ...subjectQuestions]).slice(0, count);
+    return this.selectLeastRepeatedQuestions(
+      [...dueReview, ...skillQuestions, ...subjectQuestions],
+      profile,
+      count,
+      `boss-${week}`,
+      dueReviewItems.map(item => item.questionId),
+      'subject'
+    );
+  }
+
+  static selectQuestionsForTowerFloor(state, floorData, count = 8) {
+    if (!floorData) return [];
+    const profile = this.getProfile(state);
+    const floorSubject = this.normalizeSubjectId(floorData.subject);
+    const fallbackWeek = Math.max(1, Math.min(CurriculumData.summerWeeks.length, Math.ceil((parseInt(floorData.floor, 10) || 1) / 7)));
+    const weekData = CurriculumData.summerWeeks.find(item => item.week === floorData.week)
+      || CurriculumData.summerWeeks.find(item => item.week === fallbackWeek)
+      || CurriculumData.summerWeeks[0];
+    const subjectIds = !floorSubject || floorSubject === 'mixed' || floorSubject === 'diagnostic'
+      ? weekData.subjects.map(subjectId => this.normalizeSubjectId(subjectId)).filter(Boolean)
+      : [floorSubject];
+    const weekSkillIds = (weekData.skills || []).filter(skillId => subjectIds.includes(this.getSubjectIdForSkill(skillId)));
+    const subjectSkillIds = subjectIds.flatMap(subjectId => (CurriculumData.skills[subjectId] || []).map(skill => skill.id));
+    const skillIds = [...new Set([...weekSkillIds, ...subjectSkillIds])];
+    const dueReviewItems = this.getDueReviewItems(state).filter(item => skillIds.includes(item.skillId));
+    const dueReview = dueReviewItems
+      .map(item => CurriculumData.questionBank.find(question => question.id === item.questionId))
+      .filter(Boolean);
+    const skillQuestions = skillIds.flatMap(skillId => CurriculumData.getQuestionsBySkill(skillId));
+    const subjectQuestions = subjectIds.flatMap(subjectId => CurriculumData.questionBank.filter(question => question.subject === subjectId));
+    return this.selectLeastRepeatedQuestions(
+      [...dueReview, ...skillQuestions, ...subjectQuestions],
+      profile,
+      count,
+      `tower-${floorData.floor || 0}-${floorSubject || 'mixed'}`,
+      dueReviewItems.map(item => item.questionId),
+      'subject'
+    );
+  }
+
+  static normalizeSubjectId(subjectId) {
+    if (subjectId === 'art') return 'arts';
+    return CurriculumData.subjects[subjectId] || subjectId === 'mixed' || subjectId === 'diagnostic' ? subjectId : null;
   }
 
   static uniqueQuestions(questions) {
@@ -286,6 +354,73 @@ class LearningEngine {
       seen.add(question.id);
       return true;
     });
+  }
+
+  static selectLeastRepeatedQuestions(questions, profile, count, contextKey = '', priorityQuestionIds = [], diversifyBy = null) {
+    const unique = this.uniqueQuestions(questions);
+    const priorityIds = new Set(priorityQuestionIds.filter(Boolean));
+    const ranked = unique
+      .map((question, index) => ({
+        question,
+        index,
+        stats: this.getQuestionStats(profile, question.id),
+        rotation: this.questionRotationScore(question.id, `${contextKey}-${this.todayKey()}`),
+        priority: priorityIds.has(question.id) ? 0 : 1
+      }))
+      .sort((a, b) => {
+        const aSeen = a.stats.attempts > 0 ? 1 : 0;
+        const bSeen = b.stats.attempts > 0 ? 1 : 0;
+        if (aSeen !== bSeen) return aSeen - bSeen;
+        if (a.stats.attempts !== b.stats.attempts) return a.stats.attempts - b.stats.attempts;
+        if (a.priority !== b.priority) return a.priority - b.priority;
+        const aLast = a.stats.lastSeenAt || '';
+        const bLast = b.stats.lastSeenAt || '';
+        if (aLast !== bLast) return aLast.localeCompare(bLast);
+        if (a.rotation !== b.rotation) return a.rotation - b.rotation;
+        return a.index - b.index;
+      })
+      .map(item => item.question);
+    const ordered = diversifyBy ? this.interleaveQuestionsByProperty(ranked, diversifyBy) : ranked;
+    return ordered.slice(0, Math.max(0, count));
+  }
+
+  static interleaveQuestionsByProperty(questions, propertyName) {
+    const groups = questions.reduce((acc, question) => {
+      const key = question[propertyName] || 'default';
+      if (!acc.has(key)) acc.set(key, []);
+      acc.get(key).push(question);
+      return acc;
+    }, new Map());
+    const ordered = [];
+    while (groups.size > 0) {
+      [...groups.keys()].forEach(key => {
+        const group = groups.get(key);
+        const next = group.shift();
+        if (next) ordered.push(next);
+        if (group.length === 0) groups.delete(key);
+      });
+    }
+    return ordered;
+  }
+
+  static getQuestionStats(profile, questionId) {
+    return profile.questionHistory[questionId] || {
+      questionId,
+      attempts: 0,
+      correct: 0,
+      incorrect: 0,
+      lastSeenAt: null,
+      lastResult: null
+    };
+  }
+
+  static questionRotationScore(questionId, salt = '') {
+    const input = `${salt}:${questionId}`;
+    let hash = 0;
+    for (let index = 0; index < input.length; index += 1) {
+      hash = ((hash << 5) - hash + input.charCodeAt(index)) | 0;
+    }
+    return Math.abs(hash);
   }
 
   static recordAnswer(state, question, isCorrect, meta = {}) {
@@ -307,6 +442,7 @@ class LearningEngine {
       progress.streak = 0;
       this.enqueueReview(profile, question);
     }
+    this.recordQuestionHistory(profile, question, isCorrect);
     progress.mastery = this.calculateMastery(progress, skill);
     progress.status = this.statusForMastery(progress.mastery, skill, progress.attempts);
     if (progress.status === 'mastered' && !progress.masteredAt) progress.masteredAt = progress.lastPracticedAt;
@@ -320,6 +456,22 @@ class LearningEngine {
       status: progress.status,
       dueReviews: this.getDueReviewItems(state).length
     };
+  }
+
+  static recordQuestionHistory(profile, question, isCorrect) {
+    const questionId = question && question.id;
+    if (!questionId) return null;
+    const current = this.getQuestionStats(profile, questionId);
+    const updated = {
+      questionId,
+      attempts: current.attempts + 1,
+      correct: current.correct + (isCorrect ? 1 : 0),
+      incorrect: current.incorrect + (isCorrect ? 0 : 1),
+      lastSeenAt: this.todayKey(),
+      lastResult: isCorrect ? 'correct' : 'incorrect'
+    };
+    profile.questionHistory[questionId] = updated;
+    return updated;
   }
 
   static calculateMastery(progress, skill) {
@@ -628,17 +780,26 @@ class LearningEngine {
   static selectQuestionsForPostBossReview(state, week = null, count = 10) {
     const plan = this.getPostBossReviewPlan(state, week);
     if (!plan || plan.completed) return [];
+    const profile = this.getProfile(state);
     const skillIds = plan.skills.map(item => item.id);
-    const dueReview = this.getDueReviewItems(state)
-      .filter(item => skillIds.includes(item.skillId))
+    const dueReviewItems = this.getDueReviewItems(state)
+      .filter(item => skillIds.includes(item.skillId));
+    const dueReview = dueReviewItems
       .map(item => CurriculumData.questionBank.find(question => question.id === item.questionId))
       .filter(Boolean);
     const skillQuestions = skillIds.flatMap(skillId => CurriculumData.getQuestionsBySkill(skillId));
-    const targetedQuestions = this.uniqueQuestions([...dueReview, ...skillQuestions]);
+    const targetedQuestions = this.selectLeastRepeatedQuestions(
+      [...dueReview, ...skillQuestions],
+      profile,
+      count,
+      plan.key,
+      dueReviewItems.map(item => item.questionId),
+      'subject'
+    );
     if (targetedQuestions.length > 0) return targetedQuestions.slice(0, count);
     const subjectQuestions = [...new Set(plan.skills.map(item => item.subjectId).filter(Boolean))]
       .flatMap(subjectId => CurriculumData.questionBank.filter(question => question.subject === subjectId));
-    return this.uniqueQuestions(subjectQuestions).slice(0, count);
+    return this.selectLeastRepeatedQuestions(subjectQuestions, profile, count, `${plan.key}-fallback`, [], 'subject');
   }
 
   static recordPostBossReviewCompletion(state, week = null, stats = {}) {

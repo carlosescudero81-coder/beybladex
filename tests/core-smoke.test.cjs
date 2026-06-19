@@ -173,10 +173,13 @@ async function run() {
   assert.equal(curriculumValidation.ok, true, curriculumValidation.errors.join('; '));
   assert.equal(Object.keys(CurriculumData.subjects).length, 6);
   assert.equal(CurriculumData.summerWeeks.length, 8);
-  assert.ok(CurriculumData.questionBank.length >= 12);
+  assert.ok(CurriculumData.questionBank.length >= 500);
   assert.ok(CurriculumData.readingBank.length >= 2);
   assert.ok(CurriculumData.getSkill('math_multiply_fast'));
   assert.ok(CurriculumData.getQuestionsBySkill('math_multiply_fast').length >= 1);
+  CurriculumData.getAllSkills().forEach(skill => {
+    assert.ok(CurriculumData.getQuestionsBySkill(skill.id).length >= 3, skill.id + ' should have enough practice questions');
+  });
 
   const legacy = StorageService.normalizeState({
     player: {
@@ -236,6 +239,16 @@ async function run() {
   assert.equal(currentMission.subject.id, 'language');
   const firstQuestions = LearningEngine.selectQuestionsForMission(learningState, currentMission, 3);
   assert.ok(Array.isArray(firstQuestions));
+  assert.equal(Object.keys(learningState.pedagogy.learning.questionHistory).length, 0);
+  const firstMissionQuestion = firstQuestions[0];
+  LearningEngine.recordAnswer(learningState, firstMissionQuestion, true);
+  assert.equal(learningState.pedagogy.learning.questionHistory[firstMissionQuestion.id].attempts, 1);
+  assert.equal(learningState.pedagogy.learning.questionHistory[firstMissionQuestion.id].lastResult, 'correct');
+  const missionAfterSeen = LearningEngine.selectQuestionsForMission(learningState, currentMission, 2);
+  assert.ok(
+    !missionAfterSeen.some(question => question.id === firstMissionQuestion.id),
+    'mission selection should prefer unseen questions over a question already answered'
+  );
 
   const multiplicationQuestion = CurriculumData.getQuestionsBySkill('math_multiply_fast')[0];
   const wrongResult = LearningEngine.recordAnswer(learningState, multiplicationQuestion, false);
@@ -265,6 +278,15 @@ async function run() {
   const mixedBossQuestions = LearningEngine.selectQuestionsForWeeklyBoss(learningState, 3, 10);
   assert.ok(mixedBossQuestions.length >= 2);
   assert.ok(new Set(mixedBossQuestions.map(question => question.subject)).size >= 2);
+  const bossRotationState = StorageService.normalizeState(null);
+  const initialBossPair = LearningEngine.selectQuestionsForWeeklyBoss(bossRotationState, 1, 2);
+  assert.equal(initialBossPair.length, 2);
+  LearningEngine.recordAnswer(bossRotationState, initialBossPair[0], true);
+  const rotatedBossPair = LearningEngine.selectQuestionsForWeeklyBoss(bossRotationState, 1, 1);
+  assert.ok(
+    !rotatedBossPair.some(question => question.id === initialBossPair[0].id),
+    'weekly boss selection should prefer unseen questions over a question already answered'
+  );
   const summaryQuestions = LearningEngine.selectQuestionsForWeeklyBoss(learningState, 1, 10);
   const bossSummary = LearningEngine.recordWeeklyBossSummary(learningState, 1, {
     accuracy: 82,
@@ -289,6 +311,14 @@ async function run() {
   const postBossQuestions = LearningEngine.selectQuestionsForPostBossReview(learningState, 1, 10);
   assert.ok(postBossQuestions.length >= 1);
   assert.ok(postBossQuestions.every(question => postBossPlan.skills.some(item => item.id === question.skill)));
+  if (postBossQuestions.length > 2) {
+    LearningEngine.recordAnswer(learningState, postBossQuestions[0], true);
+    const rotatedPostBossQuestions = LearningEngine.selectQuestionsForPostBossReview(learningState, 1, 1);
+    assert.ok(
+      !rotatedPostBossQuestions.some(question => question.id === postBossQuestions[0].id),
+      'post-boss review selection should prefer unseen questions over a question already answered'
+    );
+  }
   const subjectSummary = LearningEngine.getSubjectSummary(learningState);
   assert.equal(subjectSummary.length, 6);
   assert.ok(subjectSummary.find(subject => subject.id === 'math').attempts >= 2);
@@ -327,11 +357,28 @@ async function run() {
   curriculumCombat.generateQuestionsList();
   assert.equal(curriculumCombat.curriculumMission.subject.id, 'math');
   assert.equal(curriculumCombat.questionsList.length, curriculumCombat.questionCount);
-  assert.ok(curriculumCombat.questionsList.every(question => question.type === 'curriculum-math'));
+  assert.ok(
+    curriculumCombat.questionsList.every(question => question.type === 'curriculum-tower'),
+    'tower combat should use tower curriculum questions, got ' + [...new Set(curriculumCombat.questionsList.map(question => question.type))].join(', ')
+  );
+  assert.ok(
+    curriculumCombat.questionsList.every(question => question.subject === 'language' || question.subject === 'math'),
+    'tower floor 1 should stay in language/math, got ' + [...new Set(curriculumCombat.questionsList.map(question => question.subject))].join(', ')
+  );
   curriculumCombat.currentQuestion = curriculumCombat.questionsList[0];
   const previousAttempts = learningState.pedagogy.learning.skills[curriculumCombat.currentQuestion.skill].attempts;
   curriculumCombat.recordCurriculumAnswer(false);
   assert.equal(learningState.pedagogy.learning.skills[curriculumCombat.currentQuestion.skill].attempts, previousAttempts + 1);
+
+  const scienceTowerApp = {
+    ...combatApp,
+    currentTowerFloor: 5
+  };
+  const scienceCombat = new CombatSession(5, false, learningState, scienceTowerApp);
+  scienceCombat.generateQuestionsList();
+  assert.equal(scienceCombat.questionsList.length, scienceCombat.questionCount);
+  assert.ok(scienceCombat.questionsList.every(question => question.type === 'curriculum-tower'));
+  assert.ok(new Set(scienceCombat.questionsList.map(question => question.subject)).size >= 2);
 
   const bossCombat = new CombatSession(3, true, learningState, combatApp);
   bossCombat.generateQuestionsList();

@@ -290,6 +290,12 @@ function runStaticValidation() {
   assert.ok(!source.includes('background-position:'), 'sprite background positioning is not used');
   assert.ok(source.includes('const X_TOWER_FLOORS'), 'X Tower floors are centralized in assets');
   assert.ok(source.includes('Array.from({ length: 50 }'), 'X Tower defines 50 visible floors');
+  assert.ok(source.includes('battleType'), 'X Tower floors expose battle metadata');
+  assert.ok(source.includes('targetAccuracy'), 'X Tower floors expose progressive accuracy targets');
+  assert.ok(source.includes('rivalStrategy'), 'X Tower floors expose rival strategy text');
+  assert.match(source, /handleAnswer\(selectedAnswer\)[\s\S]*const action = this\.selectedAction \|\| 'attack'/, 'combat answers resolve the selected turn action');
+  assert.match(source, /calculatePlayerDamage\(action\)[\s\S]*action === 'attack'[\s\S]*action === 'charge'/, 'player damage changes by combat action');
+  assert.match(source, /calculateRivalDamage\(playerAction\)[\s\S]*playerAction === 'defense'[\s\S]*playerAction === 'attack'/, 'rival counter damage changes by player action');
   assert.ok(source.includes('window.CurriculumData = CurriculumData'), 'curriculum data is exposed for the app');
   assert.ok(source.includes('window.LearningEngine = LearningEngine'), 'learning engine is exposed for the app');
   assert.equal(packageJson.scripts.check, 'node tests/check-syntax.cjs');
@@ -374,6 +380,51 @@ async function runRuntimeValidation() {
   assert.ok(document.getElementById('diagnostic-result-panel').innerHTML.includes('Resultado inicial'));
   app.completeDiagnosticPlacement();
   assert.equal(app.currentScreen, 'map');
+  const floorTwo = getTowerFloorData(2);
+  assert.ok(floorTwo.battleType, 'floor 2 is configured as a battle');
+  assert.ok(floorTwo.rivalBeyId, 'floor 2 has a rival Bey');
+  assert.ok(floorTwo.secondaryObjective, 'floor 2 has a secondary objective');
+  assert.equal(X_TOWER_FLOORS.length, 50, 'X Tower should contain 50 playable floors');
+  const towerRivalIds = X_TOWER_FLOORS.map(floor => floor.rivalId);
+  const characterIds = new Set(BEYBLADE_X_CHARACTERS.map(character => character.id));
+  assert.equal(new Set(towerRivalIds).size, 50, 'X Tower should use 50 different rivals');
+  assert.ok(towerRivalIds.every(rivalId => characterIds.has(rivalId)), 'every tower rival should exist in the avatar roster');
+  assert.equal(getTowerFloorData(50).rivalId, 'khromeRyugu', 'floor 50 should keep Khrome Ryugu as final boss');
+  const firstBlockPower = X_TOWER_FLOORS
+    .slice(0, 10)
+    .reduce((sum, floor) => sum + getCharacterPowerScore(getFloorRival(floor.floor)), 0) / 10;
+  const finalBlockPower = X_TOWER_FLOORS
+    .slice(40, 50)
+    .reduce((sum, floor) => sum + getCharacterPowerScore(getFloorRival(floor.floor)), 0) / 10;
+  assert.ok(finalBlockPower > firstBlockPower, 'tower rival power should rise from the first block to the final block');
+  const finalBossPower = getCharacterPowerScore(getFloorRival(50));
+  assert.ok(
+    X_TOWER_FLOORS.every(floor => finalBossPower >= getCharacterPowerScore(getFloorRival(floor.floor))),
+    'floor 50 should be the strongest rival in the tower'
+  );
+  assert.ok(Array.isArray(app.state.inventory.beys), 'Bey inventory should be initialized');
+  const floorEleven = getTowerFloorData(11);
+  assert.ok(floorEleven.reward.beyId, 'floor 11 should advertise a Bey reward');
+  const floorElevenBey = getBeyById(floorEleven.reward.beyId);
+  app.state.inventory.beys = ['swordDran', 'scytheIncendio', 'arrowWizard', 'helmKnight'];
+  assert.equal(isBeyUnlocked(app.state, floorElevenBey), false, 'non-starter Bey should stay locked until claimed');
+  app.currentTowerFloor = 11;
+  app.showRewardModal(1, true, {
+    sessionKey: 'tower-bey-reward-test',
+    rewardAlreadyClaimed: false,
+    towerFloor: 11
+  });
+  app.openRewardChest();
+  assert.ok(app.state.inventory.beys.includes(floorElevenBey.id), 'claiming a tower reward should unlock the advertised Bey');
+  assert.equal(isBeyUnlocked(app.state, floorElevenBey), true, 'claimed Bey should become selectable');
+  app.state.player.equippedBeyId = floorElevenBey.id;
+  assert.equal(getEquippedBey(app.state).id, floorElevenBey.id, 'claimed Bey should be usable as the equipped combat Bey');
+  app.openTowerFloor(2);
+  assert.equal(app.currentScreen, 'combat');
+  assert.equal(app.currentTowerFloor, 2);
+  assert.ok(app.combatSession instanceof CombatSession);
+  assert.ok(app.combatSession.floorData.battleType);
+  app.exitCombatToMap();
   const postBossSeedQuestion = CurriculumData.getQuestionsBySkill('math_add_sub')[0];
   LearningEngine.recordWeeklyBossSummary(app.state, 1, {
     accuracy: 60,
@@ -534,6 +585,38 @@ async function runRuntimeValidation() {
   assert.equal(app.currentScreen, 'map');
 
   const combat = new CombatSession(1, false, app.state, app);
+  combat.playerBey = { ataque: 76, defensa: 91, velocidad: 78 };
+  combat.rivalBey = { ataque: 88, defensa: 62, velocidad: 74 };
+  combat.rivalIntent = { type: 'attack' };
+  combat.difficulty = 4;
+  assert.equal(combat.getRecommendedAction(), 'defense');
+  assert.ok(combat.calculateRivalDamage('defense') < combat.calculateRivalDamage('attack'), 'defense reduces rival counter damage versus attack risk');
+  assert.ok(combat.calculatePlayerDamage('attack') > combat.calculatePlayerDamage('defense'), 'attack trades safety for more player damage');
+  assert.ok(combat.calculateSpecialDamage('attack') > combat.calculatePlayerDamage('attack'), 'special attack has a real damage payoff');
+
+  const verifyWrongAnswerHpLoss = action => {
+    const turnCombat = new CombatSession(1, false, app.state, app);
+    turnCombat.playerBey = combat.playerBey;
+    turnCombat.rivalBey = combat.rivalBey;
+    turnCombat.rivalIntent = combat.rivalIntent;
+    turnCombat.difficulty = combat.difficulty;
+    turnCombat.playerCombatant = { charge: 0 };
+    turnCombat.rivalCombatant = {};
+    turnCombat.selectedAction = action;
+    turnCombat.currentQuestion = { type: 'mult', a: 3, b: 4, text: '3 x 4', answer: 12, options: [10, 12, 14] };
+    turnCombat.questionStartedAt = Date.now();
+    turnCombat.updateHpBars = () => {};
+    turnCombat.updateXGauge = () => {};
+    turnCombat.performAttackSequence = () => {};
+    turnCombat.showPedagogicalExplanation = () => {};
+    turnCombat.applyLastSpinIfNeeded = () => {};
+    turnCombat.handleAnswer(10);
+    const hpLoss = 100 - turnCombat.playerHP;
+    assert.ok(hpLoss > 0, action + ' wrong answer applies rival damage to player HP');
+    return hpLoss;
+  };
+  assert.ok(verifyWrongAnswerHpLoss('defense') < verifyWrongAnswerHpLoss('attack'), 'wrong-answer turn outcome respects selected defense versus attack');
+
   combat.gaugeInterval = setInterval(() => {}, 20);
   combat.physTimer = setInterval(() => {}, 40);
   combat.dispose();

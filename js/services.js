@@ -22,9 +22,11 @@ const INITIAL_STATE = {
       hairColor: 'cyan',
       hat: 'ninguno',
       glasses: 'ningunas'
-    }
+    },
+    characterProgress: {}
   },
   inventory: {
+    beys: ['swordDran', 'scytheIncendio', 'arrowWizard', 'helmKnight'],
     core: ['core_wood'],
     ring: ['ring_wood'],
     driver: ['driver_wood'],
@@ -163,6 +165,9 @@ class StorageService {
       state.player.characterAvatarId = typeof raw.player.characterAvatarId === 'string' && raw.player.characterAvatarId.trim()
         ? raw.player.characterAvatarId.trim()
         : INITIAL_STATE.player.characterAvatarId;
+      state.player.characterProgress = raw.player.characterProgress && typeof raw.player.characterProgress === 'object' && !Array.isArray(raw.player.characterProgress)
+        ? raw.player.characterProgress
+        : {};
     }
 
     if (raw.inventory && typeof raw.inventory === 'object') {
@@ -203,6 +208,18 @@ class StorageService {
     state.player.xp = Math.max(0, parseInt(state.player.xp, 10) || 0);
     state.player.currentWeek = Math.min(12, Math.max(1, parseInt(state.player.currentWeek, 10) || 1));
     state.player.currentDay = Math.min(5, Math.max(1, parseInt(state.player.currentDay, 10) || 1));
+    state.player.characterProgress = state.player.characterProgress && typeof state.player.characterProgress === 'object' && !Array.isArray(state.player.characterProgress)
+      ? state.player.characterProgress
+      : {};
+    Object.keys(state.player.characterProgress).forEach(characterId => {
+      const progress = state.player.characterProgress[characterId] || {};
+      state.player.characterProgress[characterId] = {
+        wins: Math.max(0, parseInt(progress.wins, 10) || 0),
+        losses: Math.max(0, parseInt(progress.losses, 10) || 0),
+        xp: Math.max(0, parseInt(progress.xp, 10) || 0),
+        level: Math.max(1, Math.min(30, parseInt(progress.level, 10) || 1))
+      };
+    });
     Object.keys(state.inventory).forEach(key => {
       state.inventory[key] = [...new Set(Array.isArray(state.inventory[key]) ? state.inventory[key] : [])];
     });
@@ -411,7 +428,8 @@ class ProgressService {
         normalized.pendingReward = {
           key,
           week: normalized.pendingReward.week,
-          isBoss: !!normalized.pendingReward.isBoss
+          isBoss: !!normalized.pendingReward.isBoss,
+          towerFloor: Math.max(1, Math.min(50, parseInt(normalized.pendingReward.towerFloor, 10) || 1))
         };
       }
     }
