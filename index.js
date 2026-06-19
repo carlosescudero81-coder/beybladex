@@ -123,35 +123,35 @@ class App {
       : '<li>Sin evidencias escritas registradas esta semana.</li>';
 
     const weakRows = report.weakSkills.length > 0
-      ? report.weakSkills.map(item => `<li>${e(item.subject)}: ${e(item.name)} (${item.mastery}% dominio) · ${e(item.reason)}</li>`).join('')
+      ? report.weakSkills.map(item => `<li>${e(item.subject)}: ${e(item.name)} (${item.mastery}% dominio) - ${e(item.reason)}</li>`).join('')
       : '<li>Sin refuerzos urgentes. Mantener rutina diaria.</li>';
 
     const bossSubjectRows = bossSummary && bossSummary.subjects.length > 0
-      ? bossSummary.subjects.map(subject => `<li>${e(subject.name)}: ${subject.proven ? 'probado' : 'a reforzar'} · ${subject.accuracy}% en el jefe · ${subject.mastery}% dominio</li>`).join('')
+      ? bossSummary.subjects.map(subject => `<li>${e(subject.name)}: ${subject.proven ? 'probado' : 'a reforzar'} - ${subject.accuracy}% en el jefe - ${subject.mastery}% dominio</li>`).join('')
       : '<li>Jefe semanal aun no completado.</li>';
 
     const bossReviewRows = bossSummary && bossSummary.reviewSkills.length > 0
-      ? bossSummary.reviewSkills.map(item => `<li>${e(item.subject)}: ${e(item.name)} (${item.mastery}%/${item.target}%) · ${e(item.reason)}</li>`).join('')
+      ? bossSummary.reviewSkills.map(item => `<li>${e(item.subject)}: ${e(item.name)} (${item.mastery}%/${item.target}%) - ${e(item.reason)}</li>`).join('')
       : '<li>Sin habilidades criticas tras el jefe semanal.</li>';
 
     const spacedRows = spacedReviews.length > 0
-      ? spacedReviews.map(item => `<li>${e(item.dueAt)} · ${e(item.subject)}: ${e(item.skillName)}</li>`).join('')
+      ? spacedReviews.map(item => `<li>${e(item.dueAt)} - ${e(item.subject)}: ${e(item.skillName)}</li>`).join('')
       : '<li>No hay repasos espaciados pendientes.</li>';
 
     const spacedAlertRows = spacedAlert.hasAlert
-      ? spacedAlert.skills.map(item => `<li>${e(item.subject)}: ${e(item.skillName)} · ${item.count} fecha(s) atrasada(s), hasta ${item.maxDaysLate} dia(s).</li>`).join('')
+      ? spacedAlert.skills.map(item => `<li>${e(item.subject)}: ${e(item.skillName)} - ${item.count} fecha(s) atrasada(s), hasta ${item.maxDaysLate} dia(s).</li>`).join('')
       : '<li>No hay repasos espaciados atrasados.</li>';
 
     const recoveryRows = recoveryNote
-      ? recoveryNote.clearedSkills.map(item => `<li>${e(item.subject)}: ${e(item.skillName)} · ${item.count} fecha(s) recuperada(s).</li>`).join('')
+      ? recoveryNote.clearedSkills.map(item => `<li>${e(item.subject)}: ${e(item.skillName)} - ${item.count} fecha(s) recuperada(s).</li>`).join('')
       : '<li>Aun no hay recuperaciones registradas.</li>';
 
     const remainingRecoveryRows = recoveryNote && recoveryNote.remainingDates.length > 0
-      ? recoveryNote.remainingDates.map(item => `<li>${e(item.dueAt)} · ${e(item.subject)}: ${e(item.skillName)}</li>`).join('')
+      ? recoveryNote.remainingDates.map(item => `<li>${e(item.dueAt)} - ${e(item.subject)}: ${e(item.skillName)}</li>`).join('')
       : '<li>No quedan fechas pendientes para esa recuperacion.</li>';
 
     const pendingRows = pending.length > 0
-      ? pending.map(item => `<li>Semana ${item.week}, dia ${item.day}: ${e(item.title)} · pendiente de validar.</li>`).join('')
+      ? pending.map(item => `<li>Semana ${item.week}, dia ${item.day}: ${e(item.title)} - pendiente de validar.</li>`).join('')
       : '<li>No hay validaciones familiares pendientes.</li>';
 
     const timelineRows = timeline.map(item => `
@@ -233,7 +233,7 @@ class App {
 
   <section>
     <h2>Resumen del jefe semanal</h2>
-    <p class="note">${bossSummary ? `Jefe: ${e(bossSummary.bossName)} · Resultado: ${bossSummary.accuracy}% · Siguiente repaso: ${e(bossSummary.nextReviewAction)}` : 'Jefe semanal aun no completado.'}</p>
+    <p class="note">${bossSummary ? `Jefe: ${e(bossSummary.bossName)} - Resultado: ${bossSummary.accuracy}% - Siguiente repaso: ${e(bossSummary.nextReviewAction)}` : 'Jefe semanal aun no completado.'}</p>
     <h3>Materias probadas</h3>
     <ul>${bossSubjectRows}</ul>
     <h3>Habilidades que vuelven al ciclo de repaso</h3>
@@ -310,7 +310,8 @@ class App {
     setTimeout(() => {
       this.showRewardModal(pending.week, pending.isBoss, {
         sessionKey: pending.key,
-        rewardAlreadyClaimed: false
+        rewardAlreadyClaimed: false,
+        towerFloor: pending.towerFloor
       });
     }, 300);
   }
@@ -445,7 +446,7 @@ class App {
     // XP to Level mapping: 1 level per 200 XP
     const lvl = Math.floor(this.state.player.xp / 200) + 1;
     const equippedBey = typeof getEquippedBey === 'function' ? getEquippedBey(this.state) : null;
-    document.getElementById('header-player-level').innerText = `Rango Blader ${lvl}${equippedBey ? ` · ${equippedBey.nombre}` : ''}`;
+    document.getElementById('header-player-level').innerText = `Rango Blader ${lvl}${equippedBey ? ` - ${equippedBey.nombre}` : ''}`;
     document.getElementById('header-coins').innerText = this.state.player.coins;
     document.getElementById('header-xp').innerText = this.state.player.xp;
   }
@@ -770,7 +771,7 @@ class App {
 
     const summary = LearningEngine.getDiagnosticSummary(this.state);
     document.getElementById('diagnostic-step-label').innerText = this.diagnosticCompletedInView
-      ? `Calibracion completada · ${summary.baselineScore}%`
+      ? `Calibracion completada - ${summary.baselineScore}%`
       : 'Prueba de calibracion inicial';
     document.getElementById('btn-diagnostic-complete').innerText = this.diagnosticCompletedInView ? 'Entrar a la X Tower' : 'Completar calibracion';
     document.getElementById('diagnostic-result-panel').style.display = this.diagnosticCompletedInView ? 'block' : 'none';
@@ -863,7 +864,7 @@ class App {
     const panel = document.getElementById('diagnostic-result-panel');
     const recommended = summary.results.filter(item => item.recommended);
     const recommendedText = recommended.length > 0
-      ? recommended.slice(0, 4).map(item => `${item.subjectName}: ${item.skillName}`).join(' · ')
+      ? recommended.slice(0, 4).map(item => `${item.subjectName}: ${item.skillName}`).join(' - ')
       : 'Sin refuerzos urgentes. Mantener practica diaria.';
     panel.innerHTML = `
       <strong>Resultado inicial: ${summary.baselineScore}%</strong><br>
@@ -876,11 +877,44 @@ class App {
     const selectedCharacter = this.getSelectedCharacterAvatar();
     const preview = document.getElementById('avatar-preview-container');
     if (preview) {
+      const progress = typeof getCharacterProgress === 'function' ? getCharacterProgress(this.state, selectedCharacter.id) : { level: 1, wins: 0 };
+      const stats = typeof getEffectiveCharacterStats === 'function' ? getEffectiveCharacterStats(selectedCharacter, this.state, true) : selectedCharacter.stats;
+      const statCards = this.getAvatarStatCards(stats);
+      const mainStyle = this.getAvatarBattleStyle(selectedCharacter, stats);
+      const associatedBey = BEYBLADE_X_BEYS.find(bey => bey.nombre === selectedCharacter.beyAsociado) || getEquippedBey(this.state);
       preview.innerHTML = `
-        <div class="avatar-character-preview" style="--character-color:${selectedCharacter.colorPrincipal}">
-          ${this.renderCharacterAvatar(selectedCharacter, 'asset-image avatar-character-image')}
-          <div class="avatar-character-name">${selectedCharacter.nombre}</div>
-          <div class="avatar-character-role">${selectedCharacter.equipo} · ${selectedCharacter.rol}</div>
+        <div class="blader-x-card" style="--character-color:${selectedCharacter.colorPrincipal}">
+          <div class="blader-card-hero">
+            <div class="x-power-ring" aria-hidden="true">
+              ${statCards.map(card => `<span style="--ring-color:${card.color}; --ring-power:${Math.max(18, Math.min(100, card.value))}%"></span>`).join('')}
+            </div>
+            ${this.renderCharacterAvatar(selectedCharacter, 'asset-image avatar-character-image')}
+            <div class="blader-level-badge">Nivel ${progress.level}</div>
+          </div>
+          <div class="blader-card-info">
+            <div class="blader-style-chip">${mainStyle.label}</div>
+            <h3 class="avatar-character-name">${selectedCharacter.nombre}</h3>
+            <p class="avatar-character-role">${selectedCharacter.equipo} - ${selectedCharacter.rol}</p>
+            <p class="blader-style-line">${mainStyle.description}</p>
+            <div class="blader-mini-facts">
+              <span>Bey: ${associatedBey ? associatedBey.nombre : selectedCharacter.beyAsociado}</span>
+              <span>Entrena: ${selectedCharacter.materiaRecomendada}</span>
+              <span>Victorias: ${progress.wins}</span>
+            </div>
+          </div>
+          <div class="avatar-stat-rails">
+            ${statCards.map(card => `
+              <div class="avatar-stat-rail" style="--stat-color:${card.color}; --stat-value:${Math.max(8, Math.min(100, card.value))}%">
+                <div class="avatar-stat-icon">${card.icon}</div>
+                <div class="avatar-stat-copy">
+                  <strong>${card.label}</strong>
+                  <span>${card.meaning}</span>
+                </div>
+                <div class="avatar-stat-score">${card.value}</div>
+                <div class="avatar-stat-track"><i></i></div>
+              </div>
+            `).join('')}
+          </div>
         </div>
       `;
     }
@@ -911,8 +945,9 @@ class App {
           ${this.renderCharacterAvatar(character, 'asset-image character-select-image')}
         </div>
         <div class="workshop-item-name">${character.nombre}</div>
-        <div class="character-select-meta">${character.equipo}</div>
-        <div class="character-select-role">${character.rol}</div>
+        <div class="character-select-meta">${this.getAvatarBattleStyle(character, character.stats).shortLabel}</div>
+        <div class="character-select-role">${character.materiaRecomendada}</div>
+        ${isSelected ? '<div class="character-selected-badge">Elegido</div>' : ''}
       `;
 
       const selectCharacter = () => {
@@ -935,6 +970,34 @@ class App {
     });
   }
 
+  getAvatarStatCards(stats = {}) {
+    return [
+      { key: 'attack', label: 'Ataque', icon: '⚡', color: '#ff2b3d', value: stats.attack || 0, meaning: 'Golpea fuerte' },
+      { key: 'defense', label: 'Defensa', icon: '⬟', color: '#3aa7ff', value: stats.defense || 0, meaning: 'Aguanta mejor' },
+      { key: 'stamina', label: 'Estamina', icon: '◎', color: '#ffd33d', value: stats.stamina || 0, meaning: 'Gira mas tiempo' },
+      { key: 'speed', label: 'Velocidad', icon: '➜', color: '#00e5ff', value: stats.speed || 0, meaning: 'Corre como un rayo' },
+      { key: 'focus', label: 'Foco', icon: '✦', color: '#9cff3a', value: stats.focus || 0, meaning: 'Mantiene la calma' }
+    ];
+  }
+
+  getAvatarBattleStyle(character, stats = {}) {
+    const cards = this.getAvatarStatCards(stats);
+    const strongest = cards.slice().sort((a, b) => b.value - a.value)[0] || cards[0];
+    const map = {
+      attack: ['Atacante X', 'Fuerte', 'Entra al choque y hace mas daño cuando aciertas.'],
+      defense: ['Muro Blader', 'Resistente', 'Aguanta golpes y perdona mejor los fallos.'],
+      stamina: ['Giro eterno', 'Constante', 'Mantiene la peonza viva durante duelos largos.'],
+      speed: ['Rayo X', 'Rapido', 'Se mueve rapido y aprovecha respuestas veloces.'],
+      focus: ['Mente X', 'Preciso', 'Se concentra y convierte la calma en ventaja.']
+    };
+    const [label, shortLabel, description] = map[strongest.key] || map.attack;
+    return {
+      label,
+      shortLabel,
+      description: character?.rol ? `${description} ${character.rol}.` : description
+    };
+  }
+
   // -------------------- X TOWER DEL CONOCIMIENTO --------------------
   getKidSubjectName(floorData) {
     const labels = {
@@ -955,7 +1018,29 @@ class App {
     if (floorData.type === 'final') return 'Derrota al rival final y demuestra todo lo que has aprendido.';
     if (floorData.type === 'tower-rival') return `Duelo especial contra ${floorData.rivalName}.`;
     if (floorData.type === 'ascension') return 'Duelo de ascenso para subir a una zona nueva.';
-    return `Practica ${this.getKidSubjectName(floorData)} y carga tu Bey con respuestas correctas.`;
+    return `Combate contra ${floorData.rivalName} y gana energia con ${this.getKidSubjectName(floorData)}.`;
+  }
+
+  getTowerDifficultyLabel(floorData) {
+    if (typeof floorData.difficultyTier === 'string') {
+      const labels = {
+        baja: 'Suave',
+        media: 'Media',
+        alta: 'Intensa',
+        experta: 'Experta',
+        legendaria: 'Final'
+      };
+      return labels[floorData.difficultyTier] || floorData.difficultyTier;
+    }
+    const difficulty = floorData.difficulty || Math.ceil((floorData.floor || 1) / 10);
+    const labels = {
+      1: 'Suave',
+      2: 'Media',
+      3: 'Intensa',
+      4: 'Experta',
+      5: 'Final'
+    };
+    return labels[Math.max(1, Math.min(5, difficulty))] || 'Media';
   }
 
   getVisibleTowerFloors(currentFloor) {
@@ -985,11 +1070,11 @@ class App {
     const progressFill = document.getElementById('tower-progress-fill');
     const nextStepLabel = document.getElementById('tower-next-step');
     if (floorLabel) floorLabel.innerText = `${currentFloor} de 50`;
-    if (titleLabel) titleLabel.innerText = `Planta ${currentFloor}: ${this.getKidSubjectName(currentData)}`;
+    if (titleLabel) titleLabel.innerText = `Planta ${currentFloor}: duelo contra ${currentData.rivalName}`;
     if (missionLabel) missionLabel.innerText = this.getKidFloorGoal(currentData);
     if (blockLabel) blockLabel.innerText = `Zona: ${currentData.blockName}`;
-    if (rivalLabel) rivalLabel.innerText = `Te espera: ${currentData.rivalName}`;
-    if (beyLabel) beyLabel.innerText = `Tu Bey: ${equippedBey.nombre}`;
+    if (rivalLabel) rivalLabel.innerText = `Rival: ${currentData.rivalName} (${this.getTowerDifficultyLabel(currentData)})`;
+    if (beyLabel) beyLabel.innerText = `Tu Bey: ${equippedBey.nombre} vs ${currentData.rivalBeyName}`;
     if (rewardLabel) rewardLabel.innerText = `Premio: ${currentData.reward.label}`;
     if (progressFill) progressFill.style.width = `${Math.max(2, Math.round((currentFloor / 50) * 100))}%`;
     if (nextStepLabel) nextStepLabel.innerText = currentFloor >= 50 ? 'Estas en la cima de la torre.' : `Gana esta planta para abrir la ${currentFloor + 1}.`;
@@ -998,7 +1083,7 @@ class App {
     if (enterBtn) {
       enterBtn.innerText = currentData.type === 'diagnostic' && !LearningEngine.isDiagnosticComplete(this.state)
         ? 'Empezar revision'
-        : 'Jugar reto';
+        : 'Combatir';
       enterBtn.onclick = () => this.openTowerFloor(currentFloor);
     }
     const recalibrateBtn = document.getElementById('btn-tower-recalibrate');
@@ -1024,8 +1109,9 @@ class App {
           <span class="tower-floor-number">${floorData.floor}</span>
           <span class="tower-floor-status">${statusText}</span>
         </div>
-        <h3>${this.getKidSubjectName(floorData)}</h3>
+        <h3>${floorData.rivalName}</h3>
         <div class="tower-floor-meta">${isLocked ? 'Gana la planta anterior para abrirla.' : this.getKidFloorGoal(floorData)}</div>
+        <div class="tower-floor-meta">Dificultad: ${this.getTowerDifficultyLabel(floorData)} · Objetivo: ${floorData.secondaryObjective || 'Gana el duelo'}</div>
         <div class="tower-floor-reward">Premio: ${floorData.reward.label}</div>
         <button class="btn-action ${isLocked ? 'secondary' : ''}" type="button" ${isLocked ? 'disabled' : ''}>${actionText}</button>
       `;
@@ -1042,31 +1128,10 @@ class App {
       this.showScreen('diagnostic');
       return;
     }
-    if (floorData.type === 'tower-rival' || floorData.type === 'ascension' || floorData.type === 'final') {
-      this.selectedWeekNum = floorData.week;
-      this.currentTowerFloor = floorData.floor;
-      this.startCombat(true);
-      return;
-    }
-    if (floorData.subject === 'language') {
-      this.showScreen('language');
-      return;
-    }
-    if (floorData.subject === 'english') {
-      this.openSubjectMission('english');
-      return;
-    }
-    if (floorData.subject === 'science') {
-      this.openSubjectMission('science');
-      return;
-    }
-    if (floorData.subject === 'art' || floorData.subject === 'movement') {
-      const mission = LearningEngine.getNextMissionBySubject(this.state, floorData.subject === 'art' ? 'art' : 'movement')
-        || LearningEngine.getCurrentMission(this.state);
-      this.openOfflineMission(mission);
-      return;
-    }
-    this.showDailyMissions(floorData.week);
+    this.selectedWeekNum = floorData.week;
+    this.currentTowerFloor = floorData.floor;
+    this.pendingTowerBattle = true;
+    this.startCombat(floorData.type === 'tower-rival' || floorData.type === 'ascension' || floorData.type === 'final');
   }
 
   renderSummerPlanner() {
@@ -1334,7 +1399,7 @@ class App {
     if (!panel || !readiness) return;
     const score = Math.max(0, Math.min(100, readiness.averageMastery || 0));
     document.getElementById('boss-readiness-title').innerText = readiness.bossName
-      ? `${readiness.bossName} · ${readiness.weekTitle}`
+      ? `${readiness.bossName} - ${readiness.weekTitle}`
       : 'Jefe semanal';
     document.getElementById('boss-readiness-score').innerText = `${score}%`;
     document.getElementById('boss-readiness-bar').style.width = `${score}%`;
@@ -1412,6 +1477,8 @@ class App {
         let previewHtml = '';
         if (partType === 'color') {
           previewHtml = `<div class="workshop-item-icon" style="background-color: ${part.code}; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 8px ${part.code}"></div>`;
+        } else if (part.image) {
+          previewHtml = `<div class="workshop-item-icon"><img class="workshop-part-image" src="${part.image}" alt="${part.name}"></div>`;
         } else {
           previewHtml = `<div class="workshop-item-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">${part.svg}</svg></div>`;
         }
@@ -1595,7 +1662,7 @@ class App {
         </div>
         <div class="collection-card-actions">
           <button class="btn-action collection-equip" type="button" ${unlocked ? '' : 'disabled'}>${equipped.id === bey.id ? 'Equipado' : 'Usar este Bey'}</button>
-          <button class="collection-icon-btn ${favorite ? 'active' : ''}" type="button" data-favorite-bey="${bey.id}" title="Favorito">★</button>
+          <button class="collection-icon-btn ${favorite ? 'active' : ''}" type="button" data-favorite-bey="${bey.id}" title="Favorito"></button>
           <button class="collection-icon-btn ${comparing ? 'active' : ''}" type="button" data-compare-bey="${bey.id}" title="Comparar">VS</button>
         </div>
       </div>
@@ -1632,7 +1699,7 @@ class App {
         <div class="bey-tag-row"><span>Usa: ${character.beyAsociado}</span></div>
         <div class="collection-card-actions">
           <button class="btn-action collection-info" type="button">Ficha rival</button>
-          <button class="collection-icon-btn ${favorite ? 'active' : ''}" type="button" data-favorite-character="${character.id}" title="Favorito">★</button>
+          <button class="collection-icon-btn ${favorite ? 'active' : ''}" type="button" data-favorite-character="${character.id}" title="Favorito"></button>
         </div>
       </div>
     `;
@@ -1656,7 +1723,7 @@ class App {
         <p>${stadium.descripcion}</p>
         <div class="collection-card-actions">
           <button class="btn-action collection-info" type="button">Ver mundo</button>
-          <button class="collection-icon-btn ${favorite ? 'active' : ''}" type="button" data-favorite-stadium="${stadium.id}" title="Favorito">★</button>
+          <button class="collection-icon-btn ${favorite ? 'active' : ''}" type="button" data-favorite-stadium="${stadium.id}" title="Favorito"></button>
         </div>
       </div>
     `;
@@ -1812,7 +1879,7 @@ class App {
         const namesIndex = c - 13;
         name = collectibleNames[namesIndex % collectibleNames.length] || `Cromo Especial #${c}`;
         rarity = c % 5 === 0 ? 'legendario' : c % 3 === 0 ? 'epico' : 'raro';
-        icon = c % 5 === 0 ? '👑' : c % 3 === 0 ? '🔮' : '⚡';
+        icon = c % 5 === 0 ? '*' : c % 3 === 0 ? '+' : '.';
         desc = "Insignia escolar otorgada por constancia y cálculo mental veloz.";
       }
 
@@ -1822,7 +1889,7 @@ class App {
         <div class="card-img-holder" style="font-size: 3rem;">
           ${isUnlocked ? icon : '?'}
         </div>
-        <div class="card-name">${isUnlocked ? name : 'Incógnito'}</div>
+        <div class="card-name">${isUnlocked ? name : 'Incognito'}</div>
         <div class="card-rarity rarity-${rarity}">${rarity}</div>
       `;
 
@@ -1867,16 +1934,19 @@ class App {
     if (!this.currentTowerFloor) {
       this.currentTowerFloor = getCurrentTowerFloor(this.state);
     }
+    const floorData = getTowerFloorData(this.currentTowerFloor);
+    const isTowerBattle = this.pendingTowerBattle === true && !!floorData && floorData.floor === this.currentTowerFloor;
+    this.pendingTowerBattle = false;
     const bossReadiness = isBoss
       ? LearningEngine.canUnlockWeeklyBoss(this.state, Math.min(this.selectedWeekNum, CurriculumData.summerWeeks.length))
       : null;
     const gate = ProgressService.canStart(this.state, this.selectedWeekNum, isBoss);
-    if (isBoss && !bossReadiness.ok) {
+    if (isBoss && !isTowerBattle && !bossReadiness.ok) {
       sounds.playIncorrect();
       this.showNotice(bossReadiness.reason, "Jefe bloqueado");
       return;
     }
-    if (!isBoss && !gate.ok) {
+    if (!isBoss && !isTowerBattle && !gate.ok) {
       sounds.playIncorrect();
       this.showNotice(gate.reason, "Sesion bloqueada");
       return;
@@ -2219,15 +2289,21 @@ class App {
     this.rewardSessionKey = stats?.sessionKey || null;
     this.rewardAlreadyClaimed = stats?.rewardAlreadyClaimed || false;
     this.rewardBossSummary = stats?.bossSummary || (isBoss ? LearningEngine.getWeeklyBossSummary(this.state, weekNum) : null);
+    this.rewardTowerFloor = Math.max(1, Math.min(50, parseInt(stats?.towerFloor || this.currentTowerFloor || getCurrentTowerFloor(this.state), 10) || 1));
 
     const isPostBossReview = weekNum === 'post-boss-review';
+    const floorReward = getTowerFloorData(this.rewardTowerFloor)?.reward || null;
+    const rewardBey = floorReward?.beyId ? getBeyById(floorReward.beyId) : null;
+    const beyAlreadyOwned = rewardBey ? (this.state.inventory.beys || []).includes(rewardBey.id) : false;
     document.getElementById('reward-header-text').innerText = isBoss
-      ? "¡RIVAL DE TORRE SUPERADO!"
+      ? "RIVAL DE TORRE SUPERADO!"
       : isPostBossReview
         ? "RECALIBRACION COMPLETADA"
         : "¡ENTRENAMIENTO COMPLETADO!";
     document.getElementById('reward-desc-text').innerText = isBoss 
-      ? `Has vencido un duelo de la X Tower. Abre tu capsula de piezas.`
+      ? rewardBey && !beyAlreadyOwned
+        ? `Has vencido la planta ${this.rewardTowerFloor}. Abre la capsula para conseguir ${rewardBey.nombre}.`
+        : `Has vencido un duelo de la X Tower. Abre tu capsula de piezas.`
       : isPostBossReview
         ? "Has estabilizado tu Bey con repaso espaciado. Abre tu capsula."
         : "Has completado la sesion diaria de entrenamiento. Abre tu capsula de piezas.";
@@ -2303,34 +2379,45 @@ class App {
         return;
       }
       
+      const floorData = getTowerFloorData(this.rewardTowerFloor);
+      const floorReward = floorData?.reward || null;
+      const rewardBey = floorReward?.beyId ? getBeyById(floorReward.beyId) : null;
+      if (!this.state.inventory.beys) this.state.inventory.beys = [];
+
       // Determine what to reward
       let rewardedPart = null;
+      let rewardedBey = null;
       let partType = 'color';
-      let partId = '';
-      
-      // Choose part type based on week / boss
-      if (this.rewardIsBoss) {
-        // Boss gives Ring or Core (Epic/Legendary/Cosmic)
-        const candidates = ['core', 'ring'];
-        partType = candidates[Math.floor(Math.random() * candidates.length)];
-      } else {
-        // Training gives Driver or Color
-        const candidates = ['driver', 'color'];
-        partType = candidates[Math.floor(Math.random() * candidates.length)];
-      }
 
-      const allParts = CUSTOM_PARTS[partType];
-      // Find one not owned
-      const owned = this.state.inventory[partType] || [];
-      const unowned = allParts.filter(p => !owned.includes(p.id));
-      
-      if (unowned.length > 0) {
-        // Reward one of the unowned parts
-        rewardedPart = unowned[0];
-        this.state.inventory[partType].push(rewardedPart.id);
+      if (rewardBey && !this.state.inventory.beys.includes(rewardBey.id)) {
+        rewardedBey = rewardBey;
+        partType = 'bey';
+        this.state.inventory.beys.push(rewardedBey.id);
       } else {
-        // If all owned, give a random card
-        partType = 'card';
+        // Choose part type based on week / boss
+        if (this.rewardIsBoss) {
+          // Boss gives Ring or Core (Epic/Legendary/Cosmic)
+          const candidates = ['core', 'ring'];
+          partType = candidates[Math.floor(Math.random() * candidates.length)];
+        } else {
+          // Training gives Driver or Color
+          const candidates = ['driver', 'color'];
+          partType = candidates[Math.floor(Math.random() * candidates.length)];
+        }
+
+        const allParts = CUSTOM_PARTS[partType];
+        // Find one not owned
+        const owned = this.state.inventory[partType] || [];
+        const unowned = allParts.filter(p => !owned.includes(p.id));
+
+        if (unowned.length > 0) {
+          // Reward one of the unowned parts
+          rewardedPart = unowned[0];
+          this.state.inventory[partType].push(rewardedPart.id);
+        } else {
+          // If all owned, give a random card
+          partType = 'card';
+        }
       }
 
       // Handle card reward
@@ -2366,7 +2453,13 @@ class App {
       const revealRarity = document.getElementById('reward-rarity-badge');
       const revealDesc = document.getElementById('reward-item-desc');
 
-      if (partType === 'card') {
+      if (partType === 'bey' && rewardedBey) {
+        revealIcon.innerHTML = renderAssetImage(rewardedBey.image, rewardedBey.nombre, 'asset-image reward-bey-image');
+        revealName.innerText = rewardedBey.nombre;
+        revealRarity.innerText = rewardedBey.rareza.toUpperCase();
+        revealRarity.className = `rarity-${rewardedBey.rareza}`;
+        revealDesc.innerText = `Nueva Bey desbloqueada para tus combates. Tipo: ${rewardedBey.tipo.toUpperCase()} (+${gainedCoins} chips de energia / +${gainedXp} puntos de giro)`;
+      } else if (partType === 'card') {
         revealIcon.innerText = 'B';
         revealName.innerText = `Emblema de arena #${cardNum}`;
         revealRarity.innerText = "COLECCIONABLE";
@@ -2375,7 +2468,9 @@ class App {
       } else {
         revealIcon.innerHTML = partType === 'color' 
           ? `<div style="width:70px;height:70px;background-color:${rewardedPart.code};border-radius:50%;margin:auto;border:3px solid #fff;"></div>`
-          : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" style="width:70px;height:70px;">${rewardedPart.svg}</svg>`;
+          : rewardedPart.image
+            ? `<img class="reward-part-image" src="${rewardedPart.image}" alt="${rewardedPart.name}">`
+            : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" style="width:70px;height:70px;">${rewardedPart.svg}</svg>`;
         revealName.innerText = rewardedPart.name;
         revealRarity.innerText = rewardedPart.rarity.toUpperCase();
         revealRarity.className = `rarity-${rewardedPart.rarity}`;
@@ -2511,14 +2606,14 @@ class App {
       <div class="spaced-alert-card urgent">
         <strong>${summary.count} repaso${summary.count === 1 ? '' : 's'} atrasado${summary.count === 1 ? '' : 's'}</strong>
         <p>Recuperar con una sesion corta hoy. La racha se mantiene como contexto; el objetivo es volver al ritmo sin castigo.</p>
-        <span>Mayor atraso: ${summary.maxDaysLate} dia${summary.maxDaysLate === 1 ? '' : 's'} · Racha actual: ${summary.streak.current}</span>
+        <span>Mayor atraso: ${summary.maxDaysLate} dia${summary.maxDaysLate === 1 ? '' : 's'} - Racha actual: ${summary.streak.current}</span>
         <button class="spaced-alert-recover" type="button" data-spaced-recover-week="${summary.recoveryWeek || ''}">Lanzar repaso de recuperacion</button>
       </div>
       <div class="spaced-alert-list">
         ${summary.skills.slice(0, 6).map(item => `
           <div class="spaced-alert-item">
             <strong>${this.escapeReportText(item.subject)}: ${this.escapeReportText(item.skillName)}</strong>
-            <span>${item.count} fecha${item.count === 1 ? '' : 's'} · hasta ${item.maxDaysLate} dia${item.maxDaysLate === 1 ? '' : 's'}</span>
+            <span>${item.count} fecha${item.count === 1 ? '' : 's'} - hasta ${item.maxDaysLate} dia${item.maxDaysLate === 1 ? '' : 's'}</span>
           </div>
         `).join('')}
       </div>
@@ -2533,10 +2628,10 @@ class App {
   renderSpacedRecoveryNoteMarkup(note) {
     if (!note) return '';
     const cleared = note.clearedSkills && note.clearedSkills.length > 0
-      ? note.clearedSkills.map(item => `<span class="spaced-alert-pill">${this.escapeReportText(item.subject)}: ${this.escapeReportText(item.skillName)} · ${item.count}</span>`).join('')
+      ? note.clearedSkills.map(item => `<span class="spaced-alert-pill">${this.escapeReportText(item.subject)}: ${this.escapeReportText(item.skillName)} - ${item.count}</span>`).join('')
       : '<span class="spaced-alert-pill">Sin habilidades registradas</span>';
     const remaining = note.remainingDates && note.remainingDates.length > 0
-      ? note.remainingDates.map(item => `<span class="spaced-alert-pill">${this.escapeReportText(item.dueAt)} · ${this.escapeReportText(item.subject)}</span>`).join('')
+      ? note.remainingDates.map(item => `<span class="spaced-alert-pill">${this.escapeReportText(item.dueAt)} - ${this.escapeReportText(item.subject)}</span>`).join('')
       : '<span class="spaced-alert-pill">No quedan fechas pendientes</span>';
     return `
       <div class="spaced-alert-card recovery">
@@ -2692,7 +2787,7 @@ class App {
       return `
         <div class="offline-validation-item">
           <div>
-            <strong>Semana ${item.week} Dia ${item.day} · ${subject ? subject.shortName : item.subject}</strong>
+            <strong>Semana ${item.week} Dia ${item.day} - ${subject ? subject.shortName : item.subject}</strong>
             <p>${skill ? skill.name : item.skill}: "${item.evidence}"</p>
             <p>${item.parentPrompt}</p>
           </div>

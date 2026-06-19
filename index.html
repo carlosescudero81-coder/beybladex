@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -39,7 +39,7 @@
       <div class="header-center">Beyblade X Academy</div>
       <div class="header-right">
         <div class="stat-pill coins">
-          <span style="font-size: 1.2rem;">⚡</span>
+          <span style="font-size: 1.2rem;">?</span>
           <span id="header-coins">0</span>
         </div>
         <div class="stat-pill xp">
@@ -80,25 +80,30 @@
         
         <div class="start-interactive">
           <button id="btn-start-game" class="btn-massive">¡LANZAR BEY!</button>
-          <div id="btn-parents-gate-trigger" class="parent-portal-hint">Acceso para Padres ⚙️</div>
+          <div id="btn-parents-gate-trigger" class="parent-portal-hint">Acceso para Padres ??</div>
         </div>
       </section>
 
       <!-- 2. AVATAR SELECTION SCREEN -->
       <section id="screen-avatar" class="screen">
-        <h2 class="screen-title">Crea tu Blader del Conocimiento</h2>
-        <div style="display: flex; flex-direction: row; gap: 24px; width: 100%; max-width: 1050px; margin: auto; flex: 1; min-height: 0;">
-          <!-- Left: selected character preview -->
-          <div class="workshop-left" style="flex: 2; height: 100%; min-height: 300px; justify-content: center; align-items: center;">
-            <div id="avatar-preview-container" style="width: 200px; height: 200px;">
+        <div class="avatar-screen-head">
+          <div>
+            <div class="tower-kid-eyebrow">Elige tu Blader</div>
+            <h2 class="screen-title">Toca un personaje y mira sus poderes</h2>
+          </div>
+          <button id="btn-confirm-avatar" class="btn-action avatar-confirm-btn">Entrar a la X Tower</button>
+        </div>
+        <div class="avatar-selector-shell">
+          <section class="avatar-feature-panel" aria-label="Ficha del Blader seleccionado">
+            <div id="avatar-preview-container">
               <!-- Selected character render -->
             </div>
-            <div style="margin-top: 20px; width: 100%;">
-              <input type="text" id="avatar-name-input" placeholder="Nombre de Blader" style="width: 100%; padding: 12px; border-radius: 8px; border: 2px solid var(--border-neon); background: rgba(0,0,0,0.4); color: white; font-size: 1.1rem; text-align: center; outline: none; font-weight: bold;">
-            </div>
-          </div>
-          <!-- Right: character avatar selection -->
-          <div class="workshop-right" style="flex: 3; height: 100%; min-height: 300px;">
+            <label class="avatar-name-field">
+              <span>Tu nombre de Blader</span>
+              <input type="text" id="avatar-name-input" placeholder="Carlos X">
+            </label>
+          </section>
+          <section class="avatar-grid-panel" aria-label="Lista de personajes">
             <div class="workshop-tabs" id="avatar-customizer-tabs" hidden>
               <button class="workshop-tab active" data-part="expression">ROSTRO</button>
               <button class="workshop-tab" data-part="hairStyle">PEINADO</button>
@@ -109,16 +114,8 @@
             <div class="workshop-items-grid" id="avatar-customizer-items">
               <!-- Items loaded by JS -->
             </div>
-          </div>
+          </section>
         </div>
-        <div class="visual-reference-panel">
-          <div>
-            <h3>Avatar de personaje</h3>
-            <p>Elige un personaje como Blader. Podras cambiarlo cuando quieras tocando tu avatar del encabezado.</p>
-          </div>
-          <img src="assets/personajes/01_jaxon_cross_blader_x.png" alt="Jaxon Cross / Blader X" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/personajes/01_jaxon_cross_blader_x.png'}))">
-        </div>
-        <button id="btn-confirm-avatar" class="btn-action" style="padding: 14px 40px; font-size: 1.2rem; margin-top: 20px; align-self: center;">¡GUARDAR BLADER!</button>
       </section>
 
       <!-- 3. DIAGNOSTIC SCREEN -->
@@ -232,7 +229,7 @@
       <!-- 5. DAILY MISSION MODAL -->
       <div id="daily-mission-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mission-modal-title" style="display: none;">
         <div class="modal-content">
-          <button class="modal-close" id="btn-close-missions">✖</button>
+          <button class="modal-close" id="btn-close-missions">?</button>
           <div class="arena-preview-header">
             <h3 class="arena-title" id="mission-modal-title">Arena de Entrenamiento</h3>
             <p class="arena-subtitle" id="mission-modal-subtitle">Semana 1: Entrenamiento Básico</p>
@@ -320,6 +317,42 @@
 
             <!-- Battlefield Arena -->
             <div class="battlefield-arena" id="battle-field">
+              <div class="arena-fx-layer arena-rail-energy-layer arena-energy-layer" id="arena-energy-layer" aria-hidden="true">
+                <div class="x-rail x-rail-outer"></div>
+                <div class="x-rail x-rail-inner"></div>
+                <div class="energy-ring energy-ring-player"></div>
+                <div class="energy-ring energy-ring-rival"></div>
+              </div>
+
+              <div class="arena-fx-layer arena-trail-layer trail-layer" id="trail-layer" aria-hidden="true">
+                <div class="spin-trail player-trail"></div>
+                <div class="spin-trail rival-trail"></div>
+              </div>
+
+              <div class="arena-fx-layer arena-particle-layer particle-layer" id="particle-layer" aria-hidden="true">
+                <span class="arena-particle particle-1"></span>
+                <span class="arena-particle particle-2"></span>
+                <span class="arena-particle particle-3"></span>
+                <span class="arena-particle particle-4"></span>
+                <span class="arena-particle particle-5"></span>
+                <span class="arena-particle particle-6"></span>
+              </div>
+
+              <div class="arena-damage-layer damage-layer" id="damage-layer" aria-live="polite">
+                <div class="damage-pop damage-pop-player" data-damage-target="player"></div>
+                <div class="damage-pop damage-pop-rival" data-damage-target="rival"></div>
+              </div>
+
+              <div class="attack-banner-layer" id="attack-banner-layer" data-attack-banner aria-live="polite"></div>
+
+              <div class="rival-intent-badge" id="rival-intent-badge" data-rival-intent>
+                <span class="intent-kicker">Rival</span>
+                <strong class="intent-text">Preparando ataque</strong>
+              </div>
+
+              <div class="top-label top-label-player">Carlitos</div>
+              <div class="top-label top-label-rival">Rival</div>
+
               <!-- Player Spinning Top -->
               <div class="top-sprite spinning" id="player-top" style="left: 20%; top: 45%;">
                 <!-- Dynamic SVG will be rendered here -->
@@ -351,6 +384,32 @@
             <button class="btn-answer">63</button>
           </div>
 
+          <div class="combat-action-panel" aria-label="Comandos de combate">
+            <button class="combat-action-btn" type="button" data-combat-action="attack">
+              <span class="combat-action-title">Ataque</span>
+              <span class="combat-action-copy">Golpe rapido</span>
+            </button>
+            <button class="combat-action-btn" type="button" data-combat-action="defense">
+              <span class="combat-action-title">Defensa</span>
+              <span class="combat-action-copy">Aguanta el choque</span>
+            </button>
+            <button class="combat-action-btn" type="button" data-combat-action="charge">
+              <span class="combat-action-title">Carga</span>
+              <span class="combat-action-copy">Sube el giro</span>
+            </button>
+          </div>
+          <div class="combat-action-readout" id="combat-action-readout" aria-live="polite">Ataque listo: si aciertas, embistes fuerte.</div>
+
+          <div class="x-gauge-panel" aria-label="Energia especial">
+            <div class="x-gauge-copy">
+              <strong>Energia X</strong>
+              <span id="x-gauge-label">0/3 para especial</span>
+            </div>
+            <div class="x-gauge-track">
+              <div class="x-gauge-fill" id="x-gauge-fill"></div>
+            </div>
+          </div>
+
           <!-- Attack Multiplier Combo Dots -->
           <div class="combo-streak-container">
             <div class="combo-dot" id="dot-1"></div>
@@ -360,8 +419,8 @@
           </div>
           
           <div style="display: flex; gap: 8px;">
-            <button id="btn-combat-hint" class="btn-action" style="flex: 1; padding: 10px; font-size: 0.85rem;">Pista 💡</button>
-            <button id="btn-combat-pause" class="btn-action secondary" style="flex: 1; padding: 10px; font-size: 0.85rem;">Salir 🚪</button>
+            <button id="btn-combat-hint" class="btn-action" style="flex: 1; padding: 10px; font-size: 0.85rem;">Pista</button>
+            <button id="btn-combat-pause" class="btn-action secondary" style="flex: 1; padding: 10px; font-size: 0.85rem;">Salir</button>
           </div>
         </div>
 
@@ -373,7 +432,7 @@
             </div>
             <div class="feedback-content">
               <div>
-                <h3 class="feedback-title" id="feedback-coach-title">¡Casi lo tienes!</h3>
+                <h3 class="feedback-title" id="feedback-coach-title">Casi lo tienes</h3>
                 <p class="feedback-explanation" id="feedback-coach-text">8 x 7 es como sumar 7 ocho veces.</p>
                 <div class="visual-multiplication-aid" id="feedback-coach-visual">
                   7 + 7 + 7 + 7 + 7 + 7 + 7 + 7 = 56
@@ -435,7 +494,7 @@
         <!-- Inventory customizer (Right) -->
         <div class="workshop-right">
           <div class="workshop-tabs">
-            <button class="workshop-tab active" data-part="core">NÚCLEO</button>
+            <button class="workshop-tab active" data-part="core">N?CLEO</button>
             <button class="workshop-tab" data-part="ring">ANILLO</button>
             <button class="workshop-tab" data-part="driver">PUNTA</button>
             <button class="workshop-tab" data-part="color">ENERGÍA</button>
@@ -525,13 +584,13 @@
           <div id="reward-boss-summary" class="reward-boss-summary" style="display: none;"></div>
           
           <div class="chest-display" id="reward-chest-area">
-            <div class="chest-icon" id="reward-chest-btn" style="font-size: 6rem;">🎁</div>
+            <div class="chest-icon" id="reward-chest-btn" style="font-size: 6rem;">??</div>
             <p style="color: var(--cyan); font-weight: 800; animation: pulse-glow 1s infinite alternate;">¡ABRE LA CAPSULA!</p>
           </div>
 
           <div class="reward-card-reveal" id="reward-reveal-area" style="display: none;">
             <div style="font-size: 1.1rem; font-weight: 800; color: var(--yellow);" id="reward-rarity-badge">LEGENDARIO</div>
-            <div style="font-size: 4rem;" id="reward-item-icon">🌀</div>
+            <div style="font-size: 4rem;" id="reward-item-icon">??</div>
             <h3 style="font-family: var(--font-display); font-size: 1.8rem; color: white;" id="reward-item-name">Núcleo Ígneo</h3>
             <p style="font-size: 0.9rem; color: rgba(255,255,255,0.6);" id="reward-item-desc">Desbloqueado para tu taller</p>
             <button id="btn-reward-collect" class="btn-action" style="width: 100%; margin-top: 10px;">¡Añadir a mi Colección!</button>
@@ -686,7 +745,7 @@
           <!-- Active Module -->
           <div class="module-card active-module">
             <span class="module-badge ready">DISPONIBLE</span>
-            <div class="module-icon">📐</div>
+            <div class="module-icon">??</div>
             <h3>Matemáticas</h3>
             <p>Liga de Multiplicación, series lógicas y problemas de cálculo mental.</p>
             <button class="btn-action" style="width: 100%; margin-top: 8px; font-size: 0.9rem;" onclick="app.showScreen('map')">Entrar</button>
@@ -695,7 +754,7 @@
           <!-- Locked Modules -->
           <div class="module-card locked-module">
             <span class="module-badge upcoming">MUNDO 2</span>
-            <div class="module-icon">📚</div>
+            <div class="module-icon">??</div>
             <h3>Lengua y Ortografía</h3>
             <p>Combates de palabras, corrección ortográfica y comprensión de lectura.</p>
             <button class="btn-action secondary" style="width: 100%; margin-top: 8px; font-size: 0.9rem; cursor: not-allowed;" disabled>Cerrado</button>
@@ -703,7 +762,7 @@
 
           <div class="module-card locked-module">
             <span class="module-badge upcoming">MUNDO 3</span>
-            <div class="module-icon">🇬🇧</div>
+            <div class="module-icon">????</div>
             <h3>Inglés Astral</h3>
             <p>Vocabulario elemental, listening de combate y traducción de conjuros.</p>
             <button class="btn-action secondary" style="width: 100%; margin-top: 8px; font-size: 0.9rem; cursor: not-allowed;" disabled>Cerrado</button>
@@ -711,7 +770,7 @@
 
           <div class="module-card locked-module">
             <span class="module-badge upcoming">MUNDO 4</span>
-            <div class="module-icon">🔬</div>
+            <div class="module-icon">??</div>
             <h3>Ciencias y Naturaleza</h3>
             <p>Misiones de laboratorio elemental, ecosistemas y geografía galáctica.</p>
             <button class="btn-action secondary" style="width: 100%; margin-top: 8px; font-size: 0.9rem; cursor: not-allowed;" disabled>Cerrado</button>
@@ -719,7 +778,7 @@
 
           <div class="module-card locked-module">
             <span class="module-badge upcoming">MUNDO 5</span>
-            <div class="module-icon">🎨</div>
+            <div class="module-icon">??</div>
             <h3>Creatividad y Arte</h3>
             <p>Taller de diseño de estandartes, pintura digital y forja de avatares.</p>
             <button class="btn-action secondary" style="width: 100%; margin-top: 8px; font-size: 0.9rem; cursor: not-allowed;" disabled>Cerrado</button>
@@ -727,7 +786,7 @@
 
           <div class="module-card locked-module">
             <span class="module-badge upcoming">MUNDO 6</span>
-            <div class="module-icon">🤝</div>
+            <div class="module-icon">??</div>
             <h3>Sociales e Historia</h3>
             <p>Preguntas sobre mapas, historia y cultura general del mundo.</p>
             <button class="btn-action secondary" style="width: 100%; margin-top: 8px; font-size: 0.9rem; cursor: not-allowed;" disabled>Cerrado</button>
