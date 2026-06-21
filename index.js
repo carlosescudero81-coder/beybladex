@@ -427,9 +427,9 @@ class App {
       const headerLeft = document.querySelector('.header-left');
       if (headerLeft) {
         headerLeft.innerHTML = `
-          <div class="avatar-mini" id="header-avatar-btn" style="cursor: pointer; width: 48px; height: 48px;">
+          <button class="avatar-mini" id="header-avatar-btn" type="button" aria-label="Editar mi avatar">
             ${this.renderCharacterAvatar(selectedCharacter)}
-          </div>
+          </button>
           <div class="profile-info">
             <span class="player-name" id="header-player-name">${this.state.player.name}</span>
             <span class="player-level" id="header-player-level">Rango Blader 1</span>
@@ -465,7 +465,7 @@ class App {
 
     const target = document.getElementById(`screen-${screenId}`);
     if (target) {
-      target.style.display = (screenId === 'combat' || screenId === 'workshop') ? 'flex' : 'flex';
+      target.style.display = '';
       // Delay opacity to allow browser layout calculation for smooth transition
       setTimeout(() => {
         target.classList.add('active');
@@ -479,8 +479,21 @@ class App {
     if (screenId === 'start' || screenId === 'avatar') {
       header.style.display = 'none';
     } else {
-      header.style.display = 'flex';
+      header.style.display = '';
     }
+
+    const navigationTargets = {
+      map: 'btn-goto-map',
+      language: 'btn-goto-language',
+      workshop: 'btn-goto-workshop',
+      cards: 'btn-goto-cards',
+      parents: 'btn-goto-parents',
+      modules: 'btn-goto-modules'
+    };
+    document.querySelectorAll('.btn-header').forEach(button => button.removeAttribute('aria-current'));
+    const activeNavigationId = navigationTargets[screenId];
+    const activeNavigation = activeNavigationId ? document.getElementById(activeNavigationId) : null;
+    if (activeNavigation) activeNavigation.setAttribute('aria-current', 'page');
 
     // Refresh screens data when showing them
     if (screenId === 'avatar') this.renderAvatarCustomizer();
@@ -1922,6 +1935,7 @@ class App {
     this.selectedWeekNum = 'post-boss-review';
     document.getElementById('daily-mission-modal').style.display = 'none';
     this.showScreen('combat');
+    if (this.combatSession && typeof this.combatSession.dispose === 'function') this.combatSession.dispose();
     this.combatSession = new CombatSession('post-boss-review', false, this.state, this);
     this.combatSession.start();
   }
@@ -1955,6 +1969,7 @@ class App {
     this.showScreen('combat');
 
     // Create session
+    if (this.combatSession && typeof this.combatSession.dispose === 'function') this.combatSession.dispose();
     this.combatSession = new CombatSession(this.selectedWeekNum, isBoss, this.state, this);
     this.combatSession.start();
   }
@@ -2830,6 +2845,7 @@ class App {
     this.selectedWeekNum = 'reinforce';
     document.getElementById('daily-mission-modal').style.display = 'none';
     this.showScreen('combat');
+    if (this.combatSession && typeof this.combatSession.dispose === 'function') this.combatSession.dispose();
     this.combatSession = new CombatSession('reinforce', false, this.state, this);
     this.combatSession.start();
   }

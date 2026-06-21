@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Beyblade X Academy: Torneo del Conocimiento</title>
   <link rel="stylesheet" href="index.css">
 </head>
@@ -28,9 +28,9 @@
     <!-- Global App Header -->
     <header id="app-header" style="display: none;">
       <div class="header-left">
-        <div class="avatar-mini" id="header-avatar-btn" style="cursor: pointer;">
+        <button class="avatar-mini" id="header-avatar-btn" type="button" aria-label="Editar mi avatar">
           <img id="header-avatar-img" src="" alt="Avatar">
-        </div>
+        </button>
         <div class="profile-info">
           <span class="player-name" id="header-player-name">cargando...</span>
           <span class="player-level" id="header-player-level">Nivel 1</span>
@@ -80,7 +80,7 @@
         
         <div class="start-interactive">
           <button id="btn-start-game" class="btn-massive">¡LANZAR BEY!</button>
-          <div id="btn-parents-gate-trigger" class="parent-portal-hint">Acceso para Padres ??</div>
+          <button id="btn-parents-gate-trigger" class="parent-portal-hint" type="button">Acceso para Padres</button>
         </div>
       </section>
 
@@ -229,7 +229,7 @@
       <!-- 5. DAILY MISSION MODAL -->
       <div id="daily-mission-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mission-modal-title" style="display: none;">
         <div class="modal-content">
-          <button class="modal-close" id="btn-close-missions">?</button>
+          <button class="modal-close" id="btn-close-missions" type="button" aria-label="Cerrar misiones">&times;</button>
           <div class="arena-preview-header">
             <h3 class="arena-title" id="mission-modal-title">Arena de Entrenamiento</h3>
             <p class="arena-subtitle" id="mission-modal-subtitle">Semana 1: Entrenamiento Básico</p>
@@ -441,6 +441,35 @@
               <button id="btn-feedback-close" class="btn-action" style="width: 100%;">¡Entendido! Volver al combate</button>
             </div>
           </div>
+        </div>
+
+        <div id="battle-intro" class="battle-intro" hidden aria-hidden="true" aria-label="Presentacion de combatientes">
+          <div class="battle-intro__speedlines" aria-hidden="true"></div>
+          <div class="battle-intro__flash" aria-hidden="true"></div>
+          <article class="battle-intro__fighter battle-intro__fighter--player">
+            <img id="battle-intro-player-character" class="battle-intro__character" src="" alt="">
+            <img id="battle-intro-player-bey" class="battle-intro__bey" src="" alt="">
+            <div class="battle-intro__nameplate">
+              <span class="battle-intro__side-label">TU EQUIPO</span>
+              <strong id="battle-intro-player-name">Blader</strong>
+              <span id="battle-intro-player-bey-name">Bey</span>
+            </div>
+          </article>
+          <div class="battle-intro__center" aria-hidden="true">
+            <span id="battle-intro-floor" class="battle-intro__eyebrow">X Tower</span>
+            <strong class="battle-intro__vs">VS</strong>
+            <span id="battle-intro-stadium" class="battle-intro__stadium">Estadio</span>
+          </div>
+          <article class="battle-intro__fighter battle-intro__fighter--rival">
+            <img id="battle-intro-rival-character" class="battle-intro__character" src="" alt="">
+            <img id="battle-intro-rival-bey" class="battle-intro__bey" src="" alt="">
+            <div class="battle-intro__nameplate">
+              <span class="battle-intro__side-label">RIVAL</span>
+              <strong id="battle-intro-rival-name">Rival</strong>
+              <span id="battle-intro-rival-bey-name">Bey rival</span>
+            </div>
+          </article>
+          <button id="battle-intro-skip" class="battle-intro__skip" type="button">Entrar en combate</button>
         </div>
       </section>
 
