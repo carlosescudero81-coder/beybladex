@@ -378,13 +378,12 @@ class App {
     if (this.sessionTimer) clearInterval(this.sessionTimer);
     
     this.sessionTimer = setInterval(() => {
-      const elapsedSeconds = Math.floor((Date.now() - this.sessionStart) / 1000);
-      const increment = Math.max(1, elapsedSeconds);
+      const elapsedSeconds = Math.max(1, Math.floor((Date.now() - this.sessionStart) / 1000));
       const todayStats = this.getTodayStats();
-      todayStats.seconds += increment;
-      this.state.pedagogy.math.timeSpentSeconds += increment;
+      todayStats.seconds += elapsedSeconds;
+      this.state.pedagogy.math.timeSpentSeconds += elapsedSeconds;
       this.sessionStart = Date.now();
-      this.secondsSinceLastSave += increment;
+      this.secondsSinceLastSave += elapsedSeconds;
       
       // Save progress regularly
       if (this.secondsSinceLastSave >= 10) {
@@ -1957,16 +1956,21 @@ class App {
 
   startCombat(isBoss = false) {
     sounds.playClick();
-    if (!this.selectedWeekNum || Number.isNaN(Number(this.selectedWeekNum))) {
-      this.selectedWeekNum = this.state.player.currentWeek || 1;
-    }
     if (!this.currentTowerFloor) {
       this.currentTowerFloor = getCurrentTowerFloor(this.state);
     }
     const floorData = getTowerFloorData(this.currentTowerFloor);
+    // Evaluate isTowerBattle BEFORE clearing pendingTowerBattle
     const isTowerBattle = this.pendingTowerBattle === true && !!floorData && floorData.floor === this.currentTowerFloor;
     this.activeTowerBattle = isTowerBattle;
     this.pendingTowerBattle = false;
+    // Use floor's week when it's a tower battle; fall back to currentWeek for legacy modal flow
+    // Note: use null/undefined check (not falsy) to allow week=0
+    if (isTowerBattle && floorData) {
+      this.selectedWeekNum = floorData.week != null ? floorData.week : (this.selectedWeekNum ?? this.state.player.currentWeek ?? 1);
+    } else if (this.selectedWeekNum == null || Number.isNaN(Number(this.selectedWeekNum))) {
+      this.selectedWeekNum = this.state.player.currentWeek || 1;
+    }
     const bossReadiness = isBoss
       ? LearningEngine.canUnlockWeeklyBoss(this.state, Math.min(this.selectedWeekNum, CurriculumData.summerWeeks.length))
       : null;
@@ -2143,8 +2147,8 @@ class App {
 
     const currentMission = LearningEngine.getCurrentMission(this.state);
     const completion = currentMission && currentMission.key === mission.key
-      ? LearningEngine.recordMissionCompletion(this.state, mission, { accuracy, answers: total + 1, evidence: writing })
-      : LearningEngine.recordPracticeSession(this.state, mission, { accuracy, answers: total + 1, evidence: writing });
+      ? LearningEngine.recordMissionCompletion(this.state, mission, { accuracy, answers: total, evidence: writing })
+      : LearningEngine.recordPracticeSession(this.state, mission, { accuracy, answers: total, evidence: writing });
 
     this.state.player.coins += 10;
     this.state.player.xp += 20;
@@ -2234,7 +2238,7 @@ class App {
 
   handleSubjectAnswer(questionIndex, selectedOption) {
     const question = this.subjectQuestions[questionIndex];
-    if (!question) return;
+    if (!question || this.subjectAnswers[questionIndex]) return;
     const isCorrect = selectedOption === question.answer;
     this.subjectAnswers[questionIndex] = { selectedOption, isCorrect };
 
@@ -2299,8 +2303,8 @@ class App {
 
     const currentMission = LearningEngine.getCurrentMission(this.state);
     const completion = currentMission && currentMission.key === mission.key
-      ? LearningEngine.recordMissionCompletion(this.state, mission, { accuracy, answers: total + 1, evidence })
-      : LearningEngine.recordPracticeSession(this.state, mission, { accuracy, answers: total + 1, evidence });
+      ? LearningEngine.recordMissionCompletion(this.state, mission, { accuracy, answers: total, evidence })
+      : LearningEngine.recordPracticeSession(this.state, mission, { accuracy, answers: total, evidence });
 
     this.state.player.coins += 8;
     this.state.player.xp += 18;
@@ -2456,7 +2460,8 @@ class App {
       if (partType !== 'bey' && (partType === 'card' || !rewardedPart)) {
         partType = 'card';
         // Unlock next chronologic card
-        const unlocked = this.state.inventory.cards || [];
+        if (!this.state.inventory.cards) this.state.inventory.cards = [];
+        const unlocked = this.state.inventory.cards;
         for (let c = 1; c <= 30; c++) {
           if (!unlocked.includes(c)) {
             cardNum = c;
