@@ -7428,6 +7428,49 @@ select,
   font-weight: 850;
 }
 
+.battle-intro__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  max-width: min(420px, 92%);
+  margin-top: 8px;
+}
+
+.battle-intro__fighter--rival .battle-intro__stats {
+  margin-left: auto;
+}
+
+.battle-intro__stat {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.05);
+  text-align: center;
+}
+
+.battle-intro__stat b {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: clamp(0.58rem, 0.9vw, 0.72rem);
+  font-weight: 950;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.battle-intro__stat i {
+  color: #fff;
+  font-family: var(--font-display-readable, var(--font-display));
+  font-size: clamp(1rem, 1.7vw, 1.55rem);
+  font-style: normal;
+  font-weight: 950;
+  line-height: 1;
+}
+
 .battle-intro__center {
   position: relative;
   z-index: 12;
