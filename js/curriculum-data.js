@@ -4,6 +4,15 @@
 
 const CURRICULUM_VERSION = 1;
 
+const DYNAMIC_WORDS = {
+  names: ['Leo', 'Marta', 'Carlitos', 'Sara', 'Nico', 'Luna', 'Pablo', 'Iris', 'Carla', 'Dani', 'Ana', 'Ekusu', 'Bird', 'Multi', 'Valt', 'Aiger', 'Dante', 'Bell', 'Pri'],
+  beys: ['Dran Sword', 'Hell Scythe', 'Wizard Arrow', 'Knight Shield', 'Cobalt Drake', 'Viper Tail', 'Leon Claw', 'Rhino Horn', 'Shark Edge', 'Dran Dagger', 'Hells Chain', 'Phoenix Wing'],
+  stadiums: ['Estadio X-Line', 'Arena Extrema', 'Coliseo de Combate', 'Tornado Stadium', 'Ruinas del Duelo'],
+  objects: ['peonzas', 'cartas', 'canicas', 'pegatinas', 'piezas de repuesto', 'lanzadores'],
+  locations: ['el taller de peonzas', 'la Arena X', 'el patio del colegio', 'el club de entrenamiento', 'la torre del conocimiento']
+};
+
+
 const SUBJECTS = {
   math: {
     id: 'math',
@@ -397,7 +406,7 @@ const QUESTION_BANK = [
     difficulty: 1,
     prompt: 'Which word means "mochila"?',
     answer: 'backpack',
-    options: ['backpack', 'window', 'pencil?'],
+    options: ['backpack', 'lunchbox', 'notebook'],
     explanation: 'Backpack significa mochila.'
   },
   {
@@ -419,7 +428,7 @@ const QUESTION_BANK = [
     difficulty: 2,
     prompt: 'Completa: I like ___ .',
     answer: 'apples',
-    options: ['apples', 'is', 'blue?'],
+    options: ['apples', 'swimming', 'reading'],
     explanation: 'Despues de I like puedes decir una cosa que te gusta: apples.'
   },
   {
@@ -716,36 +725,36 @@ function buildGeneratedLanguageQuestions() {
 
 function buildGeneratedEnglishQuestions() {
   const rows = [
-    ['eng_greetings', 'Choose a greeting.', 'Hello!', ['Goodbye!', 'Red', 'Seven'], 'Hello es un saludo.'],
-    ['eng_greetings', 'How do you say "buenos dias"?', 'Good morning', ['Good night', 'Thank you', 'Dog'], 'Good morning se usa por la manana.'],
-    ['eng_vocabulary', 'What color is "blue"?', 'azul', ['rojo', 'verde', 'amarillo'], 'Blue significa azul.'],
-    ['eng_vocabulary', 'Choose the animal.', 'cat', ['table', 'pencil', 'blue'], 'Cat es un animal.'],
-    ['eng_like_routines', 'Complete: I like ___ football.', 'playing', ['am', 'is', 'the'], 'I like playing expresa una actividad que gusta.'],
-    ['eng_like_routines', 'Choose the routine.', 'I brush my teeth.', ['I am a tiger.', 'Blue pencil.', 'Goodbye apple.'], 'Brush my teeth es una rutina.'],
-    ['eng_short_dialogue', 'Best answer: How are you?', 'I am fine, thank you.', ['I am eight.', 'It is a pencil.', 'Good night dog.'], 'La pregunta pide como estas.'],
-    ['eng_short_dialogue', 'Best answer: What do you like?', 'I like apples.', ['My name is Ana.', 'It is Monday.', 'Close the door.'], 'What do you like pregunta por gustos.']
+    ['eng_greetings', 'Choose a greeting.', 'Hello!', ['Goodbye!', 'See you later!', 'Good night!'], 'Hello es un saludo.'],
+    ['eng_greetings', 'How do you say "buenos dias"?', 'Good morning', ['Good afternoon', 'Good night', 'Good evening'], 'Good morning se usa por la manana.'],
+    ['eng_vocabulary', 'What color is "blue"?', 'azul', ['verde', 'rojo', 'amarillo'], 'Blue significa azul.'],
+    ['eng_vocabulary', 'Choose the animal.', 'cat', ['table', 'chair', 'pencil'], 'Cat es un animal.'],
+    ['eng_like_routines', 'Complete: I like ___ football.', 'playing', ['watching', 'to go', 'the'], 'I like playing expresa una actividad que gusta.'],
+    ['eng_like_routines', 'Choose the routine.', 'I brush my teeth.', ['I am very tall.', 'This is red.', 'She has a dog.'], 'Brush my teeth es una rutina.'],
+    ['eng_short_dialogue', 'Best answer: How are you?', 'I am fine, thank you.', ['I am eight years old.', 'My name is Ana.', 'I like apples.'], 'La pregunta pide como estas.'],
+    ['eng_short_dialogue', 'Best answer: What do you like?', 'I like apples.', ['My name is Ana.', 'I am fine.', 'It is Monday.'], 'What do you like pregunta por gustos.']
   ];
   return rows.map((row, index) => buildChoiceQuestion(`gen-eng-${index + 1}`, 'english', row[0], index < 4 ? 1 : 2, row[1], row[2], row[3], row[4]));
 }
 
 function buildGeneratedScienceArtMovementQuestions() {
   const rows = [
-    ['science', 'sci_living_things', 'Que necesitan normalmente las plantas para vivir?', 'agua, luz y aire', ['solo plastico', 'oscuridad siempre', 'ruido fuerte'], 'Las plantas son seres vivos y tienen necesidades.'],
+    ['science', 'sci_living_things', 'Que necesitan normalmente las plantas para vivir?', 'agua, luz y aire', ['solo agua, sin luz', 'solo tierra, sin agua', 'solo luz, sin tierra'], 'Las plantas son seres vivos y tienen necesidades.'],
     ['science', 'sci_living_things', 'Cual es un animal vertebrado?', 'perro', ['caracol', 'lombriz', 'medusa'], 'Los vertebrados tienen columna vertebral.'],
-    ['science', 'sci_health', 'Que desayuno ayuda mas a empezar el dia?', 'fruta, leche o pan y agua', ['solo caramelos', 'nada de agua', 'patatas fritas siempre'], 'Un desayuno equilibrado da energia.'],
-    ['science', 'sci_health', 'Antes de comer conviene...', 'lavarse las manos', ['tocar el suelo', 'no beber agua', 'correr con tijeras'], 'Lavarse las manos reduce microbios.'],
+    ['science', 'sci_health', 'Que desayuno ayuda mas a empezar el dia?', 'fruta, leche o pan y agua', ['solo zumo azucarado', 'galletas de chocolate solamente', 'patatas fritas con refresco'], 'Un desayuno equilibrado da energia.'],
+    ['science', 'sci_health', 'Antes de comer conviene...', 'lavarse las manos', ['limpiar la mesa solamente', 'ponerse el abrigo', 'abrir la ventana'], 'Lavarse las manos reduce microbios.'],
     ['science', 'sci_materials', 'Que material suele ser flexible?', 'tela', ['piedra', 'cristal', 'ladrillo'], 'La tela se dobla con facilidad.'],
     ['science', 'sci_materials', 'Si el hielo se calienta, se convierte en...', 'agua', ['arena', 'papel', 'metal'], 'El hielo es agua solida.'],
-    ['science', 'sci_time_history', 'Que estudian los historiadores?', 'el pasado', ['solo planetas', 'solo canciones', 'solo carreras'], 'La historia estudia hechos del pasado.'],
+    ['science', 'sci_time_history', 'Que estudian los historiadores?', 'el pasado', ['el futuro lejano', 'el clima del espacio', 'solo matematicas'], 'La historia estudia hechos del pasado.'],
     ['science', 'sci_time_history', 'Los romanos pertenecen a...', 'Edad Antigua', ['Prehistoria', 'Edad Contemporanea', 'futuro'], 'Roma es una civilizacion de la Edad Antigua.'],
-    ['science', 'sci_environment', 'Para ahorrar energia debo...', 'apagar luces que no uso', ['dejar todo encendido', 'tirar pilas al suelo', 'abrir el grifo siempre'], 'Ahorrar energia cuida el entorno.'],
+    ['science', 'sci_environment', 'Para ahorrar energia debo...', 'apagar luces que no uso', ['dejar las luces encendidas al salir', 'poner mas lamparas de las necesarias', 'cargar dispositivos aunque esten llenos'], 'Ahorrar energia cuida el entorno.'],
     ['science', 'sci_environment', 'Que contenedor suele usar el papel?', 'azul', ['verde', 'amarillo', 'marron'], 'El contenedor azul se usa para papel y carton.'],
     ['arts', 'art_color_line_texture', 'Un color primario es...', 'rojo', ['naranja', 'marron', 'gris'], 'Rojo, azul y amarillo son colores primarios.'],
-    ['arts', 'art_color_line_texture', 'Una textura puede ser...', 'rugosa', ['silenciosa', 'rapida', 'dulce'], 'La textura describe como parece o se siente una superficie.'],
-    ['arts', 'art_storyboard', 'Un storyboard sirve para...', 'ordenar una historia en dibujos', ['medir litros', 'sumar monedas', 'lavar pinceles'], 'Ayuda a planificar escenas.'],
-    ['arts', 'art_music_rhythm', 'El ritmo en musica es...', 'una repeticion ordenada de sonidos', ['un color oscuro', 'una regla de ortografia', 'un mapa'], 'El ritmo organiza sonidos en el tiempo.'],
-    ['movement', 'move_warmup', 'Antes de hacer ejercicio conviene...', 'calentar suave', ['empezar al maximo', 'no moverse nunca', 'cerrar los ojos corriendo'], 'El calentamiento prepara el cuerpo.'],
-    ['movement', 'move_coordination', 'Botar una pelota mientras caminas trabaja...', 'coordinacion', ['ortografia', 'historia antigua', 'multiplicacion'], 'Coordinar es usar movimientos juntos con control.'],
+    ['arts', 'art_color_line_texture', 'Una textura puede ser...', 'rugosa', ['brillante', 'oscura'], 'La textura describe como parece o se siente una superficie.'],
+    ['arts', 'art_storyboard', 'Un storyboard sirve para...', 'ordenar una historia en dibujos', ['decorar un cuaderno', 'colorear un mapa', 'escribir un poema'], 'Ayuda a planificar escenas.'],
+    ['arts', 'art_music_rhythm', 'El ritmo en musica es...', 'una repeticion ordenada de sonidos', ['la velocidad de una cancion', 'el volumen de los instrumentos'], 'El ritmo organiza sonidos en el tiempo.'],
+    ['movement', 'move_warmup', 'Antes de hacer ejercicio conviene...', 'calentar suave', ['empezar corriendo al maximo', 'hacer ejercicios muy bruscos', 'saltar sin preparacion'], 'El calentamiento prepara el cuerpo.'],
+    ['movement', 'move_coordination', 'Botar una pelota mientras caminas trabaja...', 'coordinacion', ['fuerza de brazos', 'velocidad de carrera'], 'Coordinar es usar movimientos juntos con control.'],
     ['movement', 'move_rules_teamwork', 'En un juego de equipo es importante...', 'respetar reglas y companeros', ['hacer trampas', 'empujar siempre', 'no escuchar'], 'Las reglas hacen el juego seguro y justo.']
   ];
   return rows.flatMap((row, index) => {
@@ -762,6 +771,106 @@ QUESTION_BANK.push(
   ...buildGeneratedLanguageQuestions(),
   ...buildGeneratedEnglishQuestions(),
   ...buildGeneratedScienceArtMovementQuestions()
+);
+
+// Preguntas paramétricas y con tokens dinámicos
+QUESTION_BANK.push(
+  {
+    id: 'parametric-math-add-1',
+    subject: 'math',
+    skill: 'math_add_sub',
+    type: 'choice',
+    difficulty: 1,
+    isParametric: true,
+    mathType: 'add',
+    prompt: 'Calcula {numA} + {numB}.',
+    answer: '{result}',
+    options: ['{result}', '0', '0'],
+    explanation: 'Sumando con cuidado: {numA} + {numB} = {result}.'
+  },
+  {
+    id: 'parametric-math-sub-1',
+    subject: 'math',
+    skill: 'math_add_sub',
+    type: 'choice',
+    difficulty: 2,
+    isParametric: true,
+    mathType: 'sub',
+    prompt: 'Calcula {numA} - {numB}.',
+    answer: '{result}',
+    options: ['{result}', '0', '0'],
+    explanation: 'Restando con cuidado: {numA} - {numB} = {result}.'
+  },
+  {
+    id: 'parametric-math-mult-1',
+    subject: 'math',
+    skill: 'math_multiply_fast',
+    type: 'choice',
+    difficulty: 2,
+    isParametric: true,
+    mathType: 'mult',
+    prompt: '¿Cuánto es {numA} x {numB}?',
+    answer: '{result}',
+    options: ['{result}', '0', '0'],
+    explanation: 'Multiplicar es sumar repetidamente: {numA} veces {numB} es {result}.'
+  },
+  {
+    id: 'parametric-math-div-1',
+    subject: 'math',
+    skill: 'math_division_intro',
+    type: 'choice',
+    difficulty: 3,
+    isParametric: true,
+    mathType: 'div',
+    prompt: 'Repartimos {numA} peonzas entre {numB} amigos. ¿Cuántas recibe cada uno?',
+    answer: '{result}',
+    options: ['{result}', '0', '0'],
+    explanation: 'Dividir es hacer partes iguales: {numA} entre {numB} da {result}.'
+  },
+  {
+    id: 'dynamic-lang-literal-1',
+    subject: 'language',
+    skill: 'lang_literal',
+    type: 'choice',
+    difficulty: 1,
+    prompt: 'Texto: {name} guarda su peonza {beyblade} en {location}. ¿Dónde la guarda?',
+    answer: 'en {location}',
+    options: ['en {location}', 'en el bolsillo', 'debajo de la cama'],
+    explanation: 'La respuesta correcta está explícita en el texto.'
+  },
+  {
+    id: 'dynamic-lang-inference-1',
+    subject: 'language',
+    skill: 'lang_inference',
+    type: 'choice',
+    difficulty: 2,
+    prompt: 'Texto: {name} bosteza y guarda su {beyblade} en el club. ¿Cómo se siente?',
+    answer: 'Tiene sueño o cansancio',
+    options: ['Tiene sueño o cansancio', 'Tiene mucha energía', 'Tiene hambre'],
+    explanation: 'Bostezar es una pista clara de cansancio o sueño.'
+  },
+  {
+    id: 'dynamic-eng-vocab-1',
+    subject: 'english',
+    skill: 'eng_vocabulary',
+    type: 'choice',
+    difficulty: 1,
+    prompt: 'En {location}, {name} dice "I need my launch tool". ¿Qué necesita?',
+    answer: 'un lanzador',
+    options: ['un lanzador', 'una peonza', 'un libro'],
+    explanation: '"Launch tool" hace referencia al lanzador de peonzas.'
+  },
+  {
+    id: 'dynamic-sci-living-1',
+    subject: 'science',
+    skill: 'sci_living_things',
+    type: 'choice',
+    difficulty: 1,
+    prompt: 'Si {name} lleva a su perro a pasear por {location}, ¿cuál de ellos es un ser vivo?',
+    answer: 'Ambos, {name} y su perro',
+    options: ['Ambos, {name} y su perro', 'Solo el perro', 'Ninguno'],
+    explanation: 'Las personas y los animales son seres vivos porque nacen, crecen y respiran.'
+  }
 );
 
 const READING_BANK = [
@@ -1134,53 +1243,53 @@ function appendLanguageExpansion() {
 
 function appendEnglishExpansion() {
   [
-    ['Choose the greeting.', 'Good morning', ['Blue pencil', 'Three cats'], 'Good morning is a greeting.'],
-    ['How do you say "adios"?', 'Goodbye', ['Hello', 'Please'], 'Goodbye means adios.'],
-    ['Complete: My name ___ Leo.', 'is', ['are', 'am not'], 'My name is Leo.'],
-    ['Answer: How are you?', 'I am fine.', ['I am eight apples.', 'It is a pencil.'], 'I am fine answers how you are.'],
-    ['Choose the polite word.', 'please', ['window', 'jump'], 'Please is used to ask politely.'],
-    ['How do you say "gracias"?', 'thank you', ['sorry', 'school'], 'Thank you means gracias.'],
-    ['Complete: Nice to ___ you.', 'meet', ['blue', 'run'], 'Nice to meet you is a greeting phrase.'],
-    ['Choose the question for a name.', 'What is your name?', ['What color is it?', 'Where is my bag?'], 'This question asks for a name.']
+    ['Choose the greeting.', 'Good morning', ['Good night', 'Goodbye'], 'Good morning is a greeting.'],
+    ['How do you say "adios"?', 'Goodbye', ['Hello', 'See you tomorrow'], 'Goodbye means adios.'],
+    ['Complete: My name ___ Leo.', 'is', ['are', 'am'], 'My name is Leo.'],
+    ['Answer: How are you?', 'I am fine.', ['I am eight.', 'It is sunny.'], 'I am fine answers how you are.'],
+    ['Choose the polite word.', 'please', ['sorry', 'excuse me'], 'Please is used to ask politely.'],
+    ['How do you say "gracias"?', 'thank you', ['sorry', 'please'], 'Thank you means gracias.'],
+    ['Complete: Nice to ___ you.', 'meet', ['see', 'know'], 'Nice to meet you is a greeting phrase.'],
+    ['Choose the question for a name.', 'What is your name?', ['How old are you?', 'Where are you from?'], 'This question asks for a name.']
   ].forEach(([prompt, answer, wrong, explanation], index) => {
     QUESTION_BANK.push(makeChoiceQuestion(`eng-greetings-exp-${String(index + 1).padStart(2, '0')}`, 'english', 'eng_greetings', index < 4 ? 1 : 2, prompt, answer, wrong, explanation));
   });
 
   [
-    ['Which word means "lapiz"?', 'pencil', ['chair', 'apple'], 'Pencil means lapiz.'],
-    ['Which word means "mesa"?', 'table', ['book', 'dog'], 'Table means mesa.'],
-    ['Which word means "rojo"?', 'red', ['green', 'small'], 'Red means rojo.'],
-    ['Which word means "perro"?', 'dog', ['cat', 'bird'], 'Dog means perro.'],
-    ['Which word means "libro"?', 'book', ['shoe', 'milk'], 'Book means libro.'],
-    ['Which word means "ventana"?', 'window', ['door', 'pencil'], 'Window means ventana.'],
-    ['Which word means "manzana"?', 'apple', ['water', 'desk'], 'Apple means manzana.'],
-    ['Which word means "escuela"?', 'school', ['park', 'beach'], 'School means escuela.']
+    ['Which word means "lapiz"?', 'pencil', ['pen', 'ruler'], 'Pencil means lapiz.'],
+    ['Which word means "mesa"?', 'table', ['chair', 'desk'], 'Table means mesa.'],
+    ['Which word means "rojo"?', 'red', ['blue', 'green'], 'Red means rojo.'],
+    ['Which word means "perro"?', 'dog', ['cat', 'rabbit'], 'Dog means perro.'],
+    ['Which word means "libro"?', 'book', ['notebook', 'folder'], 'Book means libro.'],
+    ['Which word means "ventana"?', 'window', ['door', 'wall'], 'Window means ventana.'],
+    ['Which word means "manzana"?', 'apple', ['orange', 'banana'], 'Apple means manzana.'],
+    ['Which word means "escuela"?', 'school', ['library', 'park'], 'School means escuela.']
   ].forEach(([prompt, answer, wrong, explanation], index) => {
     QUESTION_BANK.push(makeChoiceQuestion(`eng-vocab-exp-${String(index + 1).padStart(2, '0')}`, 'english', 'eng_vocabulary', index < 5 ? 1 : 2, prompt, answer, wrong, explanation));
   });
 
   [
-    ['Complete: I like ___ football.', 'playing', ['is', 'blue'], 'I like playing football is a correct pattern.'],
-    ['Choose the correct sentence.', 'I like apples.', ['I likes apples.', 'I apple like.'], 'After I we use like.'],
+    ['Complete: I like ___ football.', 'playing', ['to play', 'play'], 'I like playing football is a correct pattern.'],
+    ['Choose the correct sentence.', 'I like apples.', ['I likes apples.', 'I am liking apples.'], 'After I we use like.'],
     ['Complete: I get up ___ seven.', 'at', ['in', 'on'], 'We use at with clock times.'],
-    ['Choose a daily routine.', 'I brush my teeth.', ['I am a pencil.', 'Blue is run.'], 'Brushing teeth is a routine.'],
-    ['Complete: I have breakfast in the ___.', 'morning', ['night moon', 'pencil'], 'Breakfast is usually in the morning.'],
-    ['Choose the negative.', 'I do not like broccoli.', ['I like broccoli.', 'Like I broccoli.'], 'Do not makes the sentence negative.'],
-    ['Answer: Do you like music?', 'Yes, I do.', ['Yes, I am eight.', 'No, it is red.'], 'Yes, I do answers a do you like question.'],
-    ['Complete: I go to school by ___.', 'bus', ['hungry', 'green'], 'Bus is a transport word.']
+    ['Choose a daily routine.', 'I brush my teeth.', ['I am a student.', 'She brushes her teeth.'], 'Brushing teeth is a routine.'],
+    ['Complete: I have breakfast in the ___.', 'morning', ['afternoon', 'evening'], 'Breakfast is usually in the morning.'],
+    ['Choose the negative.', 'I do not like broccoli.', ['I like broccoli.', 'I not like broccoli.'], 'Do not makes the sentence negative.'],
+    ['Answer: Do you like music?', 'Yes, I do.', ['Yes, I am.', 'Yes, I like.'], 'Yes, I do answers a do you like question.'],
+    ['Complete: I go to school by ___.', 'bus', ['foot', 'car'], 'Bus is a transport word.']
   ].forEach(([prompt, answer, wrong, explanation], index) => {
     QUESTION_BANK.push(makeChoiceQuestion(`eng-routines-exp-${String(index + 1).padStart(2, '0')}`, 'english', 'eng_like_routines', 2, prompt, answer, wrong, explanation));
   });
 
   [
-    ['A: What color is it? B: ___', 'It is blue.', ['I am Carlos.', 'Good night.'], 'The question asks for color.'],
-    ['A: How old are you? B: ___', 'I am eight.', ['It is a table.', 'I like red.'], 'How old asks for age.'],
-    ['A: Where is the book? B: ___', 'It is on the table.', ['I am fine.', 'My name is Ana.'], 'Where asks for place.'],
-    ['A: Can I have a pencil? B: ___', 'Yes, here you are.', ['I am seven.', 'It is sunny.'], 'This is a polite classroom answer.'],
-    ['A: What is your favourite sport? B: ___', 'I like football.', ['It is under the chair.', 'Goodbye teacher.'], 'The answer names a sport.'],
-    ['A: Is it a cat? B: ___', 'No, it is a dog.', ['I am in the park.', 'It is three.'], 'The answer compares animals.'],
-    ['A: What day is it? B: ___', 'It is Monday.', ['It is a backpack.', 'I am fine.'], 'Monday is a day.'],
-    ['A: Thank you. B: ___', 'You are welcome.', ['I am red.', 'Where is it?'], 'You are welcome replies to thank you.']
+    ['A: What color is it? B: ___', 'It is blue.', ['It is big.', 'It is nice.'], 'The question asks for color.'],
+    ['A: How old are you? B: ___', 'I am eight.', ['I am fine.', 'I am happy.'], 'How old asks for age.'],
+    ['A: Where is the book? B: ___', 'It is on the table.', ['It is red.', 'It is big.'], 'Where asks for place.'],
+    ['A: Can I have a pencil? B: ___', 'Yes, here you are.', ['Yes, I do.', 'Yes, I am eight.'], 'This is a polite classroom answer.'],
+    ['A: What is your favourite sport? B: ___', 'I like football.', ['I like Mondays.', 'I like mornings.'], 'The answer names a sport.'],
+    ['A: Is it a cat? B: ___', 'No, it is a dog.', ['No, it is small.', 'No, it is mine.'], 'The answer compares animals.'],
+    ['A: What day is it? B: ___', 'It is Monday.', ['It is morning.', 'It is sunny.'], 'Monday is a day.'],
+    ['A: Thank you. B: ___', 'You are welcome.', ['No problem.', 'Of course.'], 'You are welcome replies to thank you.']
   ].forEach(([prompt, answer, wrong, explanation], index) => {
     QUESTION_BANK.push(makeChoiceQuestion(`eng-dialogue-exp-${String(index + 1).padStart(2, '0')}`, 'english', 'eng_short_dialogue', index < 4 ? 2 : 3, prompt, answer, wrong, explanation));
   });
@@ -1188,132 +1297,132 @@ function appendEnglishExpansion() {
 
 function appendScienceArtsMovementExpansion() {
   [
-    ['Que necesitan las plantas para vivir?', 'agua, luz y aire', ['solo plastico', 'oscuridad siempre'], 'Las plantas necesitan agua, luz y aire.'],
-    ['Un mamifero normalmente...', 'nace de su madre y mama', ['tiene ruedas', 'es de piedra'], 'Los mamiferos maman cuando son crias.'],
+    ['Que necesitan las plantas para vivir?', 'agua, luz y aire', ['solo agua, sin luz', 'solo tierra, sin riego'], 'Las plantas necesitan agua, luz y aire.'],
+    ['Un mamifero normalmente...', 'nace de su madre y mama', ['nace de un huevo siempre', 'tiene escamas como los peces'], 'Los mamiferos maman cuando son crias.'],
     ['Cual es un animal vertebrado?', 'pez', ['lombriz', 'caracol'], 'Los peces tienen columna vertebral.'],
-    ['Las raices de una planta sirven para...', 'tomar agua y sujetarse', ['volar', 'hacer sonido'], 'Las raices absorben agua y fijan la planta.'],
-    ['Un ser vivo...', 'nace, crece y se reproduce', ['no cambia nunca', 'es siempre de metal'], 'Esas son funciones vitales.'],
-    ['Cual es una parte de una flor?', 'petalo', ['rueda', 'pantalla'], 'Los petalos forman parte de muchas flores.'],
-    ['Los animales carnivoros comen principalmente...', 'otros animales', ['piedras', 'solo sol'], 'Carnivoro significa que come carne.'],
-    ['Un habitat es...', 'el lugar donde vive un ser vivo', ['una operacion', 'un instrumento musical'], 'El habitat es su entorno de vida.']
+    ['Las raices de una planta sirven para...', 'tomar agua y sujetarse', ['fabricar alimento con luz', 'producir flores'], 'Las raices absorben agua y fijan la planta.'],
+    ['Un ser vivo...', 'nace, crece y se reproduce', ['no necesita agua ni alimento', 'no cambia a lo largo del tiempo'], 'Esas son funciones vitales.'],
+    ['Cual es una parte de una flor?', 'petalo', ['rama', 'raiz'], 'Los petalos forman parte de muchas flores.'],
+    ['Los animales carnivoros comen principalmente...', 'otros animales', ['plantas como la hierba', 'frutas y semillas'], 'Carnivoro significa que come carne.'],
+    ['Un habitat es...', 'el lugar donde vive un ser vivo', ['el nombre cientifico de un animal', 'el alimento principal de una planta'], 'El habitat es su entorno de vida.']
   ].forEach(([prompt, answer, wrong, explanation], index) => {
     QUESTION_BANK.push(makeChoiceQuestion(`sci-living-exp-${String(index + 1).padStart(2, '0')}`, 'science', 'sci_living_things', index < 5 ? 1 : 2, prompt, answer, wrong, explanation));
   });
 
   [
-    ['Que ayuda a prevenir enfermedades?', 'lavarse las manos', ['comer suelo', 'no dormir nunca'], 'La higiene de manos reduce microbios.'],
-    ['Para crecer sano conviene...', 'comer variado', ['solo chuches', 'no beber agua'], 'Una dieta variada aporta nutrientes.'],
-    ['Despues de hacer ejercicio es importante...', 'beber agua', ['esconder las zapatillas', 'no respirar'], 'El cuerpo necesita hidratarse.'],
-    ['Los dientes se cuidan...', 'cepillandolos', ['pintandolos con rotulador', 'no usandolos'], 'Cepillarse limpia restos de comida.'],
-    ['Dormir ayuda a...', 'descansar y aprender mejor', ['perder memoria siempre', 'no crecer'], 'El descanso ayuda al cuerpo y al cerebro.'],
-    ['Antes de cruzar una calle hay que...', 'mirar y usar paso de peatones', ['correr sin mirar', 'cerrar los ojos'], 'Es una norma basica de seguridad.'],
-    ['Una postura saludable al escribir es...', 'espalda recta y mesa adecuada', ['cuello torcido', 'tumbado en el suelo siempre'], 'La postura evita molestias.'],
-    ['Que grupo debe tomarse a menudo?', 'frutas y verduras', ['refrescos', 'caramelos'], 'Frutas y verduras aportan vitaminas y fibra.']
+    ['Que ayuda a prevenir enfermedades?', 'lavarse las manos', ['lavarse solo cuando se ven sucias', 'lavarse solo despues de comer'], 'La higiene de manos reduce microbios.'],
+    ['Para crecer sano conviene...', 'comer variado', ['comer siempre lo mismo', 'saltarse comidas a menudo'], 'Una dieta variada aporta nutrientes.'],
+    ['Despues de hacer ejercicio es importante...', 'beber agua', ['esperar mucho antes de beber', 'no beber hasta cenar'], 'El cuerpo necesita hidratarse.'],
+    ['Los dientes se cuidan...', 'cepillandolos', ['aclarandolos solo con agua', 'usando solo hilo dental'], 'Cepillarse limpia restos de comida.'],
+    ['Dormir ayuda a...', 'descansar y aprender mejor', ['cansarse mas durante el dia', 'olvidar lo aprendido en clase'], 'El descanso ayuda al cuerpo y al cerebro.'],
+    ['Antes de cruzar una calle hay que...', 'mirar y usar paso de peatones', ['cruzar en cualquier punto', 'cruzar corriendo sin mirar'], 'Es una norma basica de seguridad.'],
+    ['Una postura saludable al escribir es...', 'espalda recta y mesa adecuada', ['inclinarse mucho hacia delante', 'apoyar la cabeza en la mesa'], 'La postura evita molestias.'],
+    ['Que grupo debe tomarse a menudo?', 'frutas y verduras', ['dulces y refrescos', 'bolleria y fritos'], 'Frutas y verduras aportan vitaminas y fibra.']
   ].forEach(([prompt, answer, wrong, explanation], index) => {
     QUESTION_BANK.push(makeChoiceQuestion(`sci-health-exp-${String(index + 1).padStart(2, '0')}`, 'science', 'sci_health', index < 5 ? 1 : 2, prompt, answer, wrong, explanation));
   });
 
   [
     ['Que material es transparente normalmente?', 'vidrio', ['madera', 'carton'], 'El vidrio deja pasar la luz.'],
-    ['Una cuchara suele estar hecha de...', 'metal', ['papel mojado', 'lana'], 'Muchas cucharas son de metal.'],
-    ['El papel se obtiene de...', 'madera de arboles', ['arena', 'hierro'], 'El papel procede de fibras vegetales.'],
-    ['Si congelas agua, se convierte en...', 'hielo', ['vapor caliente', 'arena'], 'El agua solida es hielo.'],
+    ['Una cuchara suele estar hecha de...', 'metal', ['madera o plastico', 'papel prensado'], 'Muchas cucharas son de metal.'],
+    ['El papel se obtiene de...', 'madera de arboles', ['arena y sal', 'petroleo refinado'], 'El papel procede de fibras vegetales.'],
+    ['Si congelas agua, se convierte en...', 'hielo', ['vapor de agua', 'agua salada'], 'El agua solida es hielo.'],
     ['Un cambio reversible es...', 'derretir hielo', ['quemar papel', 'cocer un huevo'], 'El hielo puede volver a ser agua.'],
-    ['Que material es flexible?', 'goma', ['cristal rigido', 'piedra'], 'La goma se puede doblar con facilidad.'],
-    ['Un objeto impermeable...', 'no deja pasar agua facilmente', ['se disuelve siempre', 'es invisible'], 'Impermeable significa que resiste el paso del agua.'],
-    ['Para reciclar una botella de plastico se usa el contenedor...', 'amarillo', ['azul', 'verde solo vidrio'], 'El amarillo recoge envases de plastico, latas y briks.']
+    ['Que material es flexible?', 'goma', ['vidrio', 'madera rigida'], 'La goma se puede doblar con facilidad.'],
+    ['Un objeto impermeable...', 'no deja pasar agua facilmente', ['absorbe el agua como una esponja', 'se disuelve en agua'], 'Impermeable significa que resiste el paso del agua.'],
+    ['Para reciclar una botella de plastico se usa el contenedor...', 'amarillo', ['azul', 'verde'], 'El amarillo recoge envases de plastico, latas y briks.']
   ].forEach(([prompt, answer, wrong, explanation], index) => {
     QUESTION_BANK.push(makeChoiceQuestion(`sci-materials-exp-${String(index + 1).padStart(2, '0')}`, 'science', 'sci_materials', index < 5 ? 2 : 3, prompt, answer, wrong, explanation));
   });
 
   [
-    ['Que usamos para ordenar hechos de antes a despues?', 'linea del tiempo', ['brujula rota', 'balanza'], 'Una linea del tiempo ordena sucesos.'],
-    ['La Prehistoria termina con la aparicion de...', 'la escritura', ['la television', 'los cohetes'], 'La escritura marca el paso a la Historia.'],
-    ['Una fuente historica puede ser...', 'una moneda antigua', ['un numero inventado', 'una nube'], 'Los objetos antiguos dan informacion del pasado.'],
-    ['Los romanos pertenecen a...', 'Edad Antigua', ['Prehistoria', 'Edad Contemporanea solamente'], 'Roma es una civilizacion antigua.'],
-    ['Un siglo tiene...', '100 anos', ['10 anos', '1000 dias'], 'Un siglo son cien anos.'],
-    ['El pasado familiar se puede conocer con...', 'fotos y relatos', ['solo adivinanzas', 'un termometro'], 'Fotos y relatos conservan memoria.'],
-    ['Los primeros humanos vivian principalmente de...', 'cazar y recolectar', ['comprar por internet', 'conducir coches'], 'En la Prehistoria cazaban y recolectaban.'],
-    ['Un mapa ayuda a conocer...', 'lugares y rutas', ['sabores', 'canciones'], 'Los mapas representan espacios.']
+    ['Que usamos para ordenar hechos de antes a despues?', 'linea del tiempo', ['mapa de un pais', 'tabla de multiplicar'], 'Una linea del tiempo ordena sucesos.'],
+    ['La Prehistoria termina con la aparicion de...', 'la escritura', ['las escuelas modernas', 'la imprenta'], 'La escritura marca el paso a la Historia.'],
+    ['Una fuente historica puede ser...', 'una moneda antigua', ['una suma inventada', 'una prediccion del tiempo'], 'Los objetos antiguos dan informacion del pasado.'],
+    ['Los romanos pertenecen a...', 'Edad Antigua', ['Prehistoria', 'Edad Media'], 'Roma es una civilizacion antigua.'],
+    ['Un siglo tiene...', '100 anos', ['10 anos', '1000 anos'], 'Un siglo son cien anos.'],
+    ['El pasado familiar se puede conocer con...', 'fotos y relatos', ['solo matematicas', 'libros de texto nuevos'], 'Fotos y relatos conservan memoria.'],
+    ['Los primeros humanos vivian principalmente de...', 'cazar y recolectar', ['comprar en mercados', 'cultivar grandes campos'], 'En la Prehistoria cazaban y recolectaban.'],
+    ['Un mapa ayuda a conocer...', 'lugares y rutas', ['el peso de los objetos', 'las normas ortograficas'], 'Los mapas representan espacios.']
   ].forEach(([prompt, answer, wrong, explanation], index) => {
     QUESTION_BANK.push(makeChoiceQuestion(`sci-history-exp-${String(index + 1).padStart(2, '0')}`, 'science', 'sci_time_history', index < 4 ? 2 : 3, prompt, answer, wrong, explanation));
   });
 
   [
-    ['Que accion ahorra energia?', 'apagar luces que no usamos', ['dejar todo encendido', 'abrir la nevera para jugar'], 'Apagar luces reduce consumo.'],
-    ['Para cuidar un parque debemos...', 'tirar residuos a la papelera', ['romper plantas', 'dejar basura'], 'La basura debe ir a papeleras o contenedores.'],
-    ['Que transporte contamina menos?', 'bicicleta', ['coche para ir a la esquina', 'moto parada encendida'], 'La bicicleta no emite humo.'],
-    ['El agua se cuida si...', 'cerramos el grifo al enjabonarnos', ['dejamos correr el agua', 'llenamos vasos para tirarlos'], 'Cerrar el grifo evita malgastar agua.'],
-    ['Reducir significa...', 'usar menos recursos', ['comprar sin parar', 'tirar todo nuevo'], 'Reducir es consumir menos.'],
-    ['Una especie protegida necesita...', 'respeto y cuidado de su habitat', ['que la molesten', 'basura cerca'], 'Proteger habitat ayuda a los seres vivos.'],
-    ['El contenedor azul es para...', 'papel y carton', ['vidrio', 'restos organicos siempre'], 'El azul recoge papel y carton.'],
-    ['Un huerto escolar ayuda a aprender sobre...', 'plantas y alimentos', ['videojuegos solamente', 'trafico aereo'], 'Un huerto muestra ciclos de plantas y alimentos.']
+    ['Que accion ahorra energia?', 'apagar luces que no usamos', ['dejar las luces encendidas al salir', 'poner mas lamparas de las necesarias'], 'Apagar luces reduce consumo.'],
+    ['Para cuidar un parque debemos...', 'tirar residuos a la papelera', ['dejar los envases en el suelo', 'arrancar plantas para llevarlas a casa'], 'La basura debe ir a papeleras o contenedores.'],
+    ['Que transporte contamina menos?', 'bicicleta', ['coche de gasolina', 'moto de combustion'], 'La bicicleta no emite humo.'],
+    ['El agua se cuida si...', 'cerramos el grifo al enjabonarnos', ['dejamos correr el agua al lavarnos', 'llenamos la banera a tope cada dia'], 'Cerrar el grifo evita malgastar agua.'],
+    ['Reducir significa...', 'usar menos recursos', ['comprar mas de lo necesario', 'tirar cosas que aun funcionan'], 'Reducir es consumir menos.'],
+    ['Una especie protegida necesita...', 'respeto y cuidado de su habitat', ['que la gente pueda cazarla', 'reducir su espacio natural'], 'Proteger habitat ayuda a los seres vivos.'],
+    ['El contenedor azul es para...', 'papel y carton', ['vidrio', 'envases de plastico'], 'El azul recoge papel y carton.'],
+    ['Un huerto escolar ayuda a aprender sobre...', 'plantas y alimentos', ['geometria de figuras', 'historia antigua'], 'Un huerto muestra ciclos de plantas y alimentos.']
   ].forEach(([prompt, answer, wrong, explanation], index) => {
     QUESTION_BANK.push(makeChoiceQuestion(`sci-env-exp-${String(index + 1).padStart(2, '0')}`, 'science', 'sci_environment', index < 5 ? 1 : 2, prompt, answer, wrong, explanation));
   });
 
   [
     ['Mezclar rojo y amarillo produce...', 'naranja', ['verde', 'morado'], 'Rojo y amarillo forman naranja.'],
-    ['Una linea curva...', 'no es recta', ['siempre mide 1 km', 'no se puede dibujar'], 'La linea curva cambia de direccion.'],
-    ['La textura de una lija es...', 'aspera', ['suave como algodon', 'invisible'], 'La lija tiene textura rugosa.'],
-    ['Los colores frios incluyen...', 'azul y verde', ['rojo y naranja', 'solo negro'], 'Azul y verde suelen considerarse frios.'],
-    ['Para dar sensacion de cerca puedes dibujar...', 'mas grande', ['siempre sin color', 'fuera del papel'], 'Los objetos cercanos se representan mas grandes.'],
-    ['Un collage se hace con...', 'recortes pegados', ['solo sonidos', 'agua invisible'], 'El collage combina materiales pegados.']
+    ['Una linea curva...', 'no es recta', ['siempre es mas corta', 'siempre forma un circulo'], 'La linea curva cambia de direccion.'],
+    ['La textura de una lija es...', 'aspera', ['suave como algodon', 'lisa como el vidrio'], 'La lija tiene textura rugosa.'],
+    ['Los colores frios incluyen...', 'azul y verde', ['rojo y naranja', 'amarillo y naranja'], 'Azul y verde suelen considerarse frios.'],
+    ['Para dar sensacion de cerca puedes dibujar...', 'mas grande', ['igual que lo lejano', 'con colores mas oscuros siempre'], 'Los objetos cercanos se representan mas grandes.'],
+    ['Un collage se hace con...', 'recortes pegados', ['trazos de lapiz', 'pintura aplicada con pincel'], 'El collage combina materiales pegados.']
   ].forEach(([prompt, answer, wrong, explanation], index) => {
     QUESTION_BANK.push(makeChoiceQuestion(`art-color-exp-${String(index + 1).padStart(2, '0')}`, 'arts', 'art_color_line_texture', 1, prompt, answer, wrong, explanation));
   });
 
   [
-    ['Un storyboard sirve para...', 'ordenar escenas', ['medir temperatura', 'hacer una resta'], 'El storyboard planifica una narracion visual.'],
-    ['En una viñeta se puede mostrar...', 'una accion de la historia', ['solo una multiplicacion', 'un silencio vacio siempre'], 'Cada viñeta cuenta una parte.'],
-    ['Para que se entienda una historia visual conviene...', 'mantener orden claro', ['mezclar todo sin sentido', 'quitar todos los personajes'], 'El orden ayuda a leer imagenes.'],
-    ['Un bocadillo de comic muestra...', 'lo que dice un personaje', ['el peso', 'la temperatura'], 'El bocadillo contiene dialogo.'],
-    ['El plano general muestra...', 'el lugar y los personajes', ['solo una letra', 'nada'], 'Sirve para situar la escena.'],
-    ['Una flecha de movimiento indica...', 'direccion', ['olor', 'sabor'], 'Las flechas muestran hacia donde se mueve algo.']
+    ['Un storyboard sirve para...', 'ordenar escenas', ['resumir un texto en un parrafo', 'decorar los bordes de un dibujo'], 'El storyboard planifica una narracion visual.'],
+    ['En una viñeta se puede mostrar...', 'una accion de la historia', ['el titulo completo del album', 'la conclusion final siempre'], 'Cada viñeta cuenta una parte.'],
+    ['Para que se entienda una historia visual conviene...', 'mantener orden claro', ['cambiar el estilo en cada viñeta', 'quitar los personajes principales'], 'El orden ayuda a leer imagenes.'],
+    ['Un bocadillo de comic muestra...', 'lo que dice un personaje', ['lo que piensa el dibujante', 'el resumen de la historia'], 'El bocadillo contiene dialogo.'],
+    ['El plano general muestra...', 'el lugar y los personajes', ['solo el rostro del protagonista', 'solo las manos del personaje'], 'Sirve para situar la escena.'],
+    ['Una flecha de movimiento indica...', 'direccion', ['el tiempo que dura la accion', 'el nombre del personaje'], 'Las flechas muestran hacia donde se mueve algo.']
   ].forEach(([prompt, answer, wrong, explanation], index) => {
     QUESTION_BANK.push(makeChoiceQuestion(`art-story-exp-${String(index + 1).padStart(2, '0')}`, 'arts', 'art_storyboard', 2, prompt, answer, wrong, explanation));
   });
 
   [
-    ['El ritmo es...', 'una repeticion de sonidos o movimientos', ['un color', 'un material duro'], 'El ritmo organiza sonidos o gestos.'],
-    ['Un sonido fuerte tiene...', 'mayor intensidad', ['menos volumen siempre', 'color rojo'], 'La intensidad diferencia fuerte y suave.'],
-    ['Las palmas pueden marcar...', 'pulso', ['sabor', 'temperatura'], 'Las palmas ayudan a seguir el pulso.'],
-    ['Un instrumento de percusion se toca normalmente...', 'golpeando o sacudiendo', ['leyendo', 'dibujando'], 'La percusion produce sonido con golpes o sacudidas.'],
-    ['Una cancion puede expresar...', 'emociones', ['solo centimetros', 'solo mapas'], 'La musica comunica emociones.'],
-    ['Silencio en musica significa...', 'pausa sin sonido', ['gritar', 'correr mas'], 'El silencio tambien forma parte del ritmo.']
+    ['El ritmo es...', 'una repeticion de sonidos o movimientos', ['la velocidad de la melodia', 'el volumen de la musica'], 'El ritmo organiza sonidos o gestos.'],
+    ['Un sonido fuerte tiene...', 'mayor intensidad', ['mayor velocidad', 'mayor duracion siempre'], 'La intensidad diferencia fuerte y suave.'],
+    ['Las palmas pueden marcar...', 'pulso', ['melodia', 'armonia'], 'Las palmas ayudan a seguir el pulso.'],
+    ['Un instrumento de percusion se toca normalmente...', 'golpeando o sacudiendo', ['soplando', 'frotando cuerdas'], 'La percusion produce sonido con golpes o sacudidas.'],
+    ['Una cancion puede expresar...', 'emociones', ['solo datos numericos', 'instrucciones de cocina'], 'La musica comunica emociones.'],
+    ['Silencio en musica significa...', 'pausa sin sonido', ['nota muy suave', 'nota muy alta'], 'El silencio tambien forma parte del ritmo.']
   ].forEach(([prompt, answer, wrong, explanation], index) => {
     QUESTION_BANK.push(makeChoiceQuestion(`art-music-exp-${String(index + 1).padStart(2, '0')}`, 'arts', 'art_music_rhythm', 1, prompt, answer, wrong, explanation));
   });
 
   [
-    ['Antes de correr conviene...', 'calentar', ['sentarse una hora', 'comer mucho'], 'El calentamiento prepara el cuerpo.'],
-    ['Al terminar ejercicio conviene...', 'volver a la calma', ['parar de golpe siempre', 'no respirar'], 'La vuelta a la calma baja pulsaciones poco a poco.'],
-    ['Un calentamiento puede incluir...', 'movilidad suave', ['empujones', 'saltos peligrosos'], 'La movilidad suave prepara articulaciones.'],
-    ['Si algo duele durante el ejercicio debes...', 'parar y avisar', ['seguir fuerte', 'ocultarlo'], 'El dolor es una senal para parar.'],
-    ['Beber agua tras moverse ayuda a...', 'hidratarse', ['olvidar reglas', 'cansarse mas'], 'El cuerpo pierde agua al moverse.'],
-    ['La ropa deportiva debe permitir...', 'moverse con comodidad', ['tropezar', 'no doblar rodillas'], 'La comodidad mejora seguridad.']
+    ['Antes de correr conviene...', 'calentar', ['estirarse intensamente en frio', 'hacer abdominales directamente'], 'El calentamiento prepara el cuerpo.'],
+    ['Al terminar ejercicio conviene...', 'volver a la calma', ['parar en seco sin descansar', 'empezar otra actividad muy intensa'], 'La vuelta a la calma baja pulsaciones poco a poco.'],
+    ['Un calentamiento puede incluir...', 'movilidad suave', ['saltos muy altos sin calentar', 'carreras a maxima velocidad'], 'La movilidad suave prepara articulaciones.'],
+    ['Si algo duele durante el ejercicio debes...', 'parar y avisar', ['continuar ignorando el dolor', 'acelerar para que pase antes'], 'El dolor es una senal para parar.'],
+    ['Beber agua tras moverse ayuda a...', 'hidratarse', ['aumentar el cansancio', 'reducir la energia'], 'El cuerpo pierde agua al moverse.'],
+    ['La ropa deportiva debe permitir...', 'moverse con comodidad', ['ajustar mucho los movimientos', 'mantener calor excesivo'], 'La comodidad mejora seguridad.']
   ].forEach(([prompt, answer, wrong, explanation], index) => {
     QUESTION_BANK.push(makeChoiceQuestion(`move-warmup-exp-${String(index + 1).padStart(2, '0')}`, 'movement', 'move_warmup', 1, prompt, answer, wrong, explanation));
   });
 
   [
-    ['Saltar a la pata coja trabaja...', 'equilibrio', ['lectura silenciosa', 'ortografia solamente'], 'Mantenerse sobre una pierna entrena equilibrio.'],
-    ['Botar una pelota con una mano trabaja...', 'coordinacion', ['historia antigua', 'dibujo de mapas'], 'Coordinar mano y vista ayuda a botar.'],
-    ['En un circuito motor debes...', 'seguir el orden y cuidar seguridad', ['empujar para ganar', 'saltarte todo'], 'El circuito se completa con orden.'],
-    ['Lanzar a una diana mejora...', 'punteria', ['memoria historica', 'lectura musical'], 'Apuntar y lanzar trabajan precision.'],
-    ['Para girar sin caerte necesitas...', 'control corporal', ['ojos cerrados siempre', 'suelo mojado'], 'El control corporal ayuda al equilibrio.'],
-    ['Un relevo se practica pasando...', 'un testigo u objeto', ['una silla pesada', 'un vaso lleno'], 'El relevo incluye entregar un objeto.']
+    ['Saltar a la pata coja trabaja...', 'equilibrio', ['fuerza de brazos', 'velocidad de carrera'], 'Mantenerse sobre una pierna entrena equilibrio.'],
+    ['Botar una pelota con una mano trabaja...', 'coordinacion', ['flexibilidad', 'resistencia'], 'Coordinar mano y vista ayuda a botar.'],
+    ['En un circuito motor debes...', 'seguir el orden y cuidar seguridad', ['ir lo mas rapido posible en todas las estaciones', 'saltarte estaciones si son dificiles'], 'El circuito se completa con orden.'],
+    ['Lanzar a una diana mejora...', 'punteria', ['velocidad de carrera', 'resistencia fisica'], 'Apuntar y lanzar trabajan precision.'],
+    ['Para girar sin caerte necesitas...', 'control corporal', ['girar siempre con ojos cerrados', 'apoyarse en otro siempre'], 'El control corporal ayuda al equilibrio.'],
+    ['Un relevo se practica pasando...', 'un testigo u objeto', ['una vuelta de carrera sin parar', 'un salto de obstaculos'], 'El relevo incluye entregar un objeto.']
   ].forEach(([prompt, answer, wrong, explanation], index) => {
     QUESTION_BANK.push(makeChoiceQuestion(`move-coord-exp-${String(index + 1).padStart(2, '0')}`, 'movement', 'move_coordination', 2, prompt, answer, wrong, explanation));
   });
 
   [
-    ['En un juego de equipo es importante...', 'respetar reglas', ['hacer trampas', 'enfadarse siempre'], 'Las reglas hacen el juego justo.'],
-    ['Si un companero se cae, debes...', 'ayudar y avisar', ['reirte', 'seguir empujando'], 'La seguridad esta por encima del resultado.'],
-    ['Cooperar significa...', 'trabajar juntos', ['jugar solo contra todos', 'ignorar al equipo'], 'Cooperar es colaborar.'],
-    ['Aceptar perder ayuda a...', 'aprender y seguir jugando', ['romper material', 'culpar siempre'], 'Perder tambien ensena.'],
-    ['Una norma de seguridad es...', 'mirar antes de lanzar', ['lanzar sin avisar', 'correr con ojos cerrados'], 'Mirar evita golpes.'],
-    ['El juego limpio incluye...', 'felicitar al rival', ['insultar', 'cambiar reglas a escondidas'], 'El respeto forma parte del deporte.']
+    ['En un juego de equipo es importante...', 'respetar reglas', ['ignorar las normas si no te convienen', 'cambiar las reglas cuando vas perdiendo'], 'Las reglas hacen el juego justo.'],
+    ['Si un companero se cae, debes...', 'ayudar y avisar', ['seguir jugando sin mirar', 'esperar que se levante solo siempre'], 'La seguridad esta por encima del resultado.'],
+    ['Cooperar significa...', 'trabajar juntos', ['competir contra tus propios companeros', 'decidir todo sin consultar al equipo'], 'Cooperar es colaborar.'],
+    ['Aceptar perder ayuda a...', 'aprender y seguir jugando', ['culpar al arbitro o al equipo', 'no querer jugar mas'], 'Perder tambien ensena.'],
+    ['Una norma de seguridad es...', 'mirar antes de lanzar', ['lanzar sin avisar al grupo', 'lanzar lo mas fuerte posible siempre'], 'Mirar evita golpes.'],
+    ['El juego limpio incluye...', 'felicitar al rival', ['protestar todas las decisiones', 'ignorar al equipo ganador'], 'El respeto forma parte del deporte.']
   ].forEach(([prompt, answer, wrong, explanation], index) => {
     QUESTION_BANK.push(makeChoiceQuestion(`move-rules-exp-${String(index + 1).padStart(2, '0')}`, 'movement', 'move_rules_teamwork', 2, prompt, answer, wrong, explanation));
   });
@@ -1321,38 +1430,38 @@ function appendScienceArtsMovementExpansion() {
 
 function appendLivingThingsDepthExpansion() {
   [
-    ['Un ave suele tener...', 'plumas', ['escamas de pez', 'ruedas'], 'Las aves se reconocen por sus plumas.'],
-    ['Un pez respira en el agua con...', 'branquias', ['pulmones como nosotros siempre', 'antenas'], 'Las branquias ayudan a respirar bajo el agua.'],
-    ['Los anfibios pueden vivir...', 'en agua y tierra', ['solo en metal', 'dentro de libros'], 'Muchos anfibios pasan parte de su vida en agua y tierra.'],
-    ['Un insecto tiene normalmente...', 'seis patas', ['dos ruedas', 'ocho brazos humanos'], 'Los insectos tienen seis patas.'],
-    ['Una seta pertenece al grupo de...', 'hongos', ['mamiferos', 'maquinas'], 'Las setas son hongos.'],
-    ['Las plantas fabrican su alimento con ayuda de...', 'la luz del sol', ['el plastico', 'la television'], 'La fotosintesis necesita luz.'],
-    ['Un animal herbivoro come principalmente...', 'plantas', ['piedras', 'otros animales siempre'], 'Herbivoro significa que se alimenta de plantas.'],
-    ['Un animal omnivoro puede comer...', 'plantas y animales', ['solo aire', 'solo metal'], 'Omnivoro combina alimentos de origen vegetal y animal.'],
-    ['La cadena alimentaria empieza muchas veces con...', 'plantas', ['coches', 'lapices'], 'Las plantas producen alimento para otros seres vivos.'],
-    ['Un ecosistema incluye...', 'seres vivos y lugar donde viven', ['solo juguetes', 'solo numeros'], 'El ecosistema une organismos y entorno.'],
-    ['Las hojas ayudan a la planta a...', 'fabricar alimento', ['caminar', 'hablar'], 'En las hojas ocurre gran parte de la fotosintesis.'],
-    ['El tallo de una planta sirve para...', 'sostener y transportar sustancias', ['leer', 'correr'], 'El tallo sostiene y comunica partes de la planta.'],
-    ['Las semillas sirven para...', 'formar nuevas plantas', ['hacer ruido siempre', 'medir tiempo'], 'De muchas semillas nacen nuevas plantas.'],
-    ['Un cachorro es...', 'una cria de animal', ['una roca', 'un planeta'], 'Cachorro nombra a una cria.'],
-    ['Migrar significa...', 'desplazarse a otro lugar', ['dormir todo el ano', 'no moverse nunca'], 'Algunos animales migran buscando alimento o clima.'],
-    ['Hibernar es...', 'pasar una etapa de reposo', ['cantar fuerte', 'hacer mapas'], 'Algunos animales reducen actividad en invierno.'],
-    ['Un reptil suele tener...', 'escamas', ['plumas', 'lana de oveja siempre'], 'Muchos reptiles tienen piel con escamas.'],
-    ['Una rana adulta se clasifica como...', 'anfibio', ['ave', 'pez de metal'], 'La rana es un anfibio.'],
-    ['Una ballena es...', 'mamifero', ['pez', 'insecto'], 'Aunque vive en el agua, la ballena es mamifero.'],
-    ['Una mariposa es...', 'insecto', ['reptil', 'hongo'], 'La mariposa tiene caracteristicas de insecto.'],
-    ['El camuflaje ayuda a algunos animales a...', 'protegerse o cazar', ['hacer sumas', 'convertirse en piedra'], 'Camuflarse permite pasar desapercibido.'],
-    ['Los animales nocturnos estan mas activos...', 'de noche', ['solo al mediodia', 'nunca'], 'Nocturno significa activo durante la noche.'],
-    ['Cuidar un nido es una conducta relacionada con...', 'reproduccion y cuidado de crias', ['reciclaje de vidrio', 'geometria'], 'Los nidos protegen huevos o crias.'],
-    ['Un bosque ofrece a los seres vivos...', 'refugio y alimento', ['solo cemento', 'solo pantallas'], 'El bosque es habitat de muchos seres vivos.'],
-    ['Una planta aromatica puede reconocerse por...', 'su olor', ['su enchufe', 'sus ruedas'], 'Aromaticas como romero o menta desprenden olor.'],
-    ['Los seres vivos necesitan energia para...', 'realizar funciones vitales', ['ser invisibles', 'ser de cristal'], 'La energia permite vivir, crecer y moverse.'],
-    ['La clasificacion ayuda a...', 'ordenar seres vivos por caracteristicas', ['confundir nombres', 'borrar el entorno'], 'Clasificar usa rasgos comunes.'],
-    ['Un animal domestico vive normalmente...', 'con personas', ['solo en planetas lejanos', 'dentro de volcanes'], 'Domestico significa adaptado a convivir con personas.'],
-    ['Un animal salvaje vive normalmente...', 'en la naturaleza', ['en una mochila escolar', 'en un estuche'], 'Salvaje no depende directamente de personas.'],
-    ['Las bacterias son seres vivos...', 'microscopicos', ['gigantes siempre', 'de plastico'], 'Muchas bacterias solo se ven con microscopio.'],
-    ['La lupa sirve para observar...', 'detalles pequenos', ['el sonido', 'el peso exacto'], 'La lupa aumenta la imagen.'],
-    ['Una norma al observar animales es...', 'no molestarlos', ['perseguirlos siempre', 'romper su refugio'], 'Observar con respeto protege a los seres vivos.']
+    ['Un ave suele tener...', 'plumas', ['escamas como los reptiles', 'pelo como los mamiferos'], 'Las aves se reconocen por sus plumas.'],
+    ['Un pez respira en el agua con...', 'branquias', ['pulmones como los mamiferos', 'traquea como los insectos'], 'Las branquias ayudan a respirar bajo el agua.'],
+    ['Los anfibios pueden vivir...', 'en agua y tierra', ['solo en el mar profundo', 'solo en zonas muy secas'], 'Muchos anfibios pasan parte de su vida en agua y tierra.'],
+    ['Un insecto tiene normalmente...', 'seis patas', ['cuatro patas como los gatos', 'ocho patas como las aranas'], 'Los insectos tienen seis patas.'],
+    ['Una seta pertenece al grupo de...', 'hongos', ['plantas con flores', 'animales invertebrados'], 'Las setas son hongos.'],
+    ['Las plantas fabrican su alimento con ayuda de...', 'la luz del sol', ['el calor del suelo solo', 'los animales que las rodean'], 'La fotosintesis necesita luz.'],
+    ['Un animal herbivoro come principalmente...', 'plantas', ['carne de otros animales', 'insectos y gusanos'], 'Herbivoro significa que se alimenta de plantas.'],
+    ['Un animal omnivoro puede comer...', 'plantas y animales', ['solo carne como los leones', 'solo hierba como las vacas'], 'Omnivoro combina alimentos de origen vegetal y animal.'],
+    ['La cadena alimentaria empieza muchas veces con...', 'plantas', ['animales carnivoros', 'hongos descomponedores'], 'Las plantas producen alimento para otros seres vivos.'],
+    ['Un ecosistema incluye...', 'seres vivos y lugar donde viven', ['solo los animales del lugar', 'solo las plantas del lugar'], 'El ecosistema une organismos y entorno.'],
+    ['Las hojas ayudan a la planta a...', 'fabricar alimento', ['absorber agua del suelo', 'sujetar la planta a la tierra'], 'En las hojas ocurre gran parte de la fotosintesis.'],
+    ['El tallo de una planta sirve para...', 'sostener y transportar sustancias', ['fabricar alimento con la luz', 'absorber agua del suelo'], 'El tallo sostiene y comunica partes de la planta.'],
+    ['Las semillas sirven para...', 'formar nuevas plantas', ['alimentar solo a los pajaros', 'proteger el tronco del arbol'], 'De muchas semillas nacen nuevas plantas.'],
+    ['Un cachorro es...', 'una cria de animal', ['un animal muy pequeno siempre', 'un tipo de reptil joven'], 'Cachorro nombra a una cria.'],
+    ['Migrar significa...', 'desplazarse a otro lugar', ['hibernar durante el invierno', 'cambiar de aspecto segun la estacion'], 'Algunos animales migran buscando alimento o clima.'],
+    ['Hibernar es...', 'pasar una etapa de reposo', ['migrar a climas mas calidos', 'cambiar de color en invierno'], 'Algunos animales reducen actividad en invierno.'],
+    ['Un reptil suele tener...', 'escamas', ['plumas como las aves', 'pelo como los mamiferos'], 'Muchos reptiles tienen piel con escamas.'],
+    ['Una rana adulta se clasifica como...', 'anfibio', ['reptil por sus escamas', 'pez por vivir en el agua'], 'La rana es un anfibio.'],
+    ['Una ballena es...', 'mamifero', ['pez porque vive en el agua', 'reptil por su tamano'], 'Aunque vive en el agua, la ballena es mamifero.'],
+    ['Una mariposa es...', 'insecto', ['anfibio porque tiene metamorfosis', 'ave porque tiene alas'], 'La mariposa tiene caracteristicas de insecto.'],
+    ['El camuflaje ayuda a algunos animales a...', 'protegerse o cazar', ['volar mas alto', 'respirar bajo el agua'], 'Camuflarse permite pasar desapercibido.'],
+    ['Los animales nocturnos estan mas activos...', 'de noche', ['al amanecer principalmente', 'solo al mediodia'], 'Nocturno significa activo durante la noche.'],
+    ['Cuidar un nido es una conducta relacionada con...', 'reproduccion y cuidado de crias', ['busqueda de alimento', 'migracion estacional'], 'Los nidos protegen huevos o crias.'],
+    ['Un bosque ofrece a los seres vivos...', 'refugio y alimento', ['solo luz y calor directo', 'solo agua de lluvia'], 'El bosque es habitat de muchos seres vivos.'],
+    ['Una planta aromatica puede reconocerse por...', 'su olor', ['su color siempre verde intenso', 'sus hojas grandes y anchas'], 'Aromaticas como romero o menta desprenden olor.'],
+    ['Los seres vivos necesitan energia para...', 'realizar funciones vitales', ['solo para reproducirse', 'solo para crecer'], 'La energia permite vivir, crecer y moverse.'],
+    ['La clasificacion ayuda a...', 'ordenar seres vivos por caracteristicas', ['dar nombre solo a los animales', 'separar plantas de hongos unicamente'], 'Clasificar usa rasgos comunes.'],
+    ['Un animal domestico vive normalmente...', 'con personas', ['en libertad lejos de humanos', 'solo en zonas protegidas'], 'Domestico significa adaptado a convivir con personas.'],
+    ['Un animal salvaje vive normalmente...', 'en la naturaleza', ['en casas o granjas siempre', 'en zoologicos toda su vida'], 'Salvaje no depende directamente de personas.'],
+    ['Las bacterias son seres vivos...', 'microscopicos', ['mas grandes que los insectos', 'visibles a simple vista siempre'], 'Muchas bacterias solo se ven con microscopio.'],
+    ['La lupa sirve para observar...', 'detalles pequenos', ['objetos lejanos como estrellas', 'el interior de rocas duras'], 'La lupa aumenta la imagen.'],
+    ['Una norma al observar animales es...', 'no molestarlos', ['acercarse rapidamente para verlos mejor', 'tocarlos para comprobar su textura'], 'Observar con respeto protege a los seres vivos.']
   ].forEach(([prompt, answer, wrong, explanation], index) => {
     QUESTION_BANK.push(makeChoiceQuestion(`sci-living-depth-${String(index + 1).padStart(2, '0')}`, 'science', 'sci_living_things', index < 16 ? 2 : 3, prompt, answer, wrong, explanation));
   });
@@ -1419,7 +1528,7 @@ function appendLivingThingsClassificationPool() {
       2,
       `Para que sirve principalmente la ${part} de una planta?`,
       functionText,
-      ['hacer que la planta corra', 'convertirse en piedra'],
+      ['hacer que la planta crezca mas rapido', 'dar color a las flores'],
       `La ${part} ayuda a ${functionText}.`
     ));
   });
@@ -1432,7 +1541,7 @@ function appendLivingThingsClassificationPool() {
       2,
       `Que ser vivo encaja mejor en el habitat ${habitat}?`,
       livingThing,
-      ['silla', 'robot sin bateria'],
+      ['salmón (vive en el mar)', 'camello (vive en el desierto)'],
       `${livingThing} encaja en ${habitat} porque ${reason}.`
     ));
   });
@@ -1450,7 +1559,7 @@ function appendLivingThingsClassificationPool() {
         2 + (index % 2),
         `Que pista ayuda a reconocer a ${animal[0]} como ${animal[1]}?`,
         animal[2],
-        ['tiene ruedas', 'esta hecho de plastico'],
+        ['tiene ocho patas como las aranas', 'nace de huevo como las aves'],
         `La pista correcta es ${animal[2]}.`
       ));
     } else if (mode === 1) {
@@ -1461,7 +1570,7 @@ function appendLivingThingsClassificationPool() {
         2 + (index % 2),
         `Que parte de la planta se relaciona con esta funcion: ${plantPart[1]}?`,
         plantPart[0],
-        ['rueda', 'pantalla'],
+        ['la parte que la confunden con frecuencia', 'otra parte de funcion similar'],
         `La parte relacionada es ${plantPart[0]}.`
       ));
     } else {
@@ -1472,11 +1581,452 @@ function appendLivingThingsClassificationPool() {
         2 + (index % 2),
         `Por que ${habitat[1]} puede vivir en ${habitat[0]}?`,
         habitat[2],
-        ['porque es de metal', 'porque no necesita entorno'],
+        ['porque se alimenta de otros animales del mismo habitat', 'porque puede vivir en cualquier clima'],
         `La razon es que ${habitat[2]}.`
       ));
     }
   });
+}
+
+function appendBalancedWeakSkillExpansion() {
+  const rows = [
+    ['language', 'lang_read_fluency', 'Lee esta frase: "La peonza gira rapida y luego se queda quieta". Donde conviene hacer una pausa?', 'despues de rapida', ['despues de La', 'en medio de peonza', 'sin hacer pausas'], 'Las pausas ayudan a entender frases largas.'],
+    ['language', 'lang_read_fluency', 'Que senal indica una pausa larga al leer?', 'el punto', ['la letra m', 'un numero', 'una tilde siempre'], 'El punto marca una pausa clara.'],
+    ['language', 'lang_read_fluency', 'Para leer mejor una pregunta debo...', 'leer hasta el final antes de contestar', ['mirar solo la primera palabra', 'contestar sin leer', 'saltar las comas'], 'Leer completa la pregunta evita errores.'],
+    ['language', 'lang_read_fluency', 'Si una frase tiene coma, al leer conviene...', 'hacer una pausa corta', ['gritar', 'parar para siempre', 'cambiar de idioma'], 'La coma marca una pausa breve.'],
+    ['language', 'lang_read_fluency', 'Que ayuda a leer con expresion?', 'respetar puntos, comas y signos', ['leer todo igual', 'tapar la linea', 'cambiar palabras'], 'Los signos guian la voz.'],
+    ['language', 'lang_read_fluency', 'En voz alta, una pregunta suele terminar con...', 'entonacion de pregunta', ['voz dormida', 'silencio al principio', 'golpe en la mesa'], 'Los signos de interrogacion avisan de pregunta.'],
+    ['language', 'lang_oral', 'Para contar lo que has aprendido conviene empezar por...', 'una idea principal', ['un ruido', 'una palabra suelta', 'el final sin explicar'], 'La idea principal orienta al oyente.'],
+    ['language', 'lang_oral', 'Cuando alguien habla, escuchar significa...', 'mirar y esperar turno', ['interrumpir siempre', 'irse corriendo', 'cantar encima'], 'Respetar turnos mejora la conversacion.'],
+    ['language', 'lang_oral', 'Si no entiendo una pregunta puedo...', 'pedir que la repitan', ['inventar sin pensar', 'enfadarme', 'no decir nada nunca'], 'Pedir aclaracion ayuda a responder mejor.'],
+    ['language', 'lang_oral', 'Una explicacion clara suele tener...', 'orden y ejemplos', ['solo gritos', 'palabras mezcladas', 'silencio'], 'Ordenar ideas hace que se entiendan.'],
+    ['language', 'lang_oral', 'Para presentar un dibujo puedo decir...', 'que hice y por que', ['solo mi nombre', 'nada', 'una tabla de multiplicar'], 'Explicar decisiones mejora la expresion oral.'],
+    ['language', 'lang_oral', 'En un debate pequeno debo...', 'respetar opiniones y dar razones', ['ganar gritando', 'copiar siempre', 'no escuchar'], 'Dar razones ayuda a conversar.'],
+    ['english', 'eng_greetings', 'Best answer: Good afternoon!', 'Good afternoon!', ['I am seven.', 'It is blue.', 'Open the book.'], 'Se responde a un saludo con otro saludo.'],
+    ['english', 'eng_greetings', 'How do you say "buenas noches"?', 'Good night', ['Good morning', 'Thank you', 'I like rice'], 'Good night se usa por la noche o al despedirse.'],
+    ['english', 'eng_greetings', 'Choose the polite word.', 'Please', ['Window', 'Tiger', 'Seven'], 'Please significa por favor.'],
+    ['english', 'eng_greetings', 'Best answer: Thank you!', 'You are welcome.', ['I am a pencil.', 'It is Monday.', 'Red dog.'], 'You are welcome responde a thank you.'],
+    ['english', 'eng_vocabulary', 'What is "yellow"?', 'amarillo', ['naranja', 'verde', 'azul'], 'Yellow significa amarillo.'],
+    ['english', 'eng_vocabulary', 'Choose the school object.', 'book', ['notebook', 'folder', 'bag'], 'Book es un objeto escolar.'],
+    ['english', 'eng_vocabulary', 'What animal says meow?', 'cat', ['dog', 'rabbit', 'bird'], 'Cat significa gato.'],
+    ['english', 'eng_vocabulary', 'Choose the food.', 'apple', ['orange', 'banana', 'strawberry'], 'Apple es una comida/fruta.'],
+    ['english', 'eng_like_routines', 'Complete: I ___ breakfast.', 'eat', ['have', 'drink', 'take'], 'Eat breakfast significa desayunar.'],
+    ['english', 'eng_like_routines', 'Choose a routine.', 'I go to school.', ['I am a student.', 'She goes to school.', 'We go home.'], 'Ir al colegio es una rutina.'],
+    ['english', 'eng_like_routines', 'Complete: I like ___ books.', 'reading', ['to read', 'read', 'reads'], 'Despues de like puede ir reading.'],
+    ['english', 'eng_like_routines', 'Best sentence for a hobby.', 'I like drawing.', ['I like to draws.', 'I likes drawing.', 'I drawing like.'], 'Drawing puede ser una aficion.'],
+    ['english', 'eng_short_dialogue', 'Best answer: What is your name?', 'My name is Carlos.', ['My name is a book.', 'I like apples.', 'I am fine.'], 'La pregunta pide el nombre.'],
+    ['english', 'eng_short_dialogue', 'Best answer: How old are you?', 'I am eight.', ['I am fine.', 'I like eight.', 'I am tall.'], 'How old pregunta la edad.'],
+    ['english', 'eng_short_dialogue', 'Best answer: What color is it?', 'It is red.', ['It is big.', 'It is mine.', 'It is nice.'], 'Pregunta por color.'],
+    ['english', 'eng_short_dialogue', 'Best answer: Do you like music?', 'Yes, I do.', ['Yes, I am.', 'Yes, I like.', 'Yes, I have.'], 'Do you like se responde con yes/no.'],
+    ['arts', 'art_storyboard', 'En un storyboard, cada cuadro representa...', 'una escena', ['una estrofa de una cancion', 'un parrafo del texto', 'el titulo de la historia'], 'Cada cuadro ayuda a ordenar escenas.'],
+    ['arts', 'art_storyboard', 'Para contar una historia en dibujos necesito...', 'orden de escenas', ['solo el final en grande', 'solo un personaje sin accion', 'solo colores sin dibujos'], 'El orden ayuda a entender la historia.'],
+    ['arts', 'art_storyboard', 'Si una historia empieza con un problema, despues suele venir...', 'lo que hacen los personajes', ['el titulo del comic', 'la presentacion del lugar', 'el nombre del autor'], 'El nudo muestra acciones y decisiones.'],
+    ['arts', 'art_storyboard', 'Un final claro muestra...', 'como termina la historia', ['como empieza el problema', 'quienes son los personajes', 'donde ocurre la historia'], 'El final cierra la historia.'],
+    ['arts', 'art_music_rhythm', 'Si palmeo lento, lento, rapido, estoy creando...', 'ritmo', ['una melodia con notas', 'una armonia de voces', 'un patron de color'], 'El ritmo organiza sonidos o golpes.'],
+    ['arts', 'art_music_rhythm', 'Un sonido fuerte y uno suave cambian...', 'la intensidad', ['la velocidad del pulso', 'la altura de la nota', 'la duracion del sonido'], 'La intensidad puede ser fuerte o suave.'],
+    ['arts', 'art_music_rhythm', 'Una cancion puede tener...', 'pulso', ['rima obligatoria siempre', 'dos melodias iguales', 'cuatro partes exactas'], 'El pulso ayuda a seguir el ritmo.'],
+    ['arts', 'art_music_rhythm', 'Repetir palmadas en orden crea...', 'un patron ritmico', ['una nota musical larga', 'una cancion con letra', 'una melodia nueva'], 'Un patron es una repeticion organizada.'],
+    ['movement', 'move_warmup', 'Despues de correr mucho conviene...', 'volver a la calma', ['parar en seco sin descansar', 'empezar otra carrera intensa', 'sentarse sin moverse nada'], 'La vuelta a la calma ayuda al cuerpo.'],
+    ['movement', 'move_warmup', 'Un calentamiento seguro empieza...', 'suave y progresivo', ['con el ejercicio mas intenso', 'con estiramientos muy forzados', 'con carreras a maxima velocidad'], 'El cuerpo necesita prepararse poco a poco.'],
+    ['movement', 'move_warmup', 'Si algo duele al moverte debes...', 'parar y avisar', ['continuar hasta que pase', 'ignorar el dolor y acelerar', 'hacer mas repeticiones del mismo ejercicio'], 'La seguridad es lo primero.'],
+    ['movement', 'move_coordination', 'Lanzar y atrapar una pelota trabaja...', 'coordinacion ojo-mano', ['fuerza de piernas', 'resistencia cardiovascular', 'flexibilidad de espalda'], 'Usas vista y manos juntas.'],
+    ['movement', 'move_coordination', 'Saltar dentro y fuera de un aro mejora...', 'coordinacion y equilibrio', ['resistencia de larga duracion', 'fuerza de brazos', 'velocidad de reaccion'], 'Controlas cuerpo y espacio.'],
+    ['movement', 'move_coordination', 'Caminar siguiendo una linea trabaja...', 'equilibrio', ['velocidad de carrera', 'fuerza muscular', 'resistencia aerobica'], 'El equilibrio mantiene el cuerpo estable.'],
+    ['movement', 'move_rules_teamwork', 'Si un companero se equivoca, lo mejor es...', 'animarle y seguir jugando', ['criticarle delante de todos', 'pedir que le cambien del equipo', 'ignorarle para que mejore solo'], 'El equipo mejora con respeto.'],
+    ['movement', 'move_rules_teamwork', 'Una regla de seguridad sirve para...', 'evitar danos', ['dar ventaja al equipo que la propone', 'hacer el juego mas complicado', 'decidir quien gana siempre'], 'Las reglas cuidan a todos.'],
+    ['movement', 'move_rules_teamwork', 'En un relevo hay que...', 'esperar turno', ['salir cuando ves que puedes ganar', 'adelantar al companero en la carrera', 'pasar el testigo antes de llegar'], 'Esperar turno hace el juego justo.']
+  ];
+  rows.forEach((row, index) => {
+    const [subject, skill, prompt, answer, wrong, explanation] = row;
+    QUESTION_BANK.push(makeChoiceQuestion(
+      `balanced-${skill}-${String(index + 1).padStart(2, '0')}`,
+      subject,
+      skill,
+      index % 3 === 0 ? 1 : 2,
+      prompt,
+      answer,
+      wrong,
+      explanation
+    ));
+  });
+}
+
+function appendMinimumSkillVolume(minimumPerSkill = 24) {
+  const counts = QUESTION_BANK.reduce((acc, question) => {
+    acc[question.skill] = (acc[question.skill] || 0) + 1;
+    return acc;
+  }, {});
+  const prompts = [
+    prompt => `Reto de entrenamiento: ${prompt}`,
+    prompt => `Modo Torre X: ${prompt}`,
+    prompt => `Repaso rapido: ${prompt}`,
+    prompt => `Para ganar energia, responde: ${prompt}`,
+    prompt => `Nueva variante: ${prompt}`,
+    prompt => `Duelo de precision: ${prompt}`
+  ];
+  Object.values(SKILLS).flat().forEach(skill => {
+    const skillQuestions = QUESTION_BANK.filter(question => question.skill === skill.id);
+    if (skillQuestions.length === 0) return;
+    while ((counts[skill.id] || 0) < minimumPerSkill) {
+      const currentCount = counts[skill.id] || 0;
+      const source = skillQuestions[currentCount % skillQuestions.length];
+      const promptBuilder = prompts[currentCount % prompts.length];
+      const rotatedOptions = source.options
+        ? [source.answer, ...source.options.filter(option => String(option) !== String(source.answer)).reverse()]
+        : [source.answer, 'Opcion A', 'Opcion B'];
+      QUESTION_BANK.push(makeChoiceQuestion(
+        `topup-${skill.id}-${String(currentCount + 1).padStart(2, '0')}`,
+        source.subject,
+        source.skill,
+        source.difficulty || 2,
+        promptBuilder(source.prompt),
+        source.answer,
+        rotatedOptions.filter(option => String(option) !== String(source.answer)),
+        source.explanation || `Practica extra de ${skill.name}.`
+      ));
+      counts[skill.id] = currentCount + 1;
+    }
+  });
+}
+
+function seededValue(input) {
+  let hash = 2166136261;
+  String(input).split('').forEach(char => {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  });
+  return hash >>> 0;
+}
+
+function pickFrom(list, seed, offset = 0) {
+  return list[(seededValue(`${seed}:${offset}`) % list.length + list.length) % list.length];
+}
+
+function questionThemeSignature(question) {
+  return `${question.skill}:${String(question.prompt || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\d+/g, '#')
+    .replace(/"[^"]+"/g, '"..."')
+    .replace(/\b(leo|marta|carlitos|sara|nico|luna|pablo|iris|carla|dani|ana)\b/g, 'nombre')
+    .replace(/\b(peonzas|cartas|piezas|pegatinas|canicas|monedas|libros|lapices|cromos|puntos|objetos)\b/g, 'objeto')
+    .replace(/\b(taller|parque|clase|biblioteca|arena|casa|patio|museo|rio)\b/g, 'lugar')
+    .replace(/\s+/g, ' ')
+    .trim()}`;
+}
+
+function dedupeQuestionBankByTheme() {
+  const seen = new Set();
+  const deduped = [];
+  QUESTION_BANK.forEach(question => {
+    const key = questionThemeSignature(question);
+    if (seen.has(key)) return;
+    seen.add(key);
+    deduped.push(question);
+  });
+  QUESTION_BANK.splice(0, QUESTION_BANK.length, ...deduped);
+}
+
+function diversifyRepeatedPromptText() {
+  const themes = [
+    'torneo Beyblade X',
+    'biblioteca de verano',
+    'excursion al parque',
+    'taller de inventos',
+    'mercado del barrio',
+    'museo de ciencias',
+    'equipo de clase',
+    'entrenamiento en casa',
+    'reto de reciclaje',
+    'club de lectura',
+    'campamento urbano',
+    'diario de vacaciones'
+  ];
+  const seen = new Map();
+  QUESTION_BANK.forEach(question => {
+    const basePrompt = String(question.prompt || '');
+    const count = seen.get(basePrompt) || 0;
+    seen.set(basePrompt, count + 1);
+    if (count === 0) return;
+    const theme = themes[(seededValue(`${question.id}:${count}`) % themes.length + themes.length) % themes.length];
+    question.prompt = `Situacion ${theme} ${count + 1}: ${basePrompt}`;
+    question.explanation = `${question.explanation || 'Piensa la respuesta con calma.'} La situacion cambia, pero la habilidad practicada es ${question.skill}.`;
+  });
+}
+
+function buildFromTemplate(id, subject, skillId, difficulty, templates, seed, context) {
+  const template = pickFrom(templates, seed, 11);
+  return makeChoiceQuestion(
+    id,
+    subject,
+    skillId,
+    difficulty,
+    template.prompt(context),
+    template.answer(context),
+    template.wrong(context),
+    template.explanation(context)
+  );
+}
+
+function buildAutoQuestionForSkill(skill, index) {
+  const seed = `${skill.id}:${index}`;
+  const difficulty = Math.max(1, Math.min(5, 1 + Math.floor(index / 42)));
+  const subject = Object.entries(SKILLS).find(([, skills]) => skills.some(item => item.id === skill.id))?.[0] || 'math';
+  const names = ['Leo', 'Marta', 'Carlitos', 'Sara', 'Nico', 'Luna', 'Pablo', 'Iris'];
+  const objects = ['peonzas', 'cartas', 'piezas', 'pegatinas', 'canicas', 'monedas', 'libros', 'lapices'];
+  const places = ['taller', 'parque', 'clase', 'biblioteca', 'arena', 'casa', 'patio', 'museo'];
+  const colors = [['red', 'rojo'], ['blue', 'azul'], ['green', 'verde'], ['yellow', 'amarillo'], ['black', 'negro'], ['white', 'blanco']];
+  const animals = [['cat', 'gato'], ['dog', 'perro'], ['bird', 'pajaro'], ['fish', 'pez'], ['horse', 'caballo']];
+  const a = 8 + (seededValue(seed) % 72) + difficulty * 3;
+  const b = 2 + (seededValue(`${seed}:b`) % 18) + difficulty;
+  const name = pickFrom(names, seed, 1);
+  const object = pickFrom(objects, seed, 2);
+  const place = pickFrom(places, seed, 3);
+  const color = pickFrom(colors, seed, 4);
+  const animal = pickFrom(animals, seed, 5);
+  const c = 3 + (seededValue(`${seed}:c`) % 12);
+  const context = { a, b, c, name, object, place, color, animal, index, difficulty };
+
+  if (skill.id === 'math_number_999') {
+    const number = 100 + (seededValue(seed) % 899);
+    const hundreds = Math.floor(number / 100);
+    const tens = Math.floor((number % 100) / 10);
+    const units = number % 10;
+    return buildFromTemplate(`auto-${skill.id}-${index}`, 'math', skill.id, difficulty, [
+      { prompt: () => `En ${number}, que cifra esta en las decenas?`, answer: () => tens, wrong: () => [hundreds, units], explanation: () => 'Mira la segunda cifra empezando por la derecha.' },
+      { prompt: () => `Que numero tiene ${hundreds} centenas, ${tens} decenas y ${units} unidades?`, answer: () => number, wrong: () => [hundreds * 100 + units * 10 + tens, hundreds * 100 + tens], explanation: () => 'Centenas, decenas y unidades se colocan en orden.' },
+      { prompt: () => `Redondea ${number} a la decena mas cercana.`, answer: () => Math.round(number / 10) * 10, wrong: () => [Math.floor(number / 10) * 10, Math.ceil(number / 100) * 100], explanation: () => 'Para redondear a decenas mira las unidades.' },
+      { prompt: () => `Que numero es 10 mas que ${number}?`, answer: () => number + 10, wrong: () => [number + 1, Math.max(0, number - 10)], explanation: () => 'Sumar 10 cambia la cifra de las decenas.' }
+    ], seed, context);
+  }
+  if (skill.id === 'math_number_9999') {
+    const number = 1000 + (seededValue(seed) % 8999);
+    const thousands = Math.floor(number / 1000);
+    const hundreds = Math.floor((number % 1000) / 100);
+    const tens = Math.floor((number % 100) / 10);
+    const units = number % 10;
+    return buildFromTemplate(`auto-${skill.id}-${index}`, 'math', skill.id, difficulty, [
+      { prompt: () => `En ${number}, que cifra esta en las centenas?`, answer: () => hundreds, wrong: () => [thousands, tens], explanation: () => 'La centena es la tercera cifra empezando por la derecha.' },
+      { prompt: () => `Que numero tiene ${thousands} millares, ${hundreds} centenas, ${tens} decenas y ${units} unidades?`, answer: () => number, wrong: () => [thousands * 1000 + tens * 100 + hundreds * 10 + units, thousands * 1000 + hundreds * 100 + units], explanation: () => 'Se leen las posiciones de izquierda a derecha.' },
+      { prompt: () => `Que numero es 100 menos que ${number}?`, answer: () => number - 100, wrong: () => [number - 10, number + 100], explanation: () => 'Restar 100 cambia la cifra de centenas.' },
+      { prompt: () => `Redondea ${number} a la centena mas cercana.`, answer: () => Math.round(number / 100) * 100, wrong: () => [Math.floor(number / 100) * 100, number + 100], explanation: () => 'Para centenas mira decenas y unidades.' }
+    ], seed, context);
+  }
+  if (skill.id === 'math_add_sub') {
+    return buildFromTemplate(`auto-${skill.id}-${index}`, 'math', skill.id, difficulty, [
+      { prompt: () => `${a} + ${b} = ?`, answer: () => a + b, wrong: () => [a + b + 9, Math.max(0, a + b - 7)], explanation: () => 'Suma por partes.' },
+      { prompt: () => `${a + b} - ${b} = ?`, answer: () => a, wrong: () => [a + b, Math.max(0, a - 5)], explanation: () => 'La resta deshace la suma.' },
+      { prompt: () => `${name} tenia ${a} puntos y gana ${b}. Cuantos puntos tiene?`, answer: () => a + b, wrong: () => [a, b, a + b + 4], explanation: () => 'Ganar puntos significa sumar.' },
+      { prompt: () => `Faltan ${b} piezas para llegar a ${a + b}. Cuantas piezas hay ahora?`, answer: () => a, wrong: () => [b, a + b, Math.max(0, a - b)], explanation: () => 'Si faltan piezas, restas al total.' }
+    ], seed, context);
+  }
+  if (skill.id === 'math_word_problems') {
+    const used = Math.min(a - 1, b);
+    return buildFromTemplate(`auto-${skill.id}-${index}`, 'math', skill.id, difficulty, [
+      { prompt: () => `${name} tiene ${a} ${object} y consigue ${b} mas. Cuantos tiene ahora?`, answer: () => a + b, wrong: () => [a, b, a + b + 5], explanation: () => 'La historia aumenta, se suma.' },
+      { prompt: () => `${name} tenia ${a} ${object} y usa ${used}. Cuantos le quedan?`, answer: () => a - used, wrong: () => [a + used, used, Math.max(0, a - used - 3)], explanation: () => 'La historia quita, se resta.' },
+      { prompt: () => `En ${place} hay ${c} cajas con ${b} ${object} cada una. Cuantos hay?`, answer: () => c * b, wrong: () => [c + b, c * b + c], explanation: () => 'Son grupos iguales, se multiplica.' },
+      { prompt: () => `Reparten ${c * b} ${object} entre ${c} equipos. Cuantos recibe cada equipo?`, answer: () => b, wrong: () => [c, c + b, c * b], explanation: () => 'Repartir en partes iguales es dividir.' }
+    ], seed, context);
+  }
+  if (skill.id === 'math_tables_groups' || skill.id === 'math_multiply_fast') {
+    const x = 2 + (index % 9);
+    const y = 2 + (Math.floor(index / 3) % 9);
+    return buildFromTemplate(`auto-${skill.id}-${index}`, 'math', skill.id, difficulty, [
+      { prompt: () => `${x} grupos de ${y} son...`, answer: () => x * y, wrong: () => [x + y, x * y + x], explanation: () => 'Multiplicar junta grupos iguales.' },
+      { prompt: () => `En una cuadricula hay ${x} filas y ${y} columnas. Cuantos huecos hay?`, answer: () => x * y, wrong: () => [x + y, x * y - x], explanation: () => 'Filas por columnas.' },
+      { prompt: () => `${name} practica ${x} rondas con ${y} lanzamientos. Cuantos lanzamientos hace?`, answer: () => x * y, wrong: () => [x + y, x * y + y], explanation: () => 'Rondas iguales se multiplican.' },
+      { prompt: () => `Completa la tabla: ${x} x ${y} = ?`, answer: () => x * y, wrong: () => [x * (y - 1), x * y + 1], explanation: () => 'Usa la tabla o suma repetida.' }
+    ], seed, context);
+  }
+  if (skill.id === 'math_division_intro') {
+    const group = 2 + (index % 8);
+    const each = 2 + (Math.floor(index / 4) % 8);
+    return buildFromTemplate(`auto-${skill.id}-${index}`, 'math', skill.id, difficulty, [
+      { prompt: () => `Reparte ${group * each} ${object} en ${group} grupos iguales. Cuantos van en cada grupo?`, answer: () => each, wrong: () => [group, each + 2], explanation: () => 'Dividir es repartir.' },
+      { prompt: () => `Hay ${group * each} cromos y cada album lleva ${each}. Cuantos albumes se completan?`, answer: () => group, wrong: () => [each, group + each], explanation: () => 'Busca cuantos grupos salen.' },
+      { prompt: () => `${name} hizo ${group * each} puntos en ${group} partidas iguales. Cuantos puntos por partida?`, answer: () => each, wrong: () => [group, each + 1], explanation: () => 'Total dividido entre partidas.' }
+    ], seed, context);
+  }
+  if (skill.id === 'math_measure_time_money') {
+    const euros = 2 + (index % 8);
+    const price = 1 + (Math.floor(index / 2) % euros);
+    return buildFromTemplate(`auto-${skill.id}-${index}`, 'math', skill.id, difficulty, [
+      { prompt: () => `Pagas ${euros} euros y algo cuesta ${price}. Cuantos euros sobran?`, answer: () => euros - price, wrong: () => [euros + price, Math.max(0, euros - price + 1)], explanation: () => 'Con dinero que sobra se resta.' },
+      { prompt: () => `Si son las ${price}:30, que significa media hora?`, answer: () => '30 minutos', wrong: () => ['3 minutos', '100 minutos'], explanation: () => 'Media hora son 30 minutos.' },
+      { prompt: () => `Para medir una mesa pequena uso mejor...`, answer: () => 'centimetros', wrong: () => ['litros', 'kilos'], explanation: () => 'Las longitudes pequenas se miden en centimetros.' },
+      { prompt: () => `Una botella se mide mejor en...`, answer: () => 'litros', wrong: () => ['euros', 'centimetros'], explanation: () => 'La capacidad se mide en litros.' }
+    ], seed, context);
+  }
+  if (skill.id === 'math_geometry_data') {
+    const side = 2 + (index % 9);
+    return buildFromTemplate(`auto-${skill.id}-${index}`, 'math', skill.id, difficulty, [
+      { prompt: () => `Un cuadrado tiene lados de ${side} cm. Cual es su perimetro?`, answer: () => side * 4, wrong: () => [side + 4, side * 2], explanation: () => 'El perimetro suma los lados.' },
+      { prompt: () => `Que figura tiene 3 lados?`, answer: () => 'triangulo', wrong: () => ['cuadrado', 'circulo'], explanation: () => 'Un triangulo tiene tres lados.' },
+      { prompt: () => `En una grafica hay ${a} votos azules y ${b} rojos. Cuantos votos hay?`, answer: () => a + b, wrong: () => [a, b, a + b + 3], explanation: () => 'Para el total se suma.' },
+      { prompt: () => `Un rectangulo tiene lados ${side}, ${side}, ${c} y ${c}. Cual es su perimetro?`, answer: () => side * 2 + c * 2, wrong: () => [side + c, side * c], explanation: () => 'Suma todos los lados.' }
+    ], seed, context);
+  }
+
+  if (skill.id.startsWith('lang_')) {
+    const text = `${name} encontro ${b} ${object} en el ${place}. Despues guardo la ${object.slice(0, -1)} ${color[1]} para ensenar su trabajo.`;
+    const secondText = `Por la tarde, ${name} preparo una mochila, reviso una lista y salio hacia el ${place} con calma.`;
+    const languageTemplates = {
+      lang_read_fluency: [
+        { prompt: () => `Al leer: "${text}" conviene hacer pausas en...`, answer: () => 'puntos y comas', wrong: () => ['cada letra', 'ninguna palabra'], explanation: () => 'Los signos ayudan a leer con ritmo.' },
+        { prompt: () => `Que signo marca una pregunta al leer en voz alta?`, answer: () => 'interrogacion', wrong: () => ['punto final solo', 'coma siempre'], explanation: () => 'La interrogacion cambia la entonacion.' },
+        { prompt: () => `En la frase "${secondText}" que ayuda a no perderse?`, answer: () => 'leer por grupos de palabras', wrong: () => ['leer letras sueltas', 'saltar palabras'], explanation: () => 'Agrupar palabras mejora la fluidez.' }
+      ],
+      lang_literal: [
+        { prompt: () => `${text} Donde encontro ${name} los ${object}?`, answer: () => `en el ${place}`, wrong: () => ['en la piscina', 'en el cine'], explanation: () => 'La respuesta esta escrita en el texto.' },
+        { prompt: () => `${text} De que color era lo que guardo?`, answer: () => color[1], wrong: () => ['morado', 'gris'], explanation: () => 'Busca el dato exacto.' },
+        { prompt: () => `${secondText} Que preparo ${name}?`, answer: () => 'una mochila', wrong: () => ['una tarta', 'un mapa antiguo'], explanation: () => 'La respuesta aparece literalmente.' }
+      ],
+      lang_inference: [
+        { prompt: () => `${name} llevo paraguas porque vio nubes oscuras. Que puede pasar?`, answer: () => 'puede llover', wrong: () => ['hara calor seguro', 'ira a dormir'], explanation: () => 'Inferir es usar pistas.' },
+        { prompt: () => `${name} sonrie al ver su nota y salta de alegria. Como se siente?`, answer: () => 'contento', wrong: () => ['aburrido', 'hambriento'], explanation: () => 'Las acciones dan pistas de emocion.' },
+        { prompt: () => `El suelo esta mojado y hay charcos. Que ha pasado probablemente?`, answer: () => 'ha llovido', wrong: () => ['ha nevado arena', 'hace mucho fuego'], explanation: () => 'Los charcos son una pista.' }
+      ],
+      lang_main_idea: [
+        { prompt: () => `Un texto habla de cuidar ${object}, ordenarlos y revisarlos. Cual es el tema?`, answer: () => `cuidar ${object}`, wrong: () => ['preparar comida', 'viajar lejos'], explanation: () => 'La idea principal resume el texto.' },
+        { prompt: () => `Un parrafo explica como ahorrar agua al lavarse y cerrar grifos. Tema principal:`, answer: () => 'ahorrar agua', wrong: () => ['comprar juguetes', 'hacer deporte'], explanation: () => 'Todas las frases apuntan al ahorro de agua.' },
+        { prompt: () => `Un texto cuenta pasos para plantar una semilla. Cual es la idea principal?`, answer: () => 'como plantar una semilla', wrong: () => ['como pintar una pared', 'como sumar rapido'], explanation: () => 'Resume todos los pasos.' }
+      ],
+      lang_order_text: [
+        { prompt: () => 'Que orden tiene una historia clara?', answer: () => 'inicio, nudo y final', wrong: () => ['nudo, inicio y final', 'final, nudo e inicio'], explanation: () => 'Las historias necesitan orden.' },
+        { prompt: () => 'Ordena una receta sencilla.', answer: () => 'preparar, cocinar y servir', wrong: () => ['servir, preparar y cocinar', 'cocinar, servir y preparar'], explanation: () => 'Primero se prepara, luego se cocina.' },
+        { prompt: () => 'Que palabra suele indicar que algo pasa despues?', answer: () => 'luego', wrong: () => ['antes', 'primero'], explanation: () => 'Luego marca secuencia.' }
+      ],
+      lang_writing_story: [
+        { prompt: () => 'Para mejorar un cuento debo revisar...', answer: () => 'mayusculas, puntos e ideas', wrong: () => ['solo el titulo y ya', 'el numero de paginas'], explanation: () => 'Revisar mejora la escritura.' },
+        { prompt: () => 'Una descripcion buena usa...', answer: () => 'detalles de como es algo', wrong: () => ['solo el nombre del objeto', 'solo la cantidad'], explanation: () => 'Describir es dar detalles.' },
+        { prompt: () => 'Para escribir una carta necesito...', answer: () => 'saludo, mensaje y despedida', wrong: () => ['solo el saludo', 'solo la firma al final'], explanation: () => 'La carta tiene partes.' }
+      ],
+      lang_spelling: [
+        { prompt: () => 'Elige la palabra bien escrita.', answer: () => index % 2 === 0 ? 'guitarra' : 'jirafa', wrong: () => index % 2 === 0 ? ['gitarra', 'guitara'] : ['girrafa', 'jirrafa'], explanation: () => 'Observa letras dificiles.' },
+        { prompt: () => 'Completa: El ___ canta por la manana.', answer: () => 'gallo', wrong: () => ['jallo', 'gayo'], explanation: () => 'Gallo se escribe con g y ll.' },
+        { prompt: () => 'Que palabra lleva mayuscula inicial?', answer: () => 'Marta', wrong: () => ['mesa', 'lapiz'], explanation: () => 'Los nombres propios van con mayuscula.' }
+      ],
+      lang_oral: [
+        { prompt: () => 'Para explicar mi respuesta conviene...', answer: () => 'hablar claro y dar una razon', wrong: () => ['hablar muy rapido sin parar', 'dar solo la respuesta sin explicar'], explanation: () => 'La expresion oral necesita orden.' },
+        { prompt: () => 'Si no entiendo una pregunta puedo...', answer: () => 'pedir que la repitan', wrong: () => ['inventar la respuesta sin pensar', 'responder otra cosa diferente'], explanation: () => 'Pedir aclaracion ayuda.' },
+        { prompt: () => 'En una conversacion debo...', answer: () => 'escuchar y respetar turnos', wrong: () => ['interrumpir cuando quiero hablar', 'hablar solo yo sin escuchar'], explanation: () => 'Conversar exige respeto.' }
+      ]
+    };
+    return buildFromTemplate(`auto-${skill.id}-${index}`, 'language', skill.id, difficulty, languageTemplates[skill.id] || languageTemplates.lang_literal, seed, context);
+  }
+
+  if (skill.id.startsWith('eng_')) {
+    const colorWrongOptions = ['rojo', 'azul', 'verde', 'amarillo', 'negro', 'blanco']
+      .filter(item => item !== color[1])
+      .slice(0, 3);
+    const englishTemplates = {
+      eng_greetings: [
+        { prompt: () => 'Choose the greeting.', answer: () => index % 2 === 0 ? 'Hello!' : 'Good morning', wrong: () => ['Goodbye!', 'Good night!'], explanation: () => 'Es un saludo.' },
+        { prompt: () => 'How do you say "gracias"?', answer: () => 'Thank you', wrong: () => ['Sorry', 'Please'], explanation: () => 'Thank you significa gracias.' },
+        { prompt: () => 'Best answer: Good night!', answer: () => 'Good night!', wrong: () => ['Good morning!', 'Good afternoon!'], explanation: () => 'Se responde al saludo.' }
+      ],
+      eng_vocabulary: [
+        { prompt: () => `What color is "${color[0]}"?`, answer: () => color[1], wrong: () => colorWrongOptions, explanation: () => 'Relaciona palabra inglesa y significado.' },
+        { prompt: () => `Choose the animal: ${animal[0]}`, answer: () => animal[1], wrong: () => ['flower', 'chair', 'pencil'], explanation: () => 'Traduce el animal.' },
+        { prompt: () => 'Choose the school object.', answer: () => 'book', wrong: () => ['notebook', 'folder'], explanation: () => 'Book es libro.' }
+      ],
+      eng_like_routines: [
+        { prompt: () => 'Complete: I like ___ games.', answer: () => 'playing', wrong: () => ['to plays', 'plays'], explanation: () => 'Despues de like puede ir playing.' },
+        { prompt: () => 'Choose a daily routine.', answer: () => 'I brush my teeth.', wrong: () => ['I am tall.', 'I am happy.'], explanation: () => 'Es una rutina diaria.' },
+        { prompt: () => 'Complete: I ___ breakfast.', answer: () => 'eat', wrong: () => ['have', 'drink'], explanation: () => 'Eat breakfast significa desayunar.' }
+      ],
+      eng_short_dialogue: [
+        { prompt: () => 'Best answer: How old are you?', answer: () => 'I am eight.', wrong: () => ['I am fine.', 'I am happy.'], explanation: () => 'How old pregunta edad.' },
+        { prompt: () => 'Best answer: What is your name?', answer: () => 'My name is Leo.', wrong: () => ['I am fine.', 'I like apples.'], explanation: () => 'Pregunta el nombre.' },
+        { prompt: () => 'Best answer: Do you like music?', answer: () => 'Yes, I do.', wrong: () => ['Yes, I am.', 'Yes, I have.'], explanation: () => 'Do you like se responde con yes/no.' }
+      ]
+    };
+    return buildFromTemplate(`auto-${skill.id}-${index}`, 'english', skill.id, difficulty, englishTemplates[skill.id] || englishTemplates.eng_vocabulary, seed, context);
+  }
+
+  if (skill.id.startsWith('sci_')) {
+    const scienceTemplates = {
+      sci_living_things: [
+        { prompt: () => `Cual de estos es un ser vivo?`, answer: () => animal[1], wrong: () => ['piedra', 'metal'], explanation: () => 'Los seres vivos nacen y crecen.' },
+        { prompt: () => 'Que necesita normalmente una planta?', answer: () => 'agua, luz y aire', wrong: () => ['solo tierra, sin agua', 'solo agua, sin luz'], explanation: () => 'Las plantas necesitan condiciones para vivir.' },
+        { prompt: () => 'Los animales vertebrados tienen...', answer: () => 'columna vertebral', wrong: () => ['caparazon como las tortugas', 'exoesqueleto como los insectos'], explanation: () => 'Los vertebrados tienen esqueleto interno.' }
+      ],
+      sci_health: [
+        { prompt: () => 'Para cuidar la salud conviene...', answer: () => 'dormir, moverse y comer variado', wrong: () => ['comer siempre lo mismo', 'saltarse comidas frecuentemente'], explanation: () => 'Los habitos saludables cuidan el cuerpo.' },
+        { prompt: () => 'Antes de comer debo...', answer: () => 'lavarme las manos', wrong: () => ['lavarme solo si se ven sucias', 'aclarar solo con agua fria'], explanation: () => 'Lavarse manos reduce microbios.' },
+        { prompt: () => 'Si estoy cansado, mi cuerpo necesita...', answer: () => 'descanso', wrong: () => ['hacer ejercicio intenso', 'tomar mucho azucar'], explanation: () => 'Dormir ayuda a recuperarse.' }
+      ],
+      sci_materials: [
+        { prompt: () => `Que material puede ser flexible?`, answer: () => 'tela', wrong: () => ['cristal', 'ceramica'], explanation: () => 'Flexible significa que se dobla.' },
+        { prompt: () => 'Si el hielo se calienta, pasa a ser...', answer: () => 'agua liquida', wrong: () => ['vapor de agua', 'agua salada'], explanation: () => 'El hielo es agua solida.' },
+        { prompt: () => 'Un material transparente deja pasar...', answer: () => 'la luz', wrong: () => ['solo el calor', 'el agua siempre'], explanation: () => 'Transparente permite ver o pasar luz.' }
+      ],
+      sci_time_history: [
+        { prompt: () => 'Que orden temporal es correcto?', answer: () => 'antes, ahora, despues', wrong: () => ['despues, antes, ahora', 'ahora, antes, despues'], explanation: () => 'El tiempo se ordena.' },
+        { prompt: () => 'La historia estudia...', answer: () => 'el pasado', wrong: () => ['solo el futuro', 'solo el presente'], explanation: () => 'Historia mira hechos del pasado.' },
+        { prompt: () => 'Un calendario sirve para...', answer: () => 'organizar dias y meses', wrong: () => ['medir distancias', 'calcular pesos'], explanation: () => 'El calendario organiza el tiempo.' }
+      ],
+      sci_environment: [
+        { prompt: () => 'Para cuidar el entorno debo...', answer: () => 'reducir, reutilizar y reciclar', wrong: () => ['usar mas recursos de los necesarios', 'dejar residuos en la naturaleza'], explanation: () => 'Cuidar recursos protege el entorno.' },
+        { prompt: () => 'El papel suele ir al contenedor...', answer: () => 'azul', wrong: () => ['verde', 'amarillo'], explanation: () => 'El azul se usa para papel y carton.' },
+        { prompt: () => 'Para ahorrar agua puedo...', answer: () => 'cerrar el grifo al enjabonarme', wrong: () => ['dejar el grifo abierto mientras me jabono', 'llenar la banera hasta el borde siempre'], explanation: () => 'Cerrar el grifo evita gasto.' }
+      ]
+    };
+    return buildFromTemplate(`auto-${skill.id}-${index}`, 'science', skill.id, difficulty, scienceTemplates[skill.id] || scienceTemplates.sci_environment, seed, context);
+  }
+
+  if (skill.id.startsWith('art_')) {
+    const artTemplates = {
+      art_color_line_texture: [
+        { prompt: () => 'Una textura rugosa se nota...', answer: () => 'aspera o con relieve', wrong: () => ['lisa como el vidrio', 'suave como el algodon'], explanation: () => 'La textura describe superficie.' },
+        { prompt: () => 'Un color primario es...', answer: () => 'rojo', wrong: () => ['naranja', 'morado'], explanation: () => 'Rojo, azul y amarillo son primarios.' },
+        { prompt: () => 'Una linea curva sirve para dibujar...', answer: () => 'formas redondeadas', wrong: () => ['angulos rectos perfectos', 'figuras con solo esquinas'], explanation: () => 'Las lineas pueden expresar forma.' }
+      ],
+      art_storyboard: [
+        { prompt: () => 'Un storyboard sirve para...', answer: () => 'ordenar escenas en dibujos', wrong: () => ['resumir un texto escrito', 'decorar la portada de un cuaderno'], explanation: () => 'Planifica una historia visual.' },
+        { prompt: () => 'En una escena dibujo...', answer: () => 'una parte de la accion', wrong: () => ['todo lo que ocurre en la historia', 'solo los fondos sin personajes'], explanation: () => 'Cada escena cuenta un momento.' },
+        { prompt: () => 'Para que se entienda una historia visual necesito...', answer: () => 'principio, desarrollo y final', wrong: () => ['solo dibujos sin orden', 'solo colores sin personajes'], explanation: () => 'El orden visual ayuda a comprender.' }
+      ],
+      art_music_rhythm: [
+        { prompt: () => 'Repetir palmadas en orden crea...', answer: () => 'ritmo', wrong: () => ['una melodia', 'una armonia'], explanation: () => 'El ritmo organiza sonidos.' },
+        { prompt: () => 'Un sonido fuerte o suave cambia...', answer: () => 'la intensidad', wrong: () => ['la velocidad del pulso', 'la duracion de la nota'], explanation: () => 'La intensidad puede variar.' },
+        { prompt: () => 'El pulso en musica ayuda a...', answer: () => 'seguir el tiempo', wrong: () => ['marcar la melodia', 'cambiar de instrumento'], explanation: () => 'El pulso mantiene regularidad.' }
+      ]
+    };
+    return buildFromTemplate(`auto-${skill.id}-${index}`, 'arts', skill.id, difficulty, artTemplates[skill.id] || artTemplates.art_color_line_texture, seed, context);
+  }
+
+  const movementTemplates = {
+    move_warmup: [
+      { prompt: () => 'Antes de ejercicio conviene...', answer: () => 'calentar suave', wrong: () => ['empezar con el ejercicio mas intenso', 'hacer estiramientos forzados en frio'], explanation: () => 'El calentamiento prepara el cuerpo.' },
+      { prompt: () => 'Al terminar una carrera conviene...', answer: () => 'volver a la calma', wrong: () => ['parar en seco sin descansar', 'empezar otra actividad muy intensa'], explanation: () => 'La vuelta a la calma recupera el cuerpo.' },
+      { prompt: () => 'Si algo duele al moverte debes...', answer: () => 'parar y avisar', wrong: () => ['continuar ignorando el dolor', 'acelerar para que pase pronto'], explanation: () => 'La seguridad es primero.' }
+    ],
+    move_coordination: [
+      { prompt: () => 'Botar y atrapar una pelota trabaja...', answer: () => 'coordinacion', wrong: () => ['fuerza de piernas', 'resistencia aerobica'], explanation: () => 'Coordinar combina movimientos.' },
+      { prompt: () => 'Caminar por una linea trabaja...', answer: () => 'equilibrio', wrong: () => ['velocidad de reaccion', 'fuerza muscular'], explanation: () => 'El equilibrio controla el cuerpo.' },
+      { prompt: () => 'Saltar dentro y fuera de un aro mejora...', answer: () => 'control del espacio', wrong: () => ['fuerza de brazos', 'resistencia de larga duracion'], explanation: () => 'Usas cuerpo y espacio.' }
+    ],
+    move_rules_teamwork: [
+      { prompt: () => 'En equipo es importante...', answer: () => 'respetar reglas y turnos', wrong: () => ['cambiar las reglas cuando vas perdiendo', 'decidir todo sin consultar al equipo'], explanation: () => 'Las reglas hacen el juego justo.' },
+      { prompt: () => 'Si un companero falla, lo mejor es...', answer: () => 'animarle', wrong: () => ['criticarle delante de todos', 'pedir que le cambien del equipo'], explanation: () => 'El equipo mejora con apoyo.' },
+      { prompt: () => 'Una regla de seguridad sirve para...', answer: () => 'evitar accidentes', wrong: () => ['dar ventaja al equipo que la propone', 'hacer el juego mas lento'], explanation: () => 'Las reglas cuidan a todos.' }
+    ]
+  };
+  return buildFromTemplate(`auto-${skill.id}-${index}`, 'movement', skill.id, difficulty, movementTemplates[skill.id] || movementTemplates.move_rules_teamwork, seed, context);
+}
+
+function appendLargeLocalQuestionBank(targetTotal = 5000, seedOffset = 0) {
+  const allSkills = Object.values(SKILLS).flat();
+  let index = 1;
+  while (QUESTION_BANK.length < targetTotal) {
+    const generatedIndex = index + seedOffset;
+    const skill = allSkills[(generatedIndex - 1) % allSkills.length];
+    QUESTION_BANK.push(buildAutoQuestionForSkill(skill, generatedIndex));
+    index += 1;
+  }
 }
 
 appendMathExpansion();
@@ -1484,7 +2034,12 @@ appendLanguageExpansion();
 appendEnglishExpansion();
 appendScienceArtsMovementExpansion();
 appendLivingThingsDepthExpansion();
+appendBalancedWeakSkillExpansion();
+appendMinimumSkillVolume(24);
+appendLargeLocalQuestionBank(5000);
+diversifyRepeatedPromptText();
 appendLivingThingsClassificationPool();
+diversifyRepeatedPromptText();
 
 READING_BANK.push(
   {
@@ -1686,6 +2241,7 @@ const CurriculumData = {
   questionBank: QUESTION_BANK,
   readingBank: READING_BANK,
   offlineMissions: OFFLINE_MISSIONS,
+  dynamicWords: DYNAMIC_WORDS,
   getAllSkills,
   getSkill,
   getQuestionsBySkill,
