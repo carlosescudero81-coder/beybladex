@@ -10,7 +10,7 @@ class CombatSession {
     this.floorData = getTowerFloorData(this.towerFloor);
     this.difficulty = this.floorData?.difficulty || Math.ceil((this.towerFloor || 1) / 6);
     this.difficultyTier = this.floorData?.difficultyTier || this.getDifficultyTierName(this.difficulty);
-    this.questionCount = this.floorData?.questionCount || Math.min(12, 6 + Math.ceil(this.difficulty / 2));
+    this.questionCount = this.floorData?.questionCount || this.getTowerQuestionCount(this.towerFloor, this.difficulty);
     this.currentQuestionIdx = 0;
     
     this.playerHP = 100;
@@ -27,6 +27,7 @@ class CombatSession {
     this.curriculumMission = appController && typeof appController.getCurriculumMissionForCombat === 'function'
       ? appController.getCurriculumMissionForCombat(weekNum, isBoss)
       : null;
+    this.isTowerBattle = appController?.activeTowerBattle === true;
     
     // Physics positions & motion state
     this.playerX = 30;
@@ -52,6 +53,9 @@ class CombatSession {
     this.lastSpinUsed = false;
     this.fastAnswerStreak = 0;
     this.questionStartedAt = 0;
+    this.battleIntroTimer = null;
+    this.battleIntroExitTimer = null;
+    this.battleIntroFinish = null;
   }
 
   start() {
@@ -126,8 +130,101 @@ class CombatSession {
     this.renderCombatants();
     this.updateXGauge();
 
-    // Launch gauge phase first
-    this.startLaunchPhase();
+    this.playBattleIntro({
+      playerCharacter,
+      rivalCharacter: rival,
+      playerBey,
+      rivalBey,
+      stadium,
+      floorData,
+      towerFloor
+    }, () => this.startLaunchPhase());
+  }
+
+  playBattleIntro(details, onComplete) {
+    const overlay = document.getElementById('battle-intro');
+    if (!overlay) {
+      onComplete();
+      return;
+    }
+
+    if (this.battleIntroTimer) clearTimeout(this.battleIntroTimer);
+    if (this.battleIntroExitTimer) clearTimeout(this.battleIntroExitTimer);
+
+    const setText = (id, text) => {
+      const element = document.getElementById(id);
+      if (element) element.innerText = text || '';
+    };
+    const setImage = (id, src, alt) => {
+      const image = document.getElementById(id);
+      if (!image) return;
+      image.src = src || '';
+      image.alt = alt || '';
+    };
+
+    const playerDisplayName = this.state?.player?.name || details.playerCharacter?.nombre || 'Blader';
+    const rivalDisplayName = details.floorData?.rivalName || details.rivalCharacter?.nombre || 'Rival';
+    setImage('battle-intro-player-character', details.playerCharacter?.image, playerDisplayName);
+    setImage('battle-intro-rival-character', details.rivalCharacter?.image, rivalDisplayName);
+    setImage('battle-intro-player-bey', details.playerBey?.image, details.playerBey?.nombre);
+    setImage('battle-intro-rival-bey', details.rivalBey?.image, details.rivalBey?.nombre);
+    setText('battle-intro-player-name', playerDisplayName);
+    setText('battle-intro-rival-name', rivalDisplayName);
+    setText('battle-intro-player-bey-name', details.playerBey?.nombre || 'Bey equipado');
+    setText('battle-intro-rival-bey-name', details.rivalBey?.nombre || 'Bey rival');
+    setText('battle-intro-floor', `Planta ${details.towerFloor || 1}`);
+    setText('battle-intro-stadium', details.stadium?.nombre || 'Estadio X');
+    this.renderBattleIntroStats('battle-intro-player-stats', this.getBattleIntroStats(details.playerBey, this.playerCharacterStats));
+    this.renderBattleIntroStats('battle-intro-rival-stats', this.getBattleIntroStats(details.rivalBey, this.rivalCharacterStats));
+
+    overlay.hidden = false;
+    overlay.setAttribute('aria-hidden', 'false');
+    overlay.style.display = 'grid';
+    overlay.classList.remove('is-exiting');
+    overlay.classList.add('is-active');
+
+    const finish = () => {
+      if (this.battleIntroFinish !== finish) return;
+      this.battleIntroFinish = null;
+      if (this.battleIntroTimer) clearTimeout(this.battleIntroTimer);
+      overlay.classList.remove('is-active');
+      overlay.classList.add('is-exiting');
+      this.battleIntroExitTimer = setTimeout(() => {
+        overlay.classList.remove('is-exiting');
+        overlay.style.display = 'none';
+        overlay.hidden = true;
+        overlay.setAttribute('aria-hidden', 'true');
+        this.battleIntroExitTimer = null;
+        onComplete();
+      }, 360);
+    };
+
+    this.battleIntroFinish = finish;
+    const skipButton = document.getElementById('battle-intro-skip');
+    if (skipButton) skipButton.onclick = finish;
+    overlay.onclick = event => {
+      if (event.target === overlay) finish();
+    };
+    this.battleIntroTimer = setTimeout(finish, 2850);
+  }
+
+  getBattleIntroStats(bey, characterStats) {
+    return [
+      { label: 'Ataque', value: Math.round(((bey?.ataque || 60) * 0.68) + ((characterStats?.attack || 55) * 0.32)) },
+      { label: 'Defensa', value: Math.round(((bey?.defensa || 60) * 0.68) + ((characterStats?.defense || 55) * 0.32)) },
+      { label: 'Giro', value: Math.round(((bey?.estamina || 60) * 0.45) + ((bey?.velocidad || 60) * 0.35) + ((characterStats?.focus || 55) * 0.2)) }
+    ].map(stat => ({ ...stat, value: Math.max(1, Math.min(100, stat.value)) }));
+  }
+
+  renderBattleIntroStats(containerId, stats) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = stats.map(stat => `
+      <span class="battle-intro__stat">
+        <b>${stat.label}</b>
+        <i>${stat.value}</i>
+      </span>
+    `).join('');
   }
 
   initCombatants() {
@@ -184,6 +281,12 @@ class CombatSession {
     if (difficulty >= 5) return 'alta';
     if (difficulty >= 3) return 'media';
     return 'baja';
+  }
+
+  getTowerQuestionCount(floorNumber, difficulty) {
+    const floor = Math.max(1, Math.min(50, parseInt(floorNumber, 10) || 1));
+    const milestoneBonus = floor % 10 === 0 ? 4 : floor % 5 === 0 ? 2 : 0;
+    return Math.max(10, Math.min(24, 9 + Math.ceil(floor / 5) + Math.ceil((difficulty || 1) / 2) + milestoneBonus));
   }
 
   decorateTopSprites() {
@@ -451,6 +554,19 @@ class CombatSession {
     this.stopPhysicsSimulation();
     if (this.gaugeInterval) clearInterval(this.gaugeInterval);
     this.gaugeInterval = null;
+    if (this.battleIntroTimer) clearTimeout(this.battleIntroTimer);
+    if (this.battleIntroExitTimer) clearTimeout(this.battleIntroExitTimer);
+    this.battleIntroTimer = null;
+    this.battleIntroExitTimer = null;
+    this.battleIntroFinish = null;
+    const battleIntro = document.getElementById('battle-intro');
+    if (battleIntro) {
+      battleIntro.classList.remove('is-active');
+      battleIntro.classList.remove('is-exiting');
+      battleIntro.style.display = 'none';
+      battleIntro.hidden = true;
+      battleIntro.setAttribute('aria-hidden', 'true');
+    }
     const launchOverlay = document.getElementById('launch-overlay');
     if (launchOverlay) launchOverlay.style.display = 'none';
     const feedbackOverlay = document.getElementById('combat-feedback');
@@ -537,10 +653,10 @@ class CombatSession {
     if (this.isBoss && typeof this.weekNum === 'number') {
       const bossQuestions = LearningEngine.selectQuestionsForWeeklyBoss(this.state, this.weekNum, this.questionCount);
       if (bossQuestions.length > 0) {
-        for (let i = 0; i < this.questionCount; i += 1) {
-          const question = bossQuestions[i % bossQuestions.length];
+        bossQuestions.slice(0, this.questionCount).forEach(question => {
           this.questionsList.push(this.adaptCurriculumQuestion(question, 'curriculum-boss'));
-        }
+        });
+        this.questionCount = this.questionsList.length;
         return;
       }
     }
@@ -548,10 +664,10 @@ class CombatSession {
     if (this.weekNum === 'post-boss-review') {
       const reviewQuestions = LearningEngine.selectQuestionsForPostBossReview(this.state, null, this.questionCount);
       if (reviewQuestions.length > 0) {
-        for (let i = 0; i < this.questionCount; i += 1) {
-          const question = reviewQuestions[i % reviewQuestions.length];
+        reviewQuestions.slice(0, this.questionCount).forEach(question => {
           this.questionsList.push(this.adaptCurriculumQuestion(question, 'curriculum-review'));
-        }
+        });
+        this.questionCount = this.questionsList.length;
         return;
       }
     }
@@ -559,10 +675,10 @@ class CombatSession {
     if (this.floorData && typeof LearningEngine.selectQuestionsForTowerFloor === 'function') {
       const towerQuestions = LearningEngine.selectQuestionsForTowerFloor(this.state, this.floorData, this.questionCount);
       if (towerQuestions.length > 0) {
-        for (let i = 0; i < this.questionCount; i += 1) {
-          const question = towerQuestions[i % towerQuestions.length];
+        towerQuestions.slice(0, this.questionCount).forEach(question => {
           this.questionsList.push(this.adaptCurriculumQuestion(question, 'curriculum-tower'));
-        }
+        });
+        this.questionCount = this.questionsList.length;
         return;
       }
     }
@@ -570,10 +686,10 @@ class CombatSession {
     if (this.curriculumMission && this.curriculumMission.subject.id === 'math') {
       const curriculumQuestions = LearningEngine.selectQuestionsForMission(this.state, this.curriculumMission, this.questionCount);
       if (curriculumQuestions.length > 0) {
-        for (let i = 0; i < this.questionCount; i += 1) {
-          const question = curriculumQuestions[i % curriculumQuestions.length];
+        curriculumQuestions.slice(0, this.questionCount).forEach(question => {
           this.questionsList.push(this.adaptCurriculumQuestion(question, 'curriculum-math'));
-        }
+        });
+        this.questionCount = this.questionsList.length;
         return;
       }
     }
@@ -1209,7 +1325,9 @@ class CombatSession {
       const ped = this.state.pedagogy.math;
       const totalSessionAnswers = this.sessionCorrect + this.sessionIncorrect;
       const sessionAccuracy = totalSessionAnswers > 0 ? Math.round((this.sessionCorrect / totalSessionAnswers) * 100) : 100;
-      const completion = ProgressService.recordCompletion(this.state, this.weekNum, this.isBoss, { accuracy: sessionAccuracy });
+      const completion = this.isTowerBattle
+        ? ProgressService.recordTowerFloorCompletion(this.state, this.towerFloor, { accuracy: sessionAccuracy, week: this.weekNum })
+        : ProgressService.recordCompletion(this.state, this.weekNum, this.isBoss, { accuracy: sessionAccuracy });
       const towerReward = this.getTowerBattleReward(sessionAccuracy);
       const characterProgress = typeof recordCharacterBattleResult === 'function'
         ? recordCharacterBattleResult(this.state, this.state.player.characterAvatarId, true, towerReward.xp)
@@ -1249,7 +1367,7 @@ class CombatSession {
         isBoss: this.isBoss,
         towerFloor: this.towerFloor
       };
-      if (typeof this.weekNum === 'number') {
+      if (!this.isTowerBattle && typeof this.weekNum === 'number') {
         this.state.player.currentWeek = Math.max(this.state.player.currentWeek || 1, Math.min(12, this.weekNum + (this.towerFloor % 6 === 0 ? 1 : 0)));
       }
       ped.history.push({

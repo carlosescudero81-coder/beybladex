@@ -48,7 +48,8 @@ class LearningEngine {
         lastCompletedAt: null
       },
       spacedRecoveryNotes: [],
-      dailyPlanCache: {}
+      dailyPlanCache: {},
+      parentInterests: { names: [], beys: [], objects: [] }
     };
   }
 
@@ -99,6 +100,13 @@ class LearningEngine {
     profile.dailyPlanCache = raw.dailyPlanCache && typeof raw.dailyPlanCache === 'object' && !Array.isArray(raw.dailyPlanCache)
       ? raw.dailyPlanCache
       : {};
+    profile.parentInterests = raw.parentInterests && typeof raw.parentInterests === 'object' && !Array.isArray(raw.parentInterests)
+      ? {
+          names: Array.isArray(raw.parentInterests.names) ? raw.parentInterests.names.filter(n => typeof n === 'string') : [],
+          beys: Array.isArray(raw.parentInterests.beys) ? raw.parentInterests.beys.filter(b => typeof b === 'string') : [],
+          objects: Array.isArray(raw.parentInterests.objects) ? raw.parentInterests.objects.filter(o => typeof o === 'string') : []
+        }
+      : { names: [], beys: [], objects: [] };
 
     const rawSkills = raw.skills && typeof raw.skills === 'object' && !Array.isArray(raw.skills) ? raw.skills : {};
     CurriculumData.getAllSkills().forEach(skill => {
@@ -167,7 +175,9 @@ class LearningEngine {
       attempts: Math.max(0, parseInt(item.attempts, 10) || 0),
       lastResult: item.lastResult === 'correct' ? 'correct' : 'incorrect',
       source: item.source || 'question',
-      week: item.week || null
+      week: item.week || null,
+      easeFactor: Number(item.easeFactor) || 2.5,
+      repetitions: Math.max(0, parseInt(item.repetitions, 10) || 0)
     };
   }
 
@@ -201,6 +211,136 @@ class LearningEngine {
       };
       return history;
     }, {});
+  }
+
+  static cloneQuestion(question) {
+    if (!question) return null;
+    return {
+      ...question,
+      options: Array.isArray(question.options) ? [...question.options] : []
+    };
+  }
+
+  static adjustTargetDifficulty(skillProgress, baseDifficulty) {
+    if (!skillProgress) return baseDifficulty;
+    if (skillProgress.attempts >= 3) {
+      const accuracy = skillProgress.correct / skillProgress.attempts;
+      if (accuracy >= 0.85 && baseDifficulty < 5) {
+        return baseDifficulty + 1;
+      } else if (accuracy < 0.6 && baseDifficulty > 1) {
+        return baseDifficulty - 1;
+      }
+    }
+    return baseDifficulty;
+  }
+
+  static resolveDynamicQuestion(rawQuestion, state) {
+    if (!rawQuestion) return null;
+    const question = this.cloneQuestion(rawQuestion);
+    const profile = this.getProfile(state);
+    const parentInterests = profile.parentInterests || { names: [], beys: [], objects: [] };
+    const words = { ...CurriculumData.dynamicWords };
+    if (parentInterests.names && parentInterests.names.length > 0) words.names = parentInterests.names;
+    if (parentInterests.beys && parentInterests.beys.length > 0) words.beys = parentInterests.beys;
+    if (parentInterests.objects && parentInterests.objects.length > 0) words.objects = parentInterests.objects;
+
+    const getRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    const selectedName = getRandom(words.names);
+    const selectedName2 = getRandom(words.names.filter(n => n !== selectedName)) || selectedName;
+    const selections = {
+      name: selectedName,
+      beyblade: getRandom(words.beys),
+      stadium: getRandom(words.stadiums),
+      object: getRandom(words.objects),
+      location: getRandom(words.locations),
+      name2: selectedName2
+    };
+
+    const replaceTokens = (text) => {
+      if (typeof text !== 'string') return text;
+      return text
+        .replace(/{name}/g, selections.name)
+        .replace(/{beyblade}/g, selections.beyblade)
+        .replace(/{stadium}/g, selections.stadium)
+        .replace(/{object}/g, selections.object)
+        .replace(/{location}/g, selections.location)
+        .replace(/{name2}/g, selections.name2);
+    };
+
+    if (question.isParametric) {
+      let numA = 0;
+      let numB = 0;
+      let result = 0;
+      const diff = parseInt(question.difficulty, 10) || 1;
+
+      if (question.mathType === 'add') {
+        const maxVal = diff >= 2 ? 8000 : 800;
+        numA = Math.floor(Math.random() * (maxVal - 10)) + 10;
+        numB = Math.floor(Math.random() * (maxVal - numA - 5)) + 5;
+        result = numA + numB;
+      } else if (question.mathType === 'sub') {
+        const maxVal = diff >= 2 ? 9000 : 900;
+        numA = Math.floor(Math.random() * (maxVal - 50)) + 50;
+        numB = Math.floor(Math.random() * (numA - 5)) + 5;
+        result = numA - numB;
+      } else if (question.mathType === 'mult') {
+        const table = getRandom([2, 3, 4, 5, 6, 7, 8, 9]);
+        const factor = getRandom([2, 3, 4, 5, 6, 7, 8, 9]);
+        numA = table;
+        numB = factor;
+        result = numA * factor;
+      } else if (question.mathType === 'div') {
+        const factor = getRandom([2, 3, 4, 5, 6, 7, 8, 9]);
+        result = getRandom([2, 3, 4, 5, 6, 7, 8, 9]);
+        numB = factor;
+        numA = result * numB;
+      }
+
+      const mathReplacer = (text) => {
+        if (typeof text !== 'string') return text;
+        return text
+          .replace(/{numA}/g, numA)
+          .replace(/{numB}/g, numB)
+          .replace(/{result}/g, result);
+      };
+
+      question.prompt = mathReplacer(question.prompt);
+      question.answer = String(result);
+
+      const opts = new Set([result]);
+      const offsets = [-10, -1, 1, 10, -2, 2, -100, 100];
+      while (opts.size < 3) {
+        const offset = getRandom(offsets);
+        const optVal = result + offset;
+        if (optVal >= 0 && optVal !== result) {
+          opts.add(optVal);
+        }
+      }
+      question.options = Array.from(opts).map(String).sort(() => Math.random() - 0.5);
+      question.explanation = mathReplacer(question.explanation);
+    }
+
+    question.prompt = replaceTokens(question.prompt);
+    question.answer = replaceTokens(question.answer);
+    question.options = question.options.map(replaceTokens);
+    if (question.explanation) {
+      question.explanation = replaceTokens(question.explanation);
+    }
+
+    const stats = this.getQuestionStats(profile, question.id);
+    if (stats.incorrect > 0) {
+      question.isScaffolded = true;
+      let hint = "";
+      if (question.subject === 'math') {
+        hint = ` (Pista: Intenta descomponer los números o usar la explicación: ${question.explanation})`;
+      } else {
+        hint = ` (Pista: Fíjate bien en las palabras clave del texto o enunciado.)`;
+      }
+      question.prompt += hint;
+    }
+
+    return question;
   }
 
   static getProfile(state) {
@@ -286,7 +426,21 @@ class LearningEngine {
       .filter(Boolean);
     const fresh = CurriculumData.getQuestionsBySkill(mission.skill.id);
     const fallback = CurriculumData.questionBank.filter(question => question.subject === mission.subject.id);
-    return this.selectLeastRepeatedQuestions([...dueReview, ...fresh, ...fallback], profile, count, mission.key, dueReviewItems.map(item => item.questionId));
+
+    const skillProgress = profile.skills[mission.skill.id];
+    const baseDifficulty = mission.day <= 2 ? 1 : 2;
+    const targetDifficulty = this.adjustTargetDifficulty(skillProgress, baseDifficulty);
+    const adaptiveFresh = this.filterQuestionsForDifficulty(fresh, profile, targetDifficulty, true);
+    const adaptiveFallback = this.filterQuestionsForDifficulty(fallback, profile, targetDifficulty, true);
+
+    const questions = this.selectLeastRepeatedQuestions(
+      [...dueReview, ...adaptiveFresh, ...adaptiveFallback],
+      profile,
+      count,
+      mission.key,
+      dueReviewItems.map(item => item.questionId)
+    );
+    return questions.map(q => this.resolveDynamicQuestion(q, state));
   }
 
   static selectQuestionsForWeeklyBoss(state, week, count = 10) {
@@ -302,14 +456,22 @@ class LearningEngine {
       .flatMap(skillId => CurriculumData.getQuestionsBySkill(skillId));
     const subjectQuestions = weekData.subjects
       .flatMap(subjectId => CurriculumData.questionBank.filter(question => question.subject === subjectId));
-    return this.selectLeastRepeatedQuestions(
-      [...dueReview, ...skillQuestions, ...subjectQuestions],
+
+    const targetDifficulties = weekData.skills.map(skillId => this.adjustTargetDifficulty(profile.skills[skillId], 2));
+    const avgDifficulty = Math.round(targetDifficulties.reduce((sum, d) => sum + d, 0) / targetDifficulties.length) || 2;
+
+    const adaptiveSkillQuestions = this.filterQuestionsForDifficulty(skillQuestions, profile, avgDifficulty, false);
+    const adaptiveSubjectQuestions = this.filterQuestionsForDifficulty(subjectQuestions, profile, avgDifficulty, false);
+
+    const questions = this.selectLeastRepeatedQuestions(
+      [...dueReview, ...adaptiveSkillQuestions, ...adaptiveSubjectQuestions],
       profile,
       count,
       `boss-${week}`,
       dueReviewItems.map(item => item.questionId),
       'subject'
     );
+    return questions.map(q => this.resolveDynamicQuestion(q, state));
   }
 
   static selectQuestionsForTowerFloor(state, floorData, count = 8) {
@@ -332,14 +494,55 @@ class LearningEngine {
       .filter(Boolean);
     const skillQuestions = skillIds.flatMap(skillId => CurriculumData.getQuestionsBySkill(skillId));
     const subjectQuestions = subjectIds.flatMap(subjectId => CurriculumData.questionBank.filter(question => question.subject === subjectId));
-    return this.selectLeastRepeatedQuestions(
-      [...dueReview, ...skillQuestions, ...subjectQuestions],
+    
+    const baseDifficulty = this.getTowerQuestionDifficulty(floorData);
+    const activeProgresses = skillIds.map(id => profile.skills[id]).filter(Boolean);
+    const totalAttempts = activeProgresses.reduce((sum, p) => sum + p.attempts, 0);
+    const totalCorrect = activeProgresses.reduce((sum, p) => sum + p.correct, 0);
+    let avgAccuracy = 0.7;
+    if (totalAttempts >= 5) {
+      avgAccuracy = totalCorrect / totalAttempts;
+    }
+    let targetDifficulty = baseDifficulty;
+    if (avgAccuracy >= 0.85 && baseDifficulty < 5) targetDifficulty += 1;
+    if (avgAccuracy < 0.6 && baseDifficulty > 1) targetDifficulty -= 1;
+
+    const towerQuestions = this.filterQuestionsForDifficulty(
+      [...skillQuestions, ...subjectQuestions],
+      profile,
+      targetDifficulty,
+      true
+    );
+    const questions = this.selectLeastRepeatedQuestions(
+      [...dueReview, ...towerQuestions],
       profile,
       count,
       `tower-${floorData.floor || 0}-${floorSubject || 'mixed'}`,
       dueReviewItems.map(item => item.questionId),
       'subject'
     );
+    return questions.map(q => this.resolveDynamicQuestion(q, state));
+  }
+
+  static getTowerQuestionDifficulty(floorData) {
+    const floor = Math.max(1, Math.min(50, parseInt(floorData?.floor, 10) || 1));
+    if (floor <= 10) return 1;
+    if (floor <= 20) return 2;
+    if (floor <= 32) return 3;
+    if (floor <= 43) return 4;
+    return 5;
+  }
+
+  static filterQuestionsForDifficulty(questions, profile, targetDifficulty, preferUnseen = false) {
+    const unique = this.uniqueQuestions(questions);
+    const unseen = preferUnseen
+      ? unique.filter(question => this.getQuestionStats(profile, question.id).attempts === 0)
+      : unique;
+    const pool = unseen.length > 0 ? unseen : unique;
+    const exactOrHarder = pool.filter(question => (parseInt(question.difficulty, 10) || 1) >= targetDifficulty);
+    if (exactOrHarder.length > 0) return exactOrHarder;
+    const near = pool.filter(question => (parseInt(question.difficulty, 10) || 1) >= Math.max(1, targetDifficulty - 1));
+    return near.length > 0 ? near : pool;
   }
 
   static normalizeSubjectId(subjectId) {
@@ -356,10 +559,50 @@ class LearningEngine {
     });
   }
 
+  static questionSignature(question) {
+    const prompt = typeof question === 'string' ? question : question?.prompt;
+    const skill = typeof question === 'object' && question ? question.skill || 'skill' : 'skill';
+    return `${skill}:${String(prompt || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\d+/g, '#')
+      .replace(/"[^"]+"/g, '"..."')
+      .replace(/\b(leo|marta|carlitos|sara|nico|luna|pablo|iris|carla|dani|ana)\b/g, 'nombre')
+      .replace(/\b(peonzas|cartas|piezas|pegatinas|canicas|monedas|libros|lapices|cromos|puntos|objetos)\b/g, 'objeto')
+      .replace(/\b(taller|parque|clase|biblioteca|arena|casa|patio|museo|rio)\b/g, 'lugar')
+      .replace(/\s+/g, ' ')
+      .trim()}`;
+  }
+
+  static uniqueQuestionsBySignature(questions) {
+    const seen = new Set();
+    return questions.filter(question => {
+      const signature = this.questionSignature(question);
+      if (!question || seen.has(signature)) return false;
+      seen.add(signature);
+      return true;
+    });
+  }
+
+  static getSeenQuestionSignatures(profile) {
+    const ids = new Set(Object.keys(profile.questionHistory || {}));
+    const signatures = new Set();
+    CurriculumData.questionBank.forEach(question => {
+      if (ids.has(question.id)) signatures.add(this.questionSignature(question));
+    });
+    return signatures;
+  }
+
   static selectLeastRepeatedQuestions(questions, profile, count, contextKey = '', priorityQuestionIds = [], diversifyBy = null) {
-    const unique = this.uniqueQuestions(questions);
+    const uniqueById = this.uniqueQuestions(questions);
+    const unique = this.uniqueQuestionsBySignature(uniqueById);
     const priorityIds = new Set(priorityQuestionIds.filter(Boolean));
-    const ranked = unique
+    const seenSignatures = this.getSeenQuestionSignatures(profile);
+    const unseen = unique.filter(question => this.getQuestionStats(profile, question.id).attempts === 0 && !seenSignatures.has(this.questionSignature(question)));
+    const unseenById = unique.filter(question => this.getQuestionStats(profile, question.id).attempts === 0);
+    const source = unseen.length >= count ? unseen : unseenById.length >= count ? this.uniqueQuestionsBySignature(unseenById) : unique;
+    const ranked = source
       .map((question, index) => ({
         question,
         index,
@@ -495,7 +738,9 @@ class LearningEngine {
     if (existing) {
       existing.step = 0;
       existing.attempts += 1;
-      existing.dueAt = this.addDays(this.todayKey(), this.REVIEW_STEPS_DAYS[0]);
+      existing.repetitions = 0;
+      existing.easeFactor = Math.max(1.3, (existing.easeFactor || 2.5) - 0.2);
+      existing.dueAt = this.addDays(this.todayKey(), 1);
       existing.lastResult = 'incorrect';
       return existing;
     }
@@ -507,7 +752,9 @@ class LearningEngine {
       dueAt: this.todayKey(),
       step: 0,
       attempts: 1,
-      lastResult: 'incorrect'
+      lastResult: 'incorrect',
+      easeFactor: 2.5,
+      repetitions: 0
     };
     profile.reviewQueue.unshift(item);
     profile.reviewQueue = profile.reviewQueue.slice(0, 200);
@@ -519,12 +766,25 @@ class LearningEngine {
     if (!item) return null;
     item.step += 1;
     item.attempts += 1;
+    item.repetitions = (item.repetitions || 0) + 1;
+    item.easeFactor = Math.min(3.0, (item.easeFactor || 2.5) + 0.1);
     item.lastResult = 'correct';
-    if (item.step >= this.REVIEW_STEPS_DAYS.length) {
+
+    let interval = 1;
+    if (item.repetitions === 1) {
+      interval = 1;
+    } else if (item.repetitions === 2) {
+      interval = 3;
+    } else {
+      interval = Math.round(item.repetitions * item.easeFactor);
+    }
+    interval = Math.max(1, Math.min(30, interval));
+
+    if (item.step >= this.REVIEW_STEPS_DAYS.length || item.repetitions >= 5) {
       profile.reviewQueue = profile.reviewQueue.filter(review => review !== item);
       return null;
     }
-    item.dueAt = this.addDays(this.todayKey(), this.REVIEW_STEPS_DAYS[item.step]);
+    item.dueAt = this.addDays(this.todayKey(), interval);
     return item;
   }
 

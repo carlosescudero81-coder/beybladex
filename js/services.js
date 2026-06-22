@@ -10,6 +10,7 @@ const INITIAL_STATE = {
     currentWeek: 1,
     currentDay: 1,
     currentLeague: "Arena de Pruebas",
+    equippedBeyId: 'blackshell',
     activeCombo: {
       core: 'core_wood',
       ring: 'ring_wood',
@@ -26,7 +27,7 @@ const INITIAL_STATE = {
     characterProgress: {}
   },
   inventory: {
-    beys: ['swordDran', 'scytheIncendio', 'arrowWizard', 'helmKnight'],
+    beys: ['blackshell', 'cobaltdragon', 'dranbuster1', 'dranbuster2'],
     core: ['core_wood'],
     ring: ['ring_wood'],
     driver: ['driver_wood'],
@@ -40,6 +41,11 @@ const INITIAL_STATE = {
   progress: {
     sessions: {},
     tableStats: {},
+    tower: {
+      highestUnlockedFloor: 1,
+      completedFloors: [],
+      dailyNewFloors: {}
+    },
     pendingReward: null
   },
   pedagogy: {
@@ -183,6 +189,9 @@ class StorageService {
       state.progress.tableStats = raw.progress.tableStats && typeof raw.progress.tableStats === 'object' && !Array.isArray(raw.progress.tableStats)
         ? raw.progress.tableStats
         : {};
+      state.progress.tower = raw.progress.tower && typeof raw.progress.tower === 'object' && !Array.isArray(raw.progress.tower)
+        ? raw.progress.tower
+        : null;
       state.progress.pendingReward = raw.progress.pendingReward || null;
     }
 
@@ -223,6 +232,22 @@ class StorageService {
     Object.keys(state.inventory).forEach(key => {
       state.inventory[key] = [...new Set(Array.isArray(state.inventory[key]) ? state.inventory[key] : [])];
     });
+    if (typeof BEYBLADE_X_BEYS !== 'undefined') {
+      const validBeyIds = new Set(BEYBLADE_X_BEYS.map(bey => bey.id));
+      const starterBeyIds = typeof STARTER_BEY_IDS !== 'undefined' && STARTER_BEY_IDS.length > 0
+        ? STARTER_BEY_IDS
+        : INITIAL_STATE.inventory.beys;
+      state.inventory.beys = state.inventory.beys.filter(id => validBeyIds.has(id));
+      starterBeyIds.forEach(id => {
+        if (validBeyIds.has(id) && !state.inventory.beys.includes(id)) state.inventory.beys.push(id);
+      });
+      if (!validBeyIds.has(state.player.equippedBeyId)) {
+        state.player.equippedBeyId = state.inventory.beys[0] || starterBeyIds[0] || INITIAL_STATE.player.equippedBeyId;
+      }
+      if (validBeyIds.has(state.player.equippedBeyId) && !state.inventory.beys.includes(state.player.equippedBeyId)) {
+        state.inventory.beys.push(state.player.equippedBeyId);
+      }
+    }
     if (!state.inventory.core.includes('core_wood')) state.inventory.core.unshift('core_wood');
     if (!state.inventory.ring.includes('ring_wood')) state.inventory.ring.unshift('ring_wood');
     if (!state.inventory.driver.includes('driver_wood')) state.inventory.driver.unshift('driver_wood');
@@ -390,6 +415,9 @@ class ProgressService {
       tableStats: progress && progress.tableStats && typeof progress.tableStats === 'object' && !Array.isArray(progress.tableStats)
         ? progress.tableStats
         : {},
+      tower: progress && progress.tower && typeof progress.tower === 'object' && !Array.isArray(progress.tower)
+        ? progress.tower
+        : null,
       pendingReward: progress && progress.pendingReward && typeof progress.pendingReward === 'object'
         ? progress.pendingReward
         : null
@@ -400,7 +428,7 @@ class ProgressService {
       normalized.sessions[key] = {
         week: Math.min(12, Math.max(1, parseInt(session.week, 10) || 1)),
         day: session.day === null || session.day === undefined ? null : Math.min(5, Math.max(1, parseInt(session.day, 10) || 1)),
-        type: session.type === 'boss' ? 'boss' : 'training',
+        type: ['boss', 'tower', 'review'].includes(session.type) ? session.type : 'training',
         attempts: Math.max(0, parseInt(session.attempts, 10) || 0),
         completedAt: session.completedAt || null,
         rewardClaimedAt: session.rewardClaimedAt || null,
@@ -418,6 +446,7 @@ class ProgressService {
       };
     });
 
+    normalized.tower = this.normalizeTowerProgress(normalized.tower, player);
     this.bootstrapLegacyProgress(normalized, player);
     if (normalized.pendingReward) {
       const key = normalized.pendingReward.key;
@@ -434,6 +463,34 @@ class ProgressService {
       }
     }
     return normalized;
+  }
+
+  static normalizeTowerProgress(rawTower, player) {
+    const today = StorageService.todayKey();
+    const raw = rawTower && typeof rawTower === 'object' && !Array.isArray(rawTower) ? rawTower : {};
+    const completedFloors = [...new Set(Array.isArray(raw.completedFloors)
+      ? raw.completedFloors.map(floor => Math.max(1, Math.min(50, parseInt(floor, 10) || 1)))
+      : [])].sort((a, b) => a - b);
+    const legacyXpFloor = Math.floor(((player && Number(player.xp)) || 0) / 45) + 1;
+    const legacyWeekFloor = ((((player && Number(player.currentWeek)) || 1) - 1) * 6) + 1;
+    const legacyFloor = Math.max(1, Math.min(50, Math.max(legacyXpFloor, legacyWeekFloor)));
+    const completedMax = completedFloors.length > 0 ? Math.max(...completedFloors) + 1 : 1;
+    const highestUnlockedFloor = Math.max(
+      1,
+      Math.min(50, parseInt(raw.highestUnlockedFloor, 10) || Math.max(completedMax, legacyFloor))
+    );
+    const dailyNewFloors = raw.dailyNewFloors && typeof raw.dailyNewFloors === 'object' && !Array.isArray(raw.dailyNewFloors)
+      ? Object.entries(raw.dailyNewFloors).reduce((acc, [date, value]) => {
+          if (/^\d{4}-\d{2}-\d{2}$/.test(date)) acc[date] = Math.max(0, Math.min(3, parseInt(value, 10) || 0));
+          return acc;
+        }, {})
+      : {};
+    if (!dailyNewFloors[today]) dailyNewFloors[today] = 0;
+    return {
+      highestUnlockedFloor,
+      completedFloors,
+      dailyNewFloors
+    };
   }
 
   static bootstrapLegacyProgress(progress, player) {
@@ -484,6 +541,11 @@ class ProgressService {
     if (week === 'reinforce') return this.reinforceKey();
     if (week === 'post-boss-review') return this.postBossReviewKey();
     return isBoss ? this.bossKey(week) : this.trainingKey(week, day);
+  }
+
+  static towerKey(floorNumber) {
+    const floor = Math.max(1, Math.min(50, parseInt(floorNumber, 10) || 1));
+    return `tower-floor-${floor}`;
   }
 
   static getSession(state, key) {
@@ -542,6 +604,25 @@ class ProgressService {
     return { ok: true };
   }
 
+  static getTowerProgress(state) {
+    if (!state.progress.tower || typeof state.progress.tower !== 'object') {
+      state.progress.tower = this.normalizeTowerProgress(null, state.player);
+    }
+    return state.progress.tower;
+  }
+
+  static canStartTowerFloor(state, floorNumber) {
+    const floor = Math.max(1, Math.min(50, parseInt(floorNumber, 10) || 1));
+    const tower = this.getTowerProgress(state);
+    const completed = new Set(tower.completedFloors || []);
+    if (completed.has(floor) || floor < tower.highestUnlockedFloor) return { ok: true, replay: true };
+    if (floor > tower.highestUnlockedFloor) return { ok: false, reason: 'Gana la planta anterior para desbloquear esta.' };
+    const today = StorageService.todayKey();
+    const winsToday = Math.max(0, parseInt(tower.dailyNewFloors?.[today], 10) || 0);
+    if (winsToday >= 1) return { ok: false, reason: 'Hoy ya has ganado una planta nueva. Puedes repetir combates o volver manana para subir otra planta.' };
+    return { ok: true, replay: false };
+  }
+
   static recordCompletion(state, week, isBoss, stats = {}) {
     const day = (week === 'reinforce' || week === 'post-boss-review') ? null : (isBoss ? null : this.nextTrainingDay(state, week));
     const key = this.sessionKey(week, isBoss, day);
@@ -558,6 +639,35 @@ class ProgressService {
     if (firstCompletion) {
       session.completedAt = today;
       if (week !== 'post-boss-review') this.advancePlayer(state, week, isBoss);
+    }
+
+    return { key, session, firstCompletion };
+  }
+
+  static recordTowerFloorCompletion(state, floorNumber, stats = {}) {
+    const floor = Math.max(1, Math.min(50, parseInt(floorNumber, 10) || 1));
+    const tower = this.getTowerProgress(state);
+    const key = this.towerKey(floor);
+    const session = this.getSession(state, key);
+    const today = StorageService.todayKey();
+    const completed = new Set(tower.completedFloors || []);
+
+    session.week = Math.max(1, Math.min(12, parseInt(stats.week, 10) || state.player.currentWeek || 1));
+    session.day = null;
+    session.type = 'tower';
+    session.towerFloor = floor;
+    session.attempts += 1;
+    session.bestAccuracy = Math.max(session.bestAccuracy || 0, stats.accuracy || 0);
+
+    const firstCompletion = !session.completedAt && !completed.has(floor);
+    if (firstCompletion) {
+      session.completedAt = today;
+      completed.add(floor);
+      tower.completedFloors = [...completed].sort((a, b) => a - b);
+      if (floor >= tower.highestUnlockedFloor) {
+        tower.highestUnlockedFloor = Math.min(50, floor + 1);
+        tower.dailyNewFloors[today] = Math.max(0, parseInt(tower.dailyNewFloors[today], 10) || 0) + 1;
+      }
     }
 
     return { key, session, firstCompletion };

@@ -258,11 +258,19 @@ function runStaticValidation() {
     'reward-modal',
     'reward-boss-summary',
     'bey-type-grid',
+    'battle-intro',
+    'battle-intro-player-character',
+    'battle-intro-rival-character',
+    'battle-intro-player-stats',
+    'battle-intro-rival-stats',
+    'battle-intro-skip',
     'app-dialog'
   ].forEach(id => {
     assert.ok(html.includes(`id="${id}"`), `critical UI id exists: ${id}`);
   });
 
+  assert.ok(source.includes('playBattleIntro'), 'combat starts with the cinematic battle intro');
+  assert.ok(source.includes('getBattleIntroStats'), 'battle intro shows simple combat stats');
   assert.match(html, /id="app-dialog"[^>]+role="dialog"[^>]+aria-modal="true"/, 'app dialog is announced as modal');
   assert.match(html, /id="parent-gate-modal"[^>]+role="dialog"[^>]+aria-modal="true"/, 'parent gate is announced as modal');
   assert.ok(!source.includes('app.state.config.soundEnabled'), 'audio does not read the app singleton directly');
@@ -405,8 +413,12 @@ async function runRuntimeValidation() {
   assert.ok(Array.isArray(app.state.inventory.beys), 'Bey inventory should be initialized');
   const floorEleven = getTowerFloorData(11);
   assert.ok(floorEleven.reward.beyId, 'floor 11 should advertise a Bey reward');
+  assert.equal(getTowerFloorData(12).reward.beyId, null, 'floors without an exact Bey reward should not repeat a recent Bey');
+  assert.equal(new Set(BEYBLADE_X_BEYS.map(bey => bey.id)).size, BEYBLADE_X_BEYS.length, 'Bey ids should be unique for inventory and equip state');
+  assert.ok(app.state.inventory.beys.every(id => BEYBLADE_X_BEYS.some(bey => bey.id === id)), 'starter Bey inventory should only contain real Bey ids');
+  assert.ok(BEYBLADE_X_BEYS.some(bey => bey.id === app.state.player.equippedBeyId), 'equipped starter Bey should exist');
   const floorElevenBey = getBeyById(floorEleven.reward.beyId);
-  app.state.inventory.beys = ['swordDran', 'scytheIncendio', 'arrowWizard', 'helmKnight'];
+  app.state.inventory.beys = STARTER_BEY_IDS.slice();
   assert.equal(isBeyUnlocked(app.state, floorElevenBey), false, 'non-starter Bey should stay locked until claimed');
   app.currentTowerFloor = 11;
   app.showRewardModal(1, true, {
@@ -419,6 +431,9 @@ async function runRuntimeValidation() {
   assert.equal(isBeyUnlocked(app.state, floorElevenBey), true, 'claimed Bey should become selectable');
   app.state.player.equippedBeyId = floorElevenBey.id;
   assert.equal(getEquippedBey(app.state).id, floorElevenBey.id, 'claimed Bey should be usable as the equipped combat Bey');
+  app.state.progress.tower.highestUnlockedFloor = 2;
+  app.state.progress.tower.completedFloors = [1];
+  app.state.progress.tower.dailyNewFloors = {};
   app.openTowerFloor(2);
   assert.equal(app.currentScreen, 'combat');
   assert.equal(app.currentTowerFloor, 2);

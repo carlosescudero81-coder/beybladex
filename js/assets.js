@@ -812,6 +812,23 @@ function camelAssetId(value) {
     .join('');
 }
 
+function camelRawId(value) {
+  const words = String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (words.length === 0) return 'asset';
+  return words
+    .map((word, index) => {
+      const lower = word.toLowerCase();
+      return index === 0 ? lower : lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join('');
+}
+
 function statProfile(index, style = 'balance', base = 58) {
   const spread = [
     { attack: 12, defense: -2, stamina: -4, speed: 10, focus: 0 },
@@ -891,11 +908,19 @@ function buildAvatarCharactersFromFiles() {
 
 function buildBeysFromFiles() {
   const owners = NEW_AVATAR_FILES.map(file => titleCaseAssetName(file));
-  return NEW_BEY_FILES.map((file, index) => {
+  const nameCounts = NEW_BEY_FILES.reduce((acc, file) => {
     const name = titleCaseAssetName(file);
+    acc[name] = (acc[name] || 0) + 1;
+    return acc;
+  }, {});
+  const nameIndexes = {};
+  return NEW_BEY_FILES.map((file, index) => {
+    const baseName = titleCaseAssetName(file);
+    nameIndexes[baseName] = (nameIndexes[baseName] || 0) + 1;
+    const name = nameCounts[baseName] > 1 ? `${baseName} ${nameIndexes[baseName]}` : baseName;
     const style = getBeyStyleFromName(name, index);
     const stats = statProfile(index, style, 54);
-    const id = name.toLowerCase().includes('dransword') ? 'swordDran' : camelAssetId(file);
+    const id = name.toLowerCase().includes('dransword') ? 'swordDran' : camelRawId(name);
     const rarity = index < 5 ? 'comun' : index < 11 ? 'rara' : index < 17 ? 'epica' : 'legendaria';
     return {
       id,
@@ -919,6 +944,7 @@ function buildBeysFromFiles() {
 
 BEYBLADE_CHARACTERS.splice(0, BEYBLADE_CHARACTERS.length, ...buildAvatarCharactersFromFiles());
 BEYBLADE_BEYS.splice(0, BEYBLADE_BEYS.length, ...buildBeysFromFiles());
+const STARTER_BEY_IDS = BEYBLADE_X_BEYS.slice(0, 4).map(bey => bey.id);
 
 function getCharacterBaseStats(character) {
   return character?.stats || { attack: 55, defense: 55, stamina: 55, speed: 55, focus: 55 };
@@ -1162,9 +1188,7 @@ function getFloorObjectives(floorNumber, subject, rival) {
 }
 
 function getFloorReward(floorNumber) {
-  const bey = BEYBLADE_X_BEYS.find(item => item.nivelRequerido === floorNumber)
-    || BEYBLADE_X_BEYS.find(item => item.nivelRequerido <= floorNumber && item.nivelRequerido > floorNumber - 3)
-    || null;
+  const bey = BEYBLADE_X_BEYS.find(item => item.nivelRequerido === floorNumber) || null;
   const difficulty = getFloorDifficulty(floorNumber);
   const rewardCoins = floorNumber % 10 === 0 ? 90 + difficulty * 8 : floorNumber % 5 === 0 ? 55 + difficulty * 6 : 18 + difficulty * 4;
   const rewardXP = floorNumber % 10 === 0 ? 120 + difficulty * 10 : floorNumber % 5 === 0 ? 75 + difficulty * 8 : 28 + difficulty * 5;
@@ -1244,9 +1268,9 @@ function getTowerFloorData(floorNumber) {
 }
 
 function getCurrentTowerFloor(state) {
-  const xpFloor = Math.floor(((state && state.player && Number(state.player.xp)) || 0) / 45) + 1;
-  const weekFloor = ((((state && state.player && Number(state.player.currentWeek)) || 1) - 1) * 6) + 1;
-  return Math.max(1, Math.min(50, Math.max(xpFloor, weekFloor)));
+  const towerFloor = parseInt(state?.progress?.tower?.highestUnlockedFloor, 10);
+  if (Number.isFinite(towerFloor) && towerFloor > 0) return Math.max(1, Math.min(50, towerFloor));
+  return 1;
 }
 
 function getUnlockedTowerFloors(state) {
@@ -1258,15 +1282,14 @@ function getBeyById(id) {
 }
 
 function getEquippedBey(state) {
-  const id = state?.player?.equippedBeyId || "swordDran";
+  const id = state?.player?.equippedBeyId || STARTER_BEY_IDS[0] || "swordDran";
   return getBeyById(id);
 }
 
 function isBeyUnlocked(state, bey) {
   if (!bey) return false;
-  const starter = ["swordDran", "scytheIncendio", "arrowWizard", "helmKnight"];
   const unlocked = state?.inventory?.beys || [];
-  return starter.includes(bey.id) || unlocked.includes(bey.id);
+  return STARTER_BEY_IDS.includes(bey.id) || unlocked.includes(bey.id);
 }
 
 const CUSTOM_PARTS = {

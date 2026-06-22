@@ -173,12 +173,25 @@ async function run() {
   assert.equal(curriculumValidation.ok, true, curriculumValidation.errors.join('; '));
   assert.equal(Object.keys(CurriculumData.subjects).length, 6);
   assert.equal(CurriculumData.summerWeeks.length, 8);
-  assert.ok(CurriculumData.questionBank.length >= 500);
+  assert.ok(CurriculumData.questionBank.length >= 5000);
+  assert.equal(new Set(CurriculumData.questionBank.map(question => question.id)).size, CurriculumData.questionBank.length);
   assert.ok(CurriculumData.readingBank.length >= 2);
   assert.ok(CurriculumData.getSkill('math_multiply_fast'));
   assert.ok(CurriculumData.getQuestionsBySkill('math_multiply_fast').length >= 1);
   CurriculumData.getAllSkills().forEach(skill => {
-    assert.ok(CurriculumData.getQuestionsBySkill(skill.id).length >= 3, skill.id + ' should have enough practice questions');
+    assert.ok(CurriculumData.getQuestionsBySkill(skill.id).length >= 100, skill.id + ' should have enough practice questions');
+  });
+  const promptShape = (prompt) => String(prompt)
+    .replace(/\d+/g, '#')
+    .replace(/"[^"]+"/g, '"..."')
+    .replace(/Leo|Marta|Carlitos|Sara|Nico|Luna|Pablo|Iris/g, 'NAME')
+    .replace(/peonzas|cartas|piezas|pegatinas|canicas|monedas|libros|lapices/g, 'OBJECT')
+    .replace(/taller|parque|clase|biblioteca|arena|casa|patio|museo/g, 'PLACE');
+  CurriculumData.getAllSkills().forEach(skill => {
+    const generatedShapes = new Set(CurriculumData.getQuestionsBySkill(skill.id)
+      .filter(question => question.id.startsWith('auto-'))
+      .map(question => promptShape(question.prompt)));
+    assert.ok(generatedShapes.size >= 3, skill.id + ' should vary prompt themes, not only numbers');
   });
 
   const legacy = StorageService.normalizeState({
@@ -379,6 +392,18 @@ async function run() {
   assert.equal(scienceCombat.questionsList.length, scienceCombat.questionCount);
   assert.ok(scienceCombat.questionsList.every(question => question.type === 'curriculum-tower'));
   assert.ok(new Set(scienceCombat.questionsList.map(question => question.subject)).size >= 2);
+  const earlyTowerQuestions = LearningEngine.selectQuestionsForTowerFloor(learningState, getTowerFloorData(5), 10);
+  const lateTowerQuestions = LearningEngine.selectQuestionsForTowerFloor(learningState, getTowerFloorData(45), 18);
+  assert.equal(new Set(lateTowerQuestions.map(question => question.id)).size, lateTowerQuestions.length);
+  assert.equal(new Set(lateTowerQuestions.map(question => LearningEngine.questionSignature(question))).size, lateTowerQuestions.length);
+  assert.ok(lateTowerQuestions.every(question => (question.difficulty || 1) >= 5));
+  assert.ok(earlyTowerQuestions.every(question => (question.difficulty || 1) >= 1));
+  const signatureState = StorageService.normalizeState(null);
+  const firstTowerBatch = LearningEngine.selectQuestionsForTowerFloor(signatureState, getTowerFloorData(25), 12);
+  assert.equal(new Set(firstTowerBatch.map(question => LearningEngine.questionSignature(question))).size, firstTowerBatch.length);
+  LearningEngine.recordAnswer(signatureState, firstTowerBatch[0], true);
+  const nextTowerBatch = LearningEngine.selectQuestionsForTowerFloor(signatureState, getTowerFloorData(25), 12);
+  assert.ok(!nextTowerBatch.map(question => LearningEngine.questionSignature(question)).includes(LearningEngine.questionSignature(firstTowerBatch[0])));
 
   const bossCombat = new CombatSession(3, true, learningState, combatApp);
   bossCombat.generateQuestionsList();
@@ -440,6 +465,25 @@ async function run() {
   assert.equal(progressState.player.currentWeek, 2);
   assert.equal(ProgressService.claimReward(progressState, boss.key), true);
   assert.equal(ProgressService.claimReward(progressState, boss.key), false);
+  const towerState = StorageService.normalizeState({
+    progress: {
+      tower: {
+        highestUnlockedFloor: 25,
+        completedFloors: Array.from({ length: 24 }, (_, index) => index + 1),
+        dailyNewFloors: {}
+      }
+    }
+  });
+  assert.equal(getCurrentTowerFloor(towerState), 25);
+  assert.equal(ProgressService.canStartTowerFloor(towerState, 25).ok, true);
+  const towerFloor25 = ProgressService.recordTowerFloorCompletion(towerState, 25, { accuracy: 90, week: 4 });
+  assert.equal(towerFloor25.key, 'tower-floor-25');
+  assert.equal(towerFloor25.firstCompletion, true);
+  assert.equal(getCurrentTowerFloor(towerState), 26);
+  assert.equal(ProgressService.canStartTowerFloor(towerState, 26).ok, false);
+  assert.equal(ProgressService.canStartTowerFloor(towerState, 25).ok, true);
+  assert.equal(ProgressService.claimReward(towerState, towerFloor25.key), true);
+  assert.equal(ProgressService.claimReward(towerState, towerFloor25.key), false);
   ProgressService.recordAnswer(progressState, { type: 'mult', a: 3, b: 4 }, true);
   ProgressService.recordAnswer(progressState, { type: 'mult', a: 3, b: 5 }, false);
   assert.deepEqual(
