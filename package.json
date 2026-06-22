@@ -5,6 +5,6 @@
   "description": "Static learning app for Spin Academy.",
   "scripts": {
     "check": "node tests/check-syntax.cjs",
-    "test": "node tests/core-smoke.test.cjs && node tests/product-validation.test.cjs"
+    "test": "node tests/core-smoke.test.cjs && node tests/product-validation.test.cjs && node tests/adaptive-learning.test.cjs"
   }
 }
