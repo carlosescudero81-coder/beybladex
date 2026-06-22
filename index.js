@@ -1072,6 +1072,7 @@ class App {
     const currentFloor = getCurrentTowerFloor(this.state);
     const currentData = getTowerFloorData(currentFloor);
     const equippedBey = getEquippedBey(this.state);
+    const currentGate = ProgressService.canStartTowerFloor(this.state, currentFloor);
 
     const floorLabel = document.getElementById('tower-current-floor');
     const blockLabel = document.getElementById('tower-current-block');
@@ -1090,11 +1091,18 @@ class App {
     if (beyLabel) beyLabel.innerText = `Tu Bey: ${equippedBey.nombre} vs ${currentData.rivalBeyName}`;
     if (rewardLabel) rewardLabel.innerText = `Premio: ${currentData.reward.label}`;
     if (progressFill) progressFill.style.width = `${Math.max(2, Math.round((currentFloor / 50) * 100))}%`;
-    if (nextStepLabel) nextStepLabel.innerText = currentFloor >= 50 ? 'Estas en la cima de la torre.' : `Gana esta planta para abrir la ${currentFloor + 1}.`;
+    if (nextStepLabel) nextStepLabel.innerText = currentFloor >= 50
+      ? 'Estas en la cima de la torre.'
+      : !currentGate.ok
+        ? `Planta ${currentFloor} desbloqueada para manana. Hoy puedes repetir combates para practicar.`
+        : `Gana esta planta para abrir la ${currentFloor + 1}.`;
 
     const enterBtn = document.getElementById('btn-tower-enter');
     if (enterBtn) {
-      enterBtn.innerText = currentData.type === 'diagnostic' && !LearningEngine.isDiagnosticComplete(this.state)
+      enterBtn.disabled = !currentGate.ok;
+      enterBtn.innerText = !currentGate.ok
+        ? 'Vuelve manana'
+        : currentData.type === 'diagnostic' && !LearningEngine.isDiagnosticComplete(this.state)
         ? 'Empezar revision'
         : 'Combatir';
       enterBtn.onclick = () => this.openTowerFloor(currentFloor);
@@ -1107,13 +1115,15 @@ class App {
     if (beysBtn) beysBtn.onclick = () => this.showScreen('cards');
 
     this.getVisibleTowerFloors(currentFloor).forEach(floorData => {
-      const isCompleted = floorData.floor < currentFloor;
-      const isAvailable = floorData.floor === currentFloor;
-      const isLocked = floorData.floor > currentFloor;
+      const towerGate = ProgressService.canStartTowerFloor(this.state, floorData.floor);
+      const isCompleted = (this.state.progress.tower?.completedFloors || []).includes(floorData.floor) || floorData.floor < currentFloor;
+      const isDailyBlocked = !isCompleted && floorData.floor === currentFloor && !towerGate.ok;
+      const isAvailable = floorData.floor === currentFloor && towerGate.ok;
+      const isLocked = floorData.floor > currentFloor || isDailyBlocked;
       const statusClass = isCompleted ? 'completed' : isAvailable ? 'available' : 'locked';
       const typeClass = floorData.type === 'tower-rival' || floorData.type === 'final' ? 'boss' : floorData.type === 'ascension' ? 'ascension' : '';
-      const statusText = isCompleted ? 'Ya ganada' : isAvailable ? 'Estoy aqui' : 'Luego';
-      const actionText = isCompleted ? 'Repetir' : isAvailable ? 'Jugar' : 'Bloqueada';
+      const statusText = isCompleted ? 'Ya ganada' : isDailyBlocked ? 'Manana' : isAvailable ? 'Estoy aqui' : 'Luego';
+      const actionText = isCompleted ? 'Repetir' : isDailyBlocked ? 'Vuelve manana' : isAvailable ? 'Jugar' : 'Bloqueada';
       const node = document.createElement('article');
       node.className = `tower-floor-node ${statusClass} ${typeClass}`;
       node.dataset.floor = floorData.floor;
@@ -1123,7 +1133,7 @@ class App {
           <span class="tower-floor-status">${statusText}</span>
         </div>
         <h3>${floorData.rivalName}</h3>
-        <div class="tower-floor-meta">${isLocked ? 'Gana la planta anterior para abrirla.' : this.getKidFloorGoal(floorData)}</div>
+        <div class="tower-floor-meta">${isDailyBlocked ? towerGate.reason : isLocked ? 'Gana la planta anterior para abrirla.' : this.getKidFloorGoal(floorData)}</div>
         <div class="tower-floor-meta">Dificultad: ${this.getTowerDifficultyLabel(floorData)} · Objetivo: ${floorData.secondaryObjective || 'Gana el duelo'}</div>
         <div class="tower-floor-reward">Premio: ${floorData.reward.label}</div>
         <button class="btn-action ${isLocked ? 'secondary' : ''}" type="button" ${isLocked ? 'disabled' : ''}>${actionText}</button>
@@ -1137,6 +1147,11 @@ class App {
   openTowerFloor(floorNumber) {
     const floorData = getTowerFloorData(floorNumber);
     sounds.playClick();
+    const towerGate = ProgressService.canStartTowerFloor(this.state, floorData.floor);
+    if (!towerGate.ok) {
+      this.showNotice(towerGate.reason, "Torre X");
+      return;
+    }
     if (floorData.type === 'diagnostic' && !LearningEngine.isDiagnosticComplete(this.state)) {
       this.showScreen('diagnostic');
       return;
@@ -1950,6 +1965,7 @@ class App {
     }
     const floorData = getTowerFloorData(this.currentTowerFloor);
     const isTowerBattle = this.pendingTowerBattle === true && !!floorData && floorData.floor === this.currentTowerFloor;
+    this.activeTowerBattle = isTowerBattle;
     this.pendingTowerBattle = false;
     const bossReadiness = isBoss
       ? LearningEngine.canUnlockWeeklyBoss(this.state, Math.min(this.selectedWeekNum, CurriculumData.summerWeeks.length))
@@ -2315,11 +2331,11 @@ class App {
       : isPostBossReview
         ? "RECALIBRACION COMPLETADA"
         : "¡ENTRENAMIENTO COMPLETADO!";
-    document.getElementById('reward-desc-text').innerText = isBoss 
-      ? rewardBey && !beyAlreadyOwned
-        ? `Has vencido la planta ${this.rewardTowerFloor}. Abre la capsula para conseguir ${rewardBey.nombre}.`
-        : `Has vencido un duelo de la X Tower. Abre tu capsula de piezas.`
-      : isPostBossReview
+    document.getElementById('reward-desc-text').innerText = rewardBey && !beyAlreadyOwned
+      ? `Has vencido la planta ${this.rewardTowerFloor}. Abre la capsula para conseguir ${rewardBey.nombre}.`
+      : isBoss
+        ? `Has vencido un duelo de la X Tower. Abre tu capsula de piezas.`
+        : isPostBossReview
         ? "Has estabilizado tu Bey con repaso espaciado. Abre tu capsula."
         : "Has completado la sesion diaria de entrenamiento. Abre tu capsula de piezas.";
     this.renderRewardBossSummary();
@@ -2437,7 +2453,7 @@ class App {
 
       // Handle card reward
       let cardNum = 1;
-      if (partType === 'card' || !rewardedPart) {
+      if (partType !== 'bey' && (partType === 'card' || !rewardedPart)) {
         partType = 'card';
         // Unlock next chronologic card
         const unlocked = this.state.inventory.cards || [];
