@@ -1098,9 +1098,13 @@ class App {
 
     const enterBtn = document.getElementById('btn-tower-enter');
     if (enterBtn) {
-      enterBtn.disabled = !currentGate.ok;
-      enterBtn.innerText = !currentGate.ok
+      const isCurrentFloorCompleted = (this.state.progress.tower?.completedFloors || []).includes(currentFloor);
+      const isDailyBlocked = !isCurrentFloorCompleted && !currentGate.ok;
+      enterBtn.disabled = isDailyBlocked;
+      enterBtn.innerText = isDailyBlocked
         ? 'Vuelve manana'
+        : isCurrentFloorCompleted
+        ? 'Repetir combate'
         : currentData.type === 'diagnostic' && !LearningEngine.isDiagnosticComplete(this.state)
         ? 'Empezar revision'
         : 'Combatir';
@@ -1146,8 +1150,9 @@ class App {
   openTowerFloor(floorNumber) {
     const floorData = getTowerFloorData(floorNumber);
     sounds.playClick();
+    const isCompleted = (this.state.progress.tower?.completedFloors || []).includes(floorNumber);
     const towerGate = ProgressService.canStartTowerFloor(this.state, floorData.floor);
-    if (!towerGate.ok) {
+    if (!towerGate.ok && !isCompleted) {
       this.showNotice(towerGate.reason, "Torre X");
       return;
     }
@@ -1272,7 +1277,10 @@ class App {
       return;
     }
     const subjectId = action?.subjectId || LearningEngine.getCurrentMission(this.state)?.subject.id;
-    if (!subjectId) return;
+    if (!subjectId) {
+      this.showDailyMissions(this.state.player.currentWeek);
+      return;
+    }
     const currentMission = LearningEngine.getCurrentMission(this.state);
     if (currentMission && (currentMission.missionType.id === 'offline' || currentMission.missionType.id === 'project') && currentMission.subject.id === subjectId) {
       this.openOfflineMission(currentMission);
