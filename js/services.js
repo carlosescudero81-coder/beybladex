@@ -407,6 +407,11 @@ class ParentalSecurityService {
 }
 
 class ProgressService {
+  // Numero maximo de plantas NUEVAS (nunca completadas antes) que se pueden
+  // desbloquear/jugar en un mismo dia. Las plantas ya completadas se pueden
+  // repetir sin limite.
+  static DAILY_NEW_FLOOR_LIMIT = 3;
+
   static normalize(progress, player) {
     const normalized = {
       sessions: progress && progress.sessions && typeof progress.sessions === 'object' && !Array.isArray(progress.sessions)
@@ -481,7 +486,7 @@ class ProgressService {
     );
     const dailyNewFloors = raw.dailyNewFloors && typeof raw.dailyNewFloors === 'object' && !Array.isArray(raw.dailyNewFloors)
       ? Object.entries(raw.dailyNewFloors).reduce((acc, [date, value]) => {
-          if (/^\d{4}-\d{2}-\d{2}$/.test(date)) acc[date] = Math.max(0, Math.min(3, parseInt(value, 10) || 0));
+          if (/^\d{4}-\d{2}-\d{2}$/.test(date)) acc[date] = Math.max(0, Math.min(this.DAILY_NEW_FLOOR_LIMIT, parseInt(value, 10) || 0));
           return acc;
         }, {})
       : {};
@@ -619,7 +624,7 @@ class ProgressService {
     if (floor > tower.highestUnlockedFloor) return { ok: false, reason: 'Gana la planta anterior para desbloquear esta.' };
     const today = StorageService.todayKey();
     const winsToday = Math.max(0, parseInt(tower.dailyNewFloors?.[today], 10) || 0);
-    if (winsToday >= 1) return { ok: false, reason: 'Hoy ya has ganado una planta nueva. Puedes repetir combates o volver manana para subir otra planta.' };
+    if (winsToday >= this.DAILY_NEW_FLOOR_LIMIT) return { ok: false, reason: `Hoy ya has ganado ${this.DAILY_NEW_FLOOR_LIMIT} plantas nuevas. Puedes repetir combates o volver manana para subir mas.` };
     return { ok: true, replay: false };
   }
 

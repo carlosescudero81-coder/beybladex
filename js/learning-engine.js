@@ -494,7 +494,8 @@ class LearningEngine {
       .filter(Boolean);
     const skillQuestions = skillIds.flatMap(skillId => CurriculumData.getQuestionsBySkill(skillId));
     const subjectQuestions = subjectIds.flatMap(subjectId => CurriculumData.questionBank.filter(question => question.subject === subjectId));
-    
+    const allCandidates = this.uniqueQuestions([...dueReview, ...skillQuestions, ...subjectQuestions]);
+
     const baseDifficulty = this.getTowerQuestionDifficulty(floorData);
     const activeProgresses = skillIds.map(id => profile.skills[id]).filter(Boolean);
     const totalAttempts = activeProgresses.reduce((sum, p) => sum + p.attempts, 0);
@@ -507,21 +508,70 @@ class LearningEngine {
     if (avgAccuracy >= 0.85 && baseDifficulty < 5) targetDifficulty += 1;
     if (avgAccuracy < 0.6 && baseDifficulty > 1) targetDifficulty -= 1;
 
-    const towerQuestions = this.filterQuestionsForDifficulty(
-      [...skillQuestions, ...subjectQuestions],
-      profile,
-      targetDifficulty,
-      true
-    );
-    const questions = this.selectLeastRepeatedQuestions(
-      [...dueReview, ...towerQuestions],
-      profile,
-      count,
-      `tower-${floorData.floor || 0}-${floorSubject || 'mixed'}`,
-      dueReviewItems.map(item => item.questionId),
-      'subject'
-    );
+    // Reparte las preguntas en una rampa de dificultad ascendente y gradual:
+    // empieza un poco por debajo del nivel de la planta y termina un poco
+    // por encima, en varios escalones a lo largo de toda la partida.
+    const difficultyRamp = this.buildTowerDifficultyRamp(targetDifficulty, count);
+
+    const usedIds = new Set(dueReviewItems.map(item => item.questionId));
+    const usedSignatures = new Set();
+    const dueReviewInRamp = dueReview.filter(question => question && usedIds.has(question.id));
+    const selected = [...dueReviewInRamp];
+    usedIds.clear();
+    selected.forEach(q => {
+      usedIds.add(q.id);
+      usedSignatures.add(this.questionSignature(q));
+    });
+
+    difficultyRamp.forEach((stepDifficulty, stepIndex) => {
+      if (selected.length > stepIndex && stepIndex < dueReviewInRamp.length) return;
+      const remainingPool = allCandidates.filter(question => !usedIds.has(question.id) && !usedSignatures.has(this.questionSignature(question)));
+      const stepPool = this.filterQuestionsForExactDifficulty(remainingPool, profile, stepDifficulty, true);
+      const [next] = this.selectLeastRepeatedQuestions(
+        stepPool,
+        profile,
+        1,
+        `tower-${floorData.floor || 0}-${floorSubject || 'mixed'}-step${stepIndex}`,
+        [],
+        'subject'
+      );
+      if (next) {
+        selected.push(next);
+        usedIds.add(next.id);
+        usedSignatures.add(this.questionSignature(next));
+      }
+    });
+
+    // Salvaguarda final: aunque cada escalon ya pide su nivel de dificultad,
+    // se reordena por dificultad ascendente para garantizar que la rampa
+    // dentro de la partida sea siempre suave y creciente de principio a fin.
+    // Las preguntas de repaso pendiente (dueReview) se mantienen al principio
+    // porque tienen prioridad pedagogica sobre el orden de dificultad.
+    const reviewCount = dueReviewInRamp.length;
+    const reviewPart = selected.slice(0, reviewCount);
+    const rampPart = selected.slice(reviewCount).sort((a, b) => (parseInt(a.difficulty, 10) || 1) - (parseInt(b.difficulty, 10) || 1));
+    const orderedSelected = [...reviewPart, ...rampPart];
+
+    const questions = orderedSelected.slice(0, Math.max(0, count));
     return questions.map(q => this.resolveDynamicQuestion(q, state));
+  }
+
+  // Genera una rampa de dificultad de longitud `count` que sube de forma
+  // gradual y suave: empieza un escalon por debajo de `targetDifficulty`
+  // y termina un escalon por encima, repartiendo varios incrementos a lo
+  // largo de toda la batalla en vez de saltar de golpe.
+  static buildTowerDifficultyRamp(targetDifficulty, count) {
+    const minDifficulty = Math.max(1, targetDifficulty - 1);
+    const maxDifficulty = Math.min(5, targetDifficulty + 1);
+    const span = Math.max(0, maxDifficulty - minDifficulty);
+    const steps = Math.max(1, count);
+    const ramp = [];
+    for (let i = 0; i < steps; i += 1) {
+      const progress = steps === 1 ? 1 : i / (steps - 1);
+      const value = minDifficulty + progress * span;
+      ramp.push(Math.min(maxDifficulty, Math.max(minDifficulty, Math.round(value))));
+    }
+    return ramp;
   }
 
   static getTowerQuestionDifficulty(floorData) {
@@ -543,6 +593,26 @@ class LearningEngine {
     if (exactOrHarder.length > 0) return exactOrHarder;
     const near = pool.filter(question => (parseInt(question.difficulty, 10) || 1) >= Math.max(1, targetDifficulty - 1));
     return near.length > 0 ? near : pool;
+  }
+
+  // A diferencia de filterQuestionsForDifficulty (que prefiere "esta dificultad
+  // o mas dura"), esta variante busca la dificultad EXACTA del escalon primero,
+  // y solo si no hay preguntas suficientes en ese nivel exacto va ampliando el
+  // rango paso a paso (+-1, +-2...). Es lo que necesita una rampa de dificultad
+  // gradual: cada escalon debe representar de verdad su nivel, no "como minimo".
+  static filterQuestionsForExactDifficulty(questions, profile, targetDifficulty, preferUnseen = false) {
+    const unique = this.uniqueQuestions(questions);
+    const unseen = preferUnseen
+      ? unique.filter(question => this.getQuestionStats(profile, question.id).attempts === 0)
+      : unique;
+    const pool = unseen.length > 0 ? unseen : unique;
+    if (pool.length === 0) return pool;
+    const maxDelta = 4;
+    for (let delta = 0; delta <= maxDelta; delta += 1) {
+      const band = pool.filter(question => Math.abs((parseInt(question.difficulty, 10) || 1) - targetDifficulty) <= delta);
+      if (band.length > 0) return band;
+    }
+    return pool;
   }
 
   static normalizeSubjectId(subjectId) {

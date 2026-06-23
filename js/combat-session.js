@@ -286,7 +286,7 @@ class CombatSession {
   getTowerQuestionCount(floorNumber, difficulty) {
     const floor = Math.max(1, Math.min(50, parseInt(floorNumber, 10) || 1));
     const milestoneBonus = floor % 10 === 0 ? 4 : floor % 5 === 0 ? 2 : 0;
-    return Math.max(10, Math.min(24, 9 + Math.ceil(floor / 5) + Math.ceil((difficulty || 1) / 2) + milestoneBonus));
+    return Math.max(30, Math.min(44, 30 + Math.ceil(floor / 5) + Math.ceil((difficulty || 1) / 2) + milestoneBonus));
   }
 
   decorateTopSprites() {
