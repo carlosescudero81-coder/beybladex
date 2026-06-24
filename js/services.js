@@ -693,11 +693,12 @@ class ProgressService {
   static claimReward(state, sessionKey) {
     const session = this.getSession(state, sessionKey);
     if (session.rewardClaimedAt) {
-      // For tower floors: allow reclaim if the floor is not yet in completedFloors.
-      // Fixes stale rewardClaimedAt set during file:// sessions.
-      if (session.type === 'tower' && session.towerFloor) {
+      // For tower floors: reset stale claim if this floor isn't in completedFloors yet.
+      // session.towerFloor may be missing in old saves, so parse floor from sessionKey.
+      if (session.type === 'tower') {
         const completedFloors = state?.progress?.tower?.completedFloors || [];
-        if (!completedFloors.includes(session.towerFloor)) {
+        const floorNum = parseInt(sessionKey.replace('tower-floor-', ''), 10);
+        if (!isNaN(floorNum) && !completedFloors.includes(floorNum)) {
           session.rewardClaimedAt = null; // reset stale claim
         } else {
           return false;
