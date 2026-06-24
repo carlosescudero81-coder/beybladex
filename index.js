@@ -1968,8 +1968,10 @@ class App {
       this.currentTowerFloor = getCurrentTowerFloor(this.state);
     }
     const floorData = getTowerFloorData(this.currentTowerFloor);
-    // Evaluate isTowerBattle BEFORE clearing pendingTowerBattle
-    const isTowerBattle = this.pendingTowerBattle === true && !!floorData && floorData.floor === this.currentTowerFloor;
+    // A tower battle occurs when launched from a floor node (pendingTowerBattle)
+    // OR directly from buttons on the map screen (btn-start-training / btn-start-boss)
+    // that always play the current tower floor. Both paths must unlock the next floor.
+    const isTowerBattle = (this.pendingTowerBattle === true || this.currentScreen === 'map') && !!floorData && floorData.floor === this.currentTowerFloor;
     this.activeTowerBattle = isTowerBattle;
     this.pendingTowerBattle = false;
     // Use floor's week when it's a tower battle; fall back to currentWeek for legacy modal flow
@@ -2024,10 +2026,10 @@ class App {
   }
 
   selectReadingForMission(mission) {
-    if (!mission || !mission.skill) return CurriculumData.readingBank[0];
-    return CurriculumData.readingBank.find(reading => reading.skill === mission.skill.id)
-      || CurriculumData.readingBank.find(reading => reading.subject === 'language')
+    const reading = LearningEngine.selectReadingForMission(this.state, mission)
       || CurriculumData.readingBank[0];
+    if (reading) LearningEngine.recordReadingShown(this.state, reading);
+    return reading;
   }
 
   renderLanguageMission() {
@@ -2050,7 +2052,17 @@ class App {
     document.getElementById('language-reading-title').innerText = reading.title;
     document.getElementById('language-reading-meta').innerText = `${mission.weekTitle} · ${mission.missionType.name}`;
     document.getElementById('language-reading-text').innerText = reading.text;
-    document.getElementById('language-writing-input').value = '';
+    const writingLabel = document.getElementById('language-writing-label');
+    const writingBox = document.querySelector('.language-writing-box');
+    const writingInput = document.getElementById('language-writing-input');
+    writingInput.value = '';
+    if (reading.writingPrompt) {
+      if (writingBox) writingBox.style.display = '';
+      if (writingLabel) writingLabel.innerText = reading.writingPrompt;
+      writingInput.placeholder = 'Escribe tu respuesta en una o dos frases completas.';
+    } else if (writingBox) {
+      writingBox.style.display = 'none';
+    }
     this.renderLanguageQuestionList();
     this.updateLanguageProgress();
   }
@@ -2071,7 +2083,10 @@ class App {
       container.appendChild(card);
 
       const options = card.querySelector('.language-options');
-      question.options.forEach(option => {
+      const displayOptions = question.type === 'truefalse'
+        ? ['Verdadero', 'Falso']
+        : (question.options || []);
+      displayOptions.forEach(option => {
         const btn = document.createElement('button');
         btn.className = 'language-option';
         btn.type = 'button';
@@ -2086,7 +2101,9 @@ class App {
     const reading = this.languageReading;
     if (!reading || !reading.questions[questionIndex]) return;
     const question = reading.questions[questionIndex];
-    const isCorrect = selectedOption === question.answer;
+    const isCorrect = question.type === 'truefalse'
+      ? (selectedOption === 'Verdadero') === question.answer
+      : selectedOption === question.answer;
     this.languageAnswers[questionIndex] = { selectedOption, isCorrect };
 
     LearningEngine.recordAnswer(this.state, {
@@ -2107,11 +2124,14 @@ class App {
       this.state.pedagogy.math.incorrectAnswers += 1;
     }
 
+    const correctOptionText = question.type === 'truefalse'
+      ? (question.answer ? 'Verdadero' : 'Falso')
+      : question.answer;
     const options = document.getElementById(`language-options-${questionIndex}`);
     if (options) {
       options.querySelectorAll('.language-option').forEach(btn => {
         btn.classList.remove('correct', 'incorrect');
-        if (btn.innerText === question.answer) btn.classList.add('correct');
+        if (btn.innerText === correctOptionText) btn.classList.add('correct');
         if (btn.innerText === selectedOption && !isCorrect) btn.classList.add('incorrect');
       });
     }
@@ -2139,9 +2159,13 @@ class App {
     }
 
     const writing = document.getElementById('language-writing-input').value.trim();
-    if (writing.length < 12) {
+    if (reading.writingPrompt && writing.length < 12) {
       this.showNotice('Escribe al menos una frase completa sobre la lectura.', 'Falta escritura');
       return;
+    }
+
+    if (reading.writingPrompt && writing) {
+      LearningEngine.recordReadingWriting(this.state, reading, writing);
     }
 
     const correct = Object.values(this.languageAnswers).filter(answer => answer.isCorrect).length;
@@ -2475,6 +2499,23 @@ class App {
             cardNum = c;
             this.state.inventory.cards.push(c);
             break;
+          }
+        }
+      }
+
+      // Safety net: ensure the completed floor is registered even if recordTowerFloorCompletion
+      // was skipped (e.g. isTowerBattle was false). Guarantees highestUnlockedFloor advances.
+      if (this.rewardTowerFloor && this.rewardTowerFloor >= 1) {
+        if (!this.state.progress.tower) this.state.progress.tower = {};
+        if (!this.state.progress.tower.completedFloors) this.state.progress.tower.completedFloors = [];
+        if (!this.state.progress.tower.dailyNewFloors) this.state.progress.tower.dailyNewFloors = {};
+        const today = StorageService.todayKey();
+        if (!this.state.progress.tower.completedFloors.includes(this.rewardTowerFloor)) {
+          this.state.progress.tower.completedFloors.push(this.rewardTowerFloor);
+          const huf = this.state.progress.tower.highestUnlockedFloor || 1;
+          if (this.rewardTowerFloor >= huf) {
+            this.state.progress.tower.highestUnlockedFloor = Math.min(50, this.rewardTowerFloor + 1);
+            this.state.progress.tower.dailyNewFloors[today] = (this.state.progress.tower.dailyNewFloors[today] || 0) + 1;
           }
         }
       }
