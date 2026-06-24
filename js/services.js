@@ -664,9 +664,7 @@ class ProgressService {
     session.attempts += 1;
     session.bestAccuracy = Math.max(session.bestAccuracy || 0, stats.accuracy || 0);
 
-    // firstCompletion depends only on completedFloors — session.completedAt can be stale
-    // (e.g. if completedFloors was lost/reset) and must not block the unlock.
-    const firstCompletion = !completed.has(floor);
+    const firstCompletion = !session.completedAt && !completed.has(floor);
     if (firstCompletion) {
       session.completedAt = today;
       completed.add(floor);
@@ -694,7 +692,20 @@ class ProgressService {
 
   static claimReward(state, sessionKey) {
     const session = this.getSession(state, sessionKey);
-    if (session.rewardClaimedAt) return false;
+    if (session.rewardClaimedAt) {
+      // For tower floors: allow reclaim if the floor is not yet in completedFloors.
+      // Fixes stale rewardClaimedAt set during file:// sessions.
+      if (session.type === 'tower' && session.towerFloor) {
+        const completedFloors = state?.progress?.tower?.completedFloors || [];
+        if (!completedFloors.includes(session.towerFloor)) {
+          session.rewardClaimedAt = null; // reset stale claim
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
     session.rewardClaimedAt = StorageService.todayKey();
     return true;
   }
