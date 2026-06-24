@@ -1261,6 +1261,419 @@ function appendEnglishExpansion() {
   });
 }
 
+function appendMeasureTimeMoneyFractionsExpansion() {
+  let counter = 0;
+  const nextId = () => `math-mtmf-curated-${String(++counter).padStart(2, '0')}`;
+
+  // ===== TIEMPO (12 preguntas) - skill: math_measure_time_money, dif 1-2 =====
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 1,
+    'Un reloj tiene la aguja larga en el 12 y la aguja corta en el 4. Que hora marca?',
+    'Las 4 en punto',
+    ['Las 12 en punto', 'Las 4 y media'],
+    'Cuando la aguja larga esta en el 12, es una hora en punto. La aguja corta marca el 4.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 1,
+    'Un reloj tiene la aguja corta entre el 7 y el 8, y la aguja larga en el 6. Que hora es?',
+    'Las 7 y media',
+    ['Las 7 en punto', 'Las 8 en punto'],
+    'La aguja larga en el 6 indica media hora, y la corta esta avanzando del 7 hacia el 8.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 1,
+    'La aguja larga de un reloj esta en el 3 y la corta esta entre el 9 y el 10. Que hora marca?',
+    'Las 9 y cuarto',
+    ['Las 9 en punto', 'Las 10 y cuarto'],
+    'La aguja larga en el 3 marca el primer cuarto de hora, despues de las 9.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 2,
+    'La aguja larga de un reloj esta en el 9 y la corta esta casi llegando al 5. Que hora es?',
+    'Las 4 y 45 (las 5 menos cuarto)',
+    ['Las 5 y cuarto', 'Las 4 y media'],
+    'Cuando la aguja larga esta en el 9, faltan 15 minutos para la siguiente hora en punto.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 1,
+    'Beyblade Carlos empieza un combate a las 5 en punto y termina a las 7 en punto. Cuanto duro el combate?',
+    '2 horas',
+    ['1 hora', '3 horas'],
+    'De las 5 a las 7 pasan 2 horas completas.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 2,
+    'Un torneo de Beyblade empieza a las 3 en punto y termina a las 6 en punto. Cuantas horas dura el torneo?',
+    '3 horas',
+    ['2 horas', '4 horas'],
+    'Contando de 3 a 6 hay 3 horas de diferencia.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 2,
+    'Carlos empieza a entrenar a las 4 en punto y entrena durante 2 horas. A que hora termina?',
+    'A las 6 en punto',
+    ['A las 5 en punto', 'A las 8 en punto'],
+    'Si suma 2 horas a las 4, el resultado es las 6.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 1,
+    'Cuantos dias tiene una semana?',
+    '7',
+    ['5', '10'],
+    'La semana tiene 7 dias: lunes, martes, miercoles, jueves, viernes, sabado y domingo.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 1,
+    'Cuantos meses tiene un ano?',
+    '12',
+    ['10', '7'],
+    'El ano tiene 12 meses, desde enero hasta diciembre.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 1,
+    'Cuantas estaciones del ano hay?',
+    '4',
+    ['3', '5'],
+    'Las estaciones son primavera, verano, otono e invierno.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 2,
+    'Cuantas semanas tiene aproximadamente un mes?',
+    '4',
+    ['2', '7'],
+    'La mayoria de los meses tienen unas 4 semanas, ya que cada semana son 7 dias.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 1,
+    'Si hoy es miercoles, que dia sera mañana?',
+    'Jueves',
+    ['Martes', 'Viernes'],
+    'Despues del miercoles viene el jueves en el orden de los dias de la semana.'
+  ));
+
+  // ===== DINERO (12 preguntas) - skill: math_measure_time_money, dif 1-3 =====
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 1,
+    'Pagas con una moneda de 5 euros una peonza que cuesta 3 euros. Cuanto te devuelven de cambio?',
+    '2 euros',
+    ['1 euro', '3 euros'],
+    'El cambio se calcula restando: 5 - 3 = 2 euros.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 2,
+    'Pagas con un billete de 10 euros un lanzador de Beyblade que cuesta 7 euros. Cuanto cambio recibes?',
+    '3 euros',
+    ['2 euros', '4 euros'],
+    'La diferencia entre 10 y 7 es 3 euros de cambio.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 2,
+    'Pagas con un billete de 20 euros una arena de combate que cuesta 14 euros. Cuanto te devuelven?',
+    '6 euros',
+    ['5 euros', '8 euros'],
+    '20 menos 14 son 6 euros de cambio.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 3,
+    'Compras una peonza de 9 euros y pagas con dos monedas de 5 euros. Cuanto cambio te dan?',
+    '1 euro',
+    ['2 euros', '0 euros'],
+    'Dos monedas de 5 euros son 10 euros. 10 - 9 = 1 euro de cambio.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 2,
+    'En el taller de Beyblade, un disco de ataque cuesta 4 euros y un anillo cuesta 3 euros. Cuanto pagas por los dos juntos?',
+    '7 euros',
+    ['6 euros', '8 euros'],
+    'Se suman los dos precios: 4 + 3 = 7 euros.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 2,
+    'Carlos compra una punta por 2 euros, un eje por 3 euros y una capa por 5 euros. Cuanto gasta en total?',
+    '10 euros',
+    ['9 euros', '11 euros'],
+    'Sumando los tres precios: 2 + 3 + 5 = 10 euros.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 2,
+    'Una camiseta del torneo cuesta 8 euros y una gorra cuesta 6 euros. Cuanto cuestan las dos juntas?',
+    '14 euros',
+    ['12 euros', '15 euros'],
+    'La suma de 8 y 6 es 14 euros.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 3,
+    'En el taller, una peonza cuesta 12 euros, un lanzador cuesta 6 euros y una guia cuesta 2 euros. Cuanto cuesta todo junto?',
+    '20 euros',
+    ['18 euros', '22 euros'],
+    'Sumando los tres precios: 12 + 6 + 2 = 20 euros.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 2,
+    'Una peonza cuesta 9 euros y otra cuesta 5 euros. Cuanto mas cara es la primera que la segunda?',
+    '4 euros',
+    ['3 euros', '14 euros'],
+    'Para saber cuanto mas cuesta, se resta: 9 - 5 = 4 euros.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 2,
+    'Un lanzador cuesta 11 euros y un eje cuesta 4 euros. Cuanto mas caro es el lanzador?',
+    '7 euros',
+    ['6 euros', '15 euros'],
+    'La diferencia entre 11 y 4 es 7 euros.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 3,
+    'Carlos tiene 15 euros y quiere comprar una arena que cuesta 18 euros. Le alcanza el dinero?',
+    'No, le faltan 3 euros',
+    ['Si, le sobran 3 euros', 'Si, le alcanza justo'],
+    '18 - 15 = 3, asi que le faltan 3 euros para poder comprarla.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 3,
+    'Carlos tiene 20 euros y quiere comprar dos peonzas de 8 euros cada una. Le sobra dinero?',
+    'Si, le sobran 4 euros',
+    ['No, le faltan 4 euros', 'Si, le sobran 12 euros'],
+    'Dos peonzas cuestan 8 + 8 = 16 euros. 20 - 16 = 4 euros le sobran.'
+  ));
+
+  // ===== LONGITUD Y MASA (10 preguntas) - skill: math_measure_time_money, dif 1-2 =====
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 1,
+    'Que unidad usarias para medir la longitud de un lapiz?',
+    'Centimetros',
+    ['Kilometros', 'Kilogramos'],
+    'Los objetos pequenos como un lapiz se miden en centimetros.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 1,
+    'Que unidad usarias para medir la distancia entre dos ciudades?',
+    'Kilometros',
+    ['Centimetros', 'Gramos'],
+    'Las distancias largas, como entre ciudades, se miden en kilometros.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 2,
+    'Que unidad usarias para medir el grosor de una moneda?',
+    'Milimetros',
+    ['Metros', 'Kilometros'],
+    'Para medidas muy pequenas, como el grosor de una moneda, se usan los milimetros.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 1,
+    'Que unidad usarias para medir el largo de un pasillo de casa?',
+    'Metros',
+    ['Milimetros', 'Kilogramos'],
+    'El largo de un pasillo se mide bien en metros.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 1,
+    'Que unidad usarias para pesar una peonza de Beyblade?',
+    'Gramos',
+    ['Kilometros', 'Litros'],
+    'Los objetos ligeros, como una peonza, se pesan en gramos.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 1,
+    'Que unidad usarias para pesar a una persona?',
+    'Kilogramos',
+    ['Gramos', 'Metros'],
+    'El peso de una persona se mide en kilogramos.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 2,
+    'Cuantos centimetros hay en 1 metro?',
+    '100',
+    ['10', '1000'],
+    '1 metro equivale exactamente a 100 centimetros.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 2,
+    'Cuantos gramos hay en 1 kilogramo?',
+    '1000',
+    ['100', '10'],
+    '1 kilogramo equivale exactamente a 1000 gramos.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 2,
+    'Si una mesa mide 2 metros de largo, cuantos centimetros son?',
+    '200 centimetros',
+    ['20 centimetros', '2000 centimetros'],
+    'Como 1 metro son 100 centimetros, 2 metros son 2 x 100 = 200 centimetros.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_measure_time_money', 2,
+    'Una peonza pesa 80 gramos y su caja pesa 20 gramos. Cuanto pesan juntas?',
+    '100 gramos',
+    ['60 gramos', '160 gramos'],
+    'Se suman los dos pesos: 80 + 20 = 100 gramos.'
+  ));
+
+  // ===== FRACCIONES (16 preguntas) - skill: math_division_intro, dif 2-3 =====
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_division_intro', 2,
+    'Una pizza se corta en 2 partes iguales. Que fraccion representa una de esas partes?',
+    '1/2',
+    ['1/3', '2/2'],
+    'Si la pizza tiene 2 partes iguales, cada parte es un medio, es decir 1/2.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_division_intro', 2,
+    'Una tableta de chocolate se divide en 3 partes iguales. Que fraccion es cada parte?',
+    '1/3',
+    ['1/2', '3/3'],
+    'Si hay 3 partes iguales, cada una representa un tercio, es decir 1/3.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_division_intro', 2,
+    'Una pizza se corta en 4 partes iguales. Que fraccion es una sola parte?',
+    '1/4',
+    ['1/2', '4/4'],
+    'Con 4 partes iguales, cada parte es un cuarto, es decir 1/4.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_division_intro', 2,
+    'Una pizza cortada en 4 partes iguales se reparte y alguien se come 2 partes. Que fraccion de la pizza comio?',
+    '2/4',
+    ['1/4', '3/4'],
+    'Si come 2 de las 4 partes iguales, la fraccion es 2/4.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_division_intro', 2,
+    'Una barra de pan se corta en 3 partes iguales y te comes 2. Que fraccion de la barra te has comido?',
+    '2/3',
+    ['1/3', '3/3'],
+    'Comiste 2 de las 3 partes iguales, asi que la fraccion es 2/3.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_division_intro', 2,
+    'En la fraccion 3/4, cual es el numerador?',
+    '3',
+    ['4', '7'],
+    'El numerador es el numero de arriba en una fraccion. En 3/4, el numerador es 3.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_division_intro', 2,
+    'En la fraccion 5/8, cual es el denominador?',
+    '8',
+    ['5', '13'],
+    'El denominador es el numero de abajo en una fraccion. En 5/8, el denominador es 8.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_division_intro', 2,
+    'Como se escribe en numeros la fraccion siete doceavos?',
+    '7/12',
+    ['12/7', '7/7'],
+    'Siete doceavos significa numerador 7 y denominador 12, es decir 7/12.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_division_intro', 2,
+    'Como se lee la fraccion 5/6?',
+    'Cinco sextos',
+    ['Seis quintos', 'Cinco sestos'],
+    'El numerador 5 se lee cinco y el denominador 6 indica sextos, asi que se lee cinco sextos.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_division_intro', 2,
+    'Como se lee la fraccion 9/10?',
+    'Nueve decimos',
+    ['Diez novenos', 'Nueve dieces'],
+    'El numerador 9 se lee nueve y el denominador 10 indica decimos.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_division_intro', 2,
+    'La fraccion 3/5, es mayor o menor que la unidad completa (1)?',
+    'Menor que 1',
+    ['Mayor que 1', 'Igual a 1'],
+    'Cuando el numerador es menor que el denominador, la fraccion representa menos de la unidad completa.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_division_intro', 3,
+    'La fraccion 7/4, es mayor o menor que la unidad completa (1)?',
+    'Mayor que 1',
+    ['Menor que 1', 'Igual a 1'],
+    'Cuando el numerador es mayor que el denominador, la fraccion representa mas que la unidad completa.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_division_intro', 2,
+    'La fraccion 6/6, es mayor, menor o igual que la unidad completa (1)?',
+    'Igual a 1',
+    ['Mayor que 1', 'Menor que 1'],
+    'Cuando el numerador y el denominador son iguales, la fraccion representa exactamente la unidad completa.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_division_intro', 2,
+    'Cuanto es la mitad de 20 peonzas?',
+    '10',
+    ['5', '15'],
+    'La mitad de 20 es 20 dividido entre 2, que es igual a 10.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_division_intro', 3,
+    'Cuanto es un tercio de 12 cartas?',
+    '4',
+    ['3', '6'],
+    'Un tercio de 12 es 12 dividido entre 3, que es igual a 4.'
+  ));
+
+  QUESTION_BANK.push(makeChoiceQuestion(
+    nextId(), 'math', 'math_division_intro', 3,
+    'Cuanto es un cuarto de 16 lanzadores?',
+    '4',
+    ['2', '8'],
+    'Un cuarto de 16 es 16 dividido entre 4, que es igual a 4.'
+  ));
+}
+
 function appendScienceArtsMovementExpansion() {
   [
     ['Que necesitan las plantas para vivir?', 'agua, luz y aire', ['solo agua, sin luz', 'solo tierra, sin riego'], 'Las plantas necesitan agua, luz y aire.'],
@@ -2362,6 +2775,7 @@ function appendWordProblemsExpansion() {
 appendWordProblemsExpansion();
 appendLanguageExpansion();
 appendEnglishExpansion();
+appendMeasureTimeMoneyFractionsExpansion();
 appendScienceArtsMovementExpansion();
 appendLivingThingsDepthExpansion();
 appendBalancedWeakSkillExpansion();
