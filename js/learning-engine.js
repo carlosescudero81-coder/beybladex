@@ -41,6 +41,7 @@ class LearningEngine {
       postBossReviewHistory: {},
       spacedReviewPlans: {},
       questionHistory: {},
+      readingHistory: {},
       spacedReviewStreak: {
         current: 0,
         best: 0,
@@ -93,6 +94,18 @@ class LearningEngine {
       ? raw.spacedReviewPlans
       : {};
     profile.questionHistory = this.normalizeQuestionHistory(raw.questionHistory);
+    profile.readingHistory = raw.readingHistory && typeof raw.readingHistory === 'object' && !Array.isArray(raw.readingHistory)
+      ? Object.entries(raw.readingHistory).reduce((acc, [readingId, item]) => {
+          if (!item || typeof item !== 'object') return acc;
+          acc[readingId] = {
+            readingId,
+            timesShown: Math.max(0, parseInt(item.timesShown, 10) || 0),
+            lastShownAt: typeof item.lastShownAt === 'string' ? item.lastShownAt : null,
+            lastWritingAnswer: typeof item.lastWritingAnswer === 'string' ? item.lastWritingAnswer.slice(0, 1000) : ''
+          };
+          return acc;
+        }, {})
+      : {};
     profile.spacedReviewStreak = this.normalizeSpacedReviewStreak(raw.spacedReviewStreak);
     profile.spacedRecoveryNotes = Array.isArray(raw.spacedRecoveryNotes)
       ? raw.spacedRecoveryNotes.filter(item => item && typeof item === 'object').slice(-20)
@@ -581,6 +594,107 @@ class LearningEngine {
     if (floor <= 32) return 3;
     if (floor <= 43) return 4;
     return 5;
+  }
+
+  // ---- Motor de seleccion de lecturas (comprension lectora) ----
+  // Igual que con las preguntas sueltas, aqui se evita repetir la misma
+  // lectura una y otra vez y se sube de dificultad poco a poco a medida
+  // que el niño avanza por las semanas del verano.
+
+  static getReadingStats(profile, readingId) {
+    return profile.readingHistory[readingId] || {
+      readingId,
+      timesShown: 0,
+      lastShownAt: null,
+      lastWritingAnswer: ''
+    };
+  }
+
+  static recordReadingShown(state, reading) {
+    if (!reading || !reading.id) return null;
+    const profile = this.getProfile(state);
+    const current = this.getReadingStats(profile, reading.id);
+    const updated = {
+      readingId: reading.id,
+      timesShown: current.timesShown + 1,
+      lastShownAt: this.todayKey(),
+      lastWritingAnswer: current.lastWritingAnswer
+    };
+    profile.readingHistory[reading.id] = updated;
+    return updated;
+  }
+
+  static recordReadingWriting(state, reading, writingText) {
+    if (!reading || !reading.id) return null;
+    const profile = this.getProfile(state);
+    const current = this.getReadingStats(profile, reading.id);
+    const updated = {
+      ...current,
+      lastWritingAnswer: typeof writingText === 'string' ? writingText.slice(0, 1000) : ''
+    };
+    profile.readingHistory[reading.id] = updated;
+    return updated;
+  }
+
+  // Dificultad objetivo de lectura segun la semana del verano (1-8),
+  // de forma analoga a getTowerQuestionDifficulty pero para el ritmo
+  // semanal en vez de las plantas de la torre.
+  static getReadingTargetDifficulty(currentWeek) {
+    const week = Math.max(1, Math.min(8, parseInt(currentWeek, 10) || 1));
+    if (week <= 2) return 1;
+    if (week <= 4) return 2;
+    if (week <= 6) return 3;
+    if (week <= 7) return 4;
+    return 5;
+  }
+
+  // Selecciona una lectura para una mision, evitando repetir las que ya
+  // se han mostrado mientras queden lecturas sin ver de esa skill/tipo,
+  // y acercandose a la dificultad esperada para la semana actual.
+  static selectReadingForMission(state, mission) {
+    const profile = this.getProfile(state);
+    const allReadings = CurriculumData.readingBank || [];
+    if (allReadings.length === 0) return null;
+
+    const skillId = mission && mission.skill && mission.skill.id;
+    const candidates = skillId
+      ? allReadings.filter(r => r.skill === skillId)
+      : allReadings.filter(r => r.subject === 'language');
+    const pool = candidates.length > 0 ? candidates : allReadings;
+
+    const targetDifficulty = this.getReadingTargetDifficulty(profile.currentWeek);
+
+    // 1) Acercar primero a la dificultad objetivo de la semana: exacta,
+    // ampliando el rango poco a poco si no hay suficientes textos en ese nivel.
+    let scoped = pool.filter(r => r.difficulty === targetDifficulty);
+    if (scoped.length === 0) {
+      for (let delta = 1; delta <= 4 && scoped.length === 0; delta += 1) {
+        scoped = pool.filter(r => Math.abs(r.difficulty - targetDifficulty) <= delta);
+      }
+    }
+    if (scoped.length === 0) scoped = pool;
+
+    // 2) Dentro de ese rango de dificultad, preferir lecturas nunca mostradas.
+    const unseen = scoped.filter(r => this.getReadingStats(profile, r.id).timesShown === 0);
+    const finalPool = unseen.length > 0 ? unseen : scoped;
+
+    if (unseen.length === 0) {
+      // Todas vistas en este rango: elegir la menos vista / mas antigua, para rotar con justicia.
+      const sortedByRotation = [...finalPool].sort((a, b) => {
+        const statsA = this.getReadingStats(profile, a.id);
+        const statsB = this.getReadingStats(profile, b.id);
+        if (statsA.timesShown !== statsB.timesShown) return statsA.timesShown - statsB.timesShown;
+        return (statsA.lastShownAt || '').localeCompare(statsB.lastShownAt || '');
+      });
+      return sortedByRotation[0] || pool[0];
+    }
+
+    // Aun quedan lecturas sin ver en este rango de dificultad: elegir una de
+    // forma estable pero no siempre la misma, usando un hash determinista
+    // por dia+skill para variar sin depender de aleatoriedad real.
+    const salt = `${this.todayKey()}-${skillId || 'mixed'}`;
+    const sorted = [...finalPool].sort((a, b) => this.questionRotationScore(a.id, salt) - this.questionRotationScore(b.id, salt));
+    return sorted[0];
   }
 
   static filterQuestionsForDifficulty(questions, profile, targetDifficulty, preferUnseen = false) {

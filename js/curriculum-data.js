@@ -94,6 +94,8 @@ const SKILLS = {
     { id: 'lang_inference', name: 'Inferencias sencillas', gradeBand: '3-inicio', masteryTarget: 75 },
     { id: 'lang_main_idea', name: 'Idea principal', gradeBand: '3-inicio', masteryTarget: 75 },
     { id: 'lang_order_text', name: 'Ordenar frases y secuencias', gradeBand: 'puente', masteryTarget: 75 },
+    { id: 'lang_vocabulary', name: 'Vocabulario en contexto', gradeBand: '3-inicio', masteryTarget: 75 },
+    { id: 'lang_text_structure', name: 'Tipos y estructura de texto', gradeBand: 'puente', masteryTarget: 70 },
     { id: 'lang_writing_story', name: 'Escritura inicio-nudo-final', gradeBand: 'puente', masteryTarget: 75 },
     { id: 'lang_spelling', name: 'Ortografia basica', gradeBand: 'puente', masteryTarget: 75 },
     { id: 'lang_oral', name: 'Expresion oral breve', gradeBand: 'puente', masteryTarget: 70 }
@@ -873,43 +875,7 @@ QUESTION_BANK.push(
   }
 );
 
-const READING_BANK = [
-  {
-    id: 'read-001',
-    subject: 'language',
-    skill: 'lang_literal',
-    difficulty: 1,
-    title: 'La peonza de Leo',
-    text: 'Leo encontro una peonza roja en el taller. La limpio con cuidado y la guardo para el torneo del viernes.',
-    questions: [
-      {
-        prompt: 'De que color era la peonza?',
-        answer: 'Roja',
-        options: ['Roja', 'Verde', 'Azul']
-      },
-      {
-        prompt: 'Cuando sera el torneo?',
-        answer: 'El viernes',
-        options: ['El lunes', 'El viernes', 'El domingo']
-      }
-    ]
-  },
-  {
-    id: 'read-002',
-    subject: 'language',
-    skill: 'lang_inference',
-    difficulty: 2,
-    title: 'Nubes en la arena',
-    text: 'Antes de salir, Carlitos miro por la ventana. El cielo estaba gris y su madre le dio un impermeable.',
-    questions: [
-      {
-        prompt: 'Que tiempo parece que hara?',
-        answer: 'Puede llover',
-        options: ['Puede llover', 'Hara mucho sol', 'Habra nieve en la playa']
-      }
-    ]
-  }
-];
+const READING_BANK = [];
 
 const OFFLINE_MISSIONS = [
   {
@@ -2043,84 +2009,1382 @@ diversifyRepeatedPromptText();
 
 READING_BANK.push(
   {
-    id: 'read-003',
-    subject: 'language',
-    skill: 'lang_main_idea',
-    difficulty: 2,
-    title: 'El parque de los recuerdos',
-    text: 'Cuando era pequeno, Dani bajaba al parque despues del colegio. Alli jugaba al futbol, celebraba cumpleanos y aprendia a cuidar a sus amigos. Anos despues, recordaba aquel lugar con alegria.',
-    questions: [
-      {
-        prompt: 'Cual es la idea principal del texto?',
-        answer: 'Los recuerdos felices del parque',
-        options: ['Los recuerdos felices del parque', 'Como arreglar una bicicleta', 'Una receta de verano']
-      },
-      {
-        prompt: 'Que aprendia Dani con sus amigos?',
-        answer: 'A cuidarlos',
-        options: ['A cuidarlos', 'A pilotar aviones', 'A pintar paredes']
-      }
-    ]
-  },
-  {
-    id: 'read-004',
-    subject: 'language',
-    skill: 'lang_order_text',
-    difficulty: 2,
-    title: 'La mochila lista',
-    text: 'Primero, Carla miro el horario. Despues, metio los libros y el estuche. Por ultimo, cerro la mochila y la dejo junto a la puerta.',
-    questions: [
-      {
-        prompt: 'Que hizo Carla primero?',
-        answer: 'Miro el horario',
-        options: ['Miro el horario', 'Cerro la mochila', 'Salio al patio']
-      },
-      {
-        prompt: 'Que palabra indica el final?',
-        answer: 'Por ultimo',
-        options: ['Por ultimo', 'Primero', 'Despues']
-      }
-    ]
-  },
-  {
-    id: 'read-005',
-    subject: 'language',
-    skill: 'lang_inference',
-    difficulty: 2,
-    title: 'El entrenamiento secreto',
-    text: 'Leo repetia los lanzamientos una y otra vez. Aunque se equivoco varias veces, siguio probando hasta que la peonza giro en el centro.',
-    questions: [
-      {
-        prompt: 'Como es Leo?',
-        answer: 'perseverante',
-        options: ['perseverante', 'perezoso', 'desordenado']
-      },
-      {
-        prompt: 'Por que siguio probando?',
-        answer: 'Queria mejorar',
-        options: ['Queria mejorar', 'Queria dormir', 'Queria perder la peonza']
-      }
-    ]
-  },
-  {
-    id: 'read-006',
-    subject: 'language',
-    skill: 'lang_literal',
+    id: "read-n01",
+    subject: "language",
+    skill: "lang_literal",
+    textType: "narrative",
     difficulty: 1,
-    title: 'Excursion al rio',
-    text: 'El sabado, tres amigos caminaron hasta el rio. Llevaron bocadillos, agua y una cuerda para jugar sin acercarse a la corriente.',
+    wordCount: 57,
+    title: "La peonza perdida",
+    text: "Leo busco su peonza roja por toda la habitacion. Miro debajo de la cama, dentro del armario y encima de la estanteria. Por fin la encontro en el bolsillo de su chaqueta, donde la habia guardado el dia anterior.\n\nSe rio de su propio despiste y la guardo en la mochila para el entrenamiento de la tarde.",
     questions: [
-      {
-        prompt: 'Cuantos amigos fueron al rio?',
-        answer: 'tres',
-        options: ['tres', 'dos', 'cinco']
-      },
-      {
-        prompt: 'Que llevaron para beber?',
-        answer: 'agua',
-        options: ['agua', 'zumo', 'leche']
-      }
+      { type: "choice", prompt: "De que color era la peonza de Leo?", answer: "Roja", options: ["Roja", "Azul", "Verde"] },
+      { type: "choice", prompt: "Donde encontro finalmente la peonza?", answer: "En el bolsillo de su chaqueta", options: ["En el bolsillo de su chaqueta", "Debajo de la cama", "Dentro del armario"] },
+      { type: "truefalse", prompt: "Leo no encontro nunca su peonza.", answer: false }
+    ],
+    writingPrompt: "Cuenta una vez que perdiste algo y donde lo encontraste al final.",
+    writingKeywords: ["perdi", "encontre", "donde"]
+  },
+  {
+    id: "read-n02",
+    subject: "language",
+    skill: "lang_literal",
+    textType: "narrative",
+    difficulty: 1,
+    wordCount: 56,
+    title: "El primer dia de piscina",
+    text: "Sara estaba nerviosa porque era su primer dia en la piscina municipal. Se puso el bañador verde, agarro su flotador y camino despacio hasta el borde del agua.\n\nAl principio tenia miedo, pero su monitora le dio la mano y juntas entraron poco a poco. Al final del dia, Sara ya no queria salir del agua.",
+    questions: [
+      { type: "choice", prompt: "De que color era el bañador de Sara?", answer: "Verde", options: ["Verde", "Rojo", "Azul"] },
+      { type: "choice", prompt: "Quien ayudo a Sara a entrar en el agua?", answer: "Su monitora", options: ["Su monitora", "Su madre", "Su hermana"] },
+      { type: "truefalse", prompt: "Sara queria salir del agua enseguida.", answer: false }
+    ],
+    writingPrompt: "Que harias tu para ayudar a un amigo que tiene miedo de algo nuevo?",
+    writingKeywords: ["ayudaria", "amigo", "miedo"]
+  },
+  {
+    id: "read-n03",
+    subject: "language",
+    skill: "lang_order_text",
+    textType: "narrative",
+    difficulty: 1,
+    wordCount: 54,
+    title: "La receta de Nico",
+    text: "Nico queria sorprender a su familia con un postre. Primero, lavo bien las fresas y las corto en trozos pequeños. Despues, las mezclo con yogur y un poco de miel en un cuenco grande.\n\nPor ultimo, lo metio todo en la nevera durante una hora. Cuando lo sirvio en la mesa, todos repitieron racion.",
+    questions: [
+      { type: "choice", prompt: "Que hizo Nico primero?", answer: "Lavar y cortar las fresas", options: ["Lavar y cortar las fresas", "Meterlo en la nevera", "Servirlo en la mesa"] },
+      { type: "choice", prompt: "Con que mezclo las fresas?", answer: "Yogur y miel", options: ["Yogur y miel", "Leche y azucar", "Chocolate y nata"] },
+      { type: "choice", prompt: "Que palabra indica el ultimo paso?", answer: "Por ultimo", options: ["Por ultimo", "Primero", "Despues"] }
+    ],
+    writingPrompt: "Explica los pasos para preparar tu merienda favorita, en orden.",
+    writingKeywords: ["primero", "despues", "ultimo"]
+  },
+  {
+    id: "read-n04",
+    subject: "language",
+    skill: "lang_inference",
+    textType: "narrative",
+    difficulty: 2,
+    wordCount: 53,
+    title: "La mochila mojada",
+    text: "Cuando Pablo llego a casa, su mochila goteaba agua por todas partes y sus libros estaban empapados. Su madre lo miro y, sin decir nada, le señalo el cielo nublado por la ventana.\n\nPablo bajo la cabeza. Sabia que deberia haber cogido el paraguas esa mañana, como le habian dicho antes de salir.",
+    questions: [
+      { type: "choice", prompt: "Por que esta mojada la mochila de Pablo?", answer: "Porque llovio y no llevaba paraguas", options: ["Porque llovio y no llevaba paraguas", "Porque se cayo a una piscina", "Porque alguien le tiro agua"] },
+      { type: "truefalse", prompt: "Pablo cogio el paraguas antes de salir.", answer: false },
+      { type: "choice", prompt: "Como se siente Pablo al final?", answer: "Arrepentido", options: ["Arrepentido", "Muy alegre", "Sorprendido"] }
+    ],
+    writingPrompt: "Que consejo le darias a Pablo para que no le vuelva a pasar?",
+    writingKeywords: ["consejo", "paraguas", "tiempo"]
+  },
+  {
+    id: "read-n05",
+    subject: "language",
+    skill: "lang_inference",
+    textType: "narrative",
+    difficulty: 2,
+    wordCount: 55,
+    title: "El equipo incompleto",
+    text: "El equipo de Iris se quedo sin portero justo antes del partido. Nadie queria ponerse los guantes porque tenian miedo de fallar delante de todos.\n\nIris, que normalmente jugaba de delantera, dio un paso adelante y se ofrecio voluntaria. Aunque encajo un gol, tambien hizo dos paradas increibles que el equipo recordaria todo el verano.",
+    questions: [
+      { type: "choice", prompt: "Que problema tenia el equipo de Iris?", answer: "No tenian portero", options: ["No tenian portero", "Habian perdido el balon", "Llegaban tarde"] },
+      { type: "choice", prompt: "Que hizo Iris?", answer: "Se ofrecio de portera voluntaria", options: ["Se ofrecio de portera voluntaria", "Se fue a casa", "Se enfado con sus compañeros"] },
+      { type: "truefalse", prompt: "Iris paro todos los goles del partido.", answer: false }
+    ],
+    writingPrompt: "Cuenta una vez que te ofreciste voluntario para algo que daba un poco de miedo.",
+    writingKeywords: ["voluntario", "miedo", "porque"]
+  },
+  {
+    id: "read-n06",
+    subject: "language",
+    skill: "lang_main_idea",
+    textType: "narrative",
+    difficulty: 2,
+    wordCount: 59,
+    title: "El torneo de los principiantes",
+    text: "En el torneo de peonzas de este año, los organizadores crearon una categoria especial solo para principiantes. Asi, los niños que nunca habian competido podian aprender sin miedo a perder contra los mas experimentados.\n\nCarlitos, que solo llevaba un mes practicando, gano su primera ronda y, aunque perdio la segunda, dijo que se lo habia pasado mejor que nunca.",
+    questions: [
+      { type: "choice", prompt: "Cual es la idea principal del texto?", answer: "Una categoria nueva ayudo a los principiantes a disfrutar del torneo", options: ["Una categoria nueva ayudo a los principiantes a disfrutar del torneo", "Carlitos gano el torneo completo", "El torneo se cancelo por lluvia"] },
+      { type: "choice", prompt: "Cuanto tiempo llevaba practicando Carlitos?", answer: "Un mes", options: ["Un mes", "Un año", "Una semana"] },
+      { type: "truefalse", prompt: "Carlitos gano las dos rondas que jugo.", answer: false }
+    ],
+    writingPrompt: "Por que crees que es buena idea crear categorias para principiantes en los torneos?",
+    writingKeywords: ["principiantes", "porque", "aprender"]
+  },
+  {
+    id: "read-n07",
+    subject: "language",
+    skill: "lang_literal",
+    textType: "narrative",
+    difficulty: 1,
+    wordCount: 51,
+    title: "El dibujo del concurso",
+    text: "Luna paso toda la tarde dibujando un dragon azul para el concurso de arte del campamento. Uso lapices de colores, un poco de purpurina y mucha paciencia con los detalles de las escamas.\n\nCuando termino, lo colgo en la pared de su habitacion para verlo antes de entregarlo al dia siguiente.",
+    questions: [
+      { type: "choice", prompt: "Que animal dibujo Luna?", answer: "Un dragon", options: ["Un dragon", "Un caballo", "Un delfin"] },
+      { type: "choice", prompt: "De que color era el dragon?", answer: "Azul", options: ["Azul", "Rojo", "Verde"] },
+      { type: "truefalse", prompt: "Luna entrego el dibujo el mismo dia que lo termino.", answer: false }
+    ],
+    writingPrompt: "Describe que dibujarias tu si participaras en ese concurso.",
+    writingKeywords: ["dibujaria", "colores"]
+  },
+  {
+    id: "read-n08",
+    subject: "language",
+    skill: "lang_inference",
+    textType: "narrative",
+    difficulty: 2,
+    wordCount: 54,
+    title: "La bicicleta nueva",
+    text: "Ana llevaba meses ahorrando las propinas de ayudar en casa para comprarse una bicicleta nueva. Cuando por fin junto el dinero suficiente, fue con su padre a la tienda y eligio una de color naranja con cesta delantera.\n\nEsa misma tarde, dio tantas vueltas por el parque que llego a casa agotada, pero feliz.",
+    questions: [
+      { type: "choice", prompt: "Como consiguio Ana el dinero?", answer: "Ahorrando propinas de ayudar en casa", options: ["Ahorrando propinas de ayudar en casa", "Se la regalaron sus abuelos", "La encontro en la calle"] },
+      { type: "choice", prompt: "De que color era la bicicleta?", answer: "Naranja", options: ["Naranja", "Rosa", "Negra"] },
+      { type: "truefalse", prompt: "Ana se sintio triste despues de montar en bicicleta.", answer: false }
+    ],
+    writingPrompt: "Que cosa te gustaria ahorrar para comprar? Explica como lo harias.",
+    writingKeywords: ["ahorrar", "comprar", "dinero"]
+  },
+  {
+    id: "read-n09",
+    subject: "language",
+    skill: "lang_order_text",
+    textType: "narrative",
+    difficulty: 1,
+    wordCount: 52,
+    title: "Preparando la acampada",
+    text: "Antes de ir de acampada, Carla y su hermano hicieron una lista de cosas necesarias. Primero comprobaron que tenian la tienda de campaña y los sacos de dormir. Despues prepararon comida y agua para dos dias.\n\nPor ultimo, revisaron que las linternas tuvieran pilas nuevas antes de meterlo todo en el coche.",
+    questions: [
+      { type: "choice", prompt: "Que comprobaron primero?", answer: "La tienda de campaña y los sacos de dormir", options: ["La tienda de campaña y los sacos de dormir", "Las linternas", "La comida"] },
+      { type: "choice", prompt: "Que revisaron por ultimo?", answer: "Que las linternas tuvieran pilas", options: ["Que las linternas tuvieran pilas", "La tienda de campaña", "El mapa"] },
+      { type: "truefalse", prompt: "Llevaban comida para una semana entera.", answer: false }
+    ],
+    writingPrompt: "Haz tu propia lista de 3 cosas imprescindibles para ir de acampada.",
+    writingKeywords: ["lista", "necesario", "llevar"]
+  },
+  {
+    id: "read-n10",
+    subject: "language",
+    skill: "lang_main_idea",
+    textType: "narrative",
+    difficulty: 2,
+    wordCount: 58,
+    title: "El equipo que no se rindio",
+    text: "Cuando empezo a llover en mitad del partido, muchos pensaron que lo cancelarian. Sin embargo, el equipo de Dani decidio seguir jugando bajo la lluvia, resbalando y riendo cada vez que alguien se caia al cesped mojado.\n\nAl final perdieron el partido por un gol, pero todos coincidieron en que habia sido el dia mas divertido del verano.",
+    questions: [
+      { type: "choice", prompt: "Cual es la idea principal del texto?", answer: "El equipo se lo paso muy bien aunque perdio bajo la lluvia", options: ["El equipo se lo paso muy bien aunque perdio bajo la lluvia", "El partido se cancelo por la lluvia", "El equipo de Dani gano el partido"] },
+      { type: "truefalse", prompt: "El equipo de Dani gano el partido.", answer: false },
+      { type: "choice", prompt: "Por que se reian los jugadores?", answer: "Porque resbalaban en el cesped mojado", options: ["Porque resbalaban en el cesped mojado", "Porque el arbitro hacia bromas", "Porque ganaban por mucha diferencia"] }
+    ],
+    writingPrompt: "Cuenta un dia en el que algo salio mal pero te divertiste igualmente.",
+    writingKeywords: ["mal", "divertido", "aunque"]
+  },
+  {
+    id: "read-n11",
+    subject: "language",
+    skill: "lang_inference",
+    textType: "narrative",
+    difficulty: 3,
+    wordCount: 82,
+    title: "El cuaderno olvidado",
+    text: "Marta llevaba toda la semana preparando su presentacion sobre el sistema solar, pero la mañana del concurso descubrio que se habia dejado el cuaderno con los apuntes en casa de su abuela.\n\nEn vez de entrar en panico, cerro los ojos un momento y recordo todo lo que habia practicado tantas veces frente al espejo. Subio al escenario sin papeles y, para su sorpresa, hablo con mas naturalidad que nunca, porque ya no estaba leyendo, sino contando lo que de verdad sabia.",
+    questions: [
+      { type: "choice", prompt: "Que problema tuvo Marta antes del concurso?", answer: "Se dejo el cuaderno de apuntes en casa de su abuela", options: ["Se dejo el cuaderno de apuntes en casa de su abuela", "Se quedo dormida y llego tarde", "Perdio su disfraz del sistema solar"] },
+      { type: "choice", prompt: "Por que hablo Marta con mas naturalidad?", answer: "Porque conto lo que sabia en vez de leerlo", options: ["Porque conto lo que sabia en vez de leerlo", "Porque alguien le dio otro cuaderno", "Porque el publico era pequeño"] },
+      { type: "truefalse", prompt: "Marta entro en panico y no pudo hablar.", answer: false },
+      { type: "vocabulary", prompt: "En el texto, \"naturalidad\" significa hablar...", answer: "de forma sencilla y sin forzar nada", options: ["de forma sencilla y sin forzar nada", "gritando muy fuerte", "leyendo cada palabra del papel"] }
+    ],
+    writingPrompt: "Cuenta una situacion en la que te olvidaste algo importante y como lo solucionaste.",
+    writingKeywords: ["olvide", "solucione", "porque"]
+  },
+  {
+    id: "read-n12",
+    subject: "language",
+    skill: "lang_main_idea",
+    textType: "narrative",
+    difficulty: 3,
+    wordCount: 80,
+    title: "El campeonato compartido",
+    text: "Hugo y su mejor amigo, Nico, llegaron juntos a la final del campeonato de peonzas. Durante todo el verano se habian entrenado el uno al otro, compartiendo trucos y corrigiendo errores sin ningun tipo de envidia.\n\nCuando Nico gano por muy poco, Hugo fue el primero en felicitarlo con un abrazo. Mas tarde, explico a sus padres que para el la verdadera victoria habia sido mejorar tanto gracias a entrenar juntos, sin importar quien se llevara la copa al final.",
+    questions: [
+      { type: "choice", prompt: "Cual es la idea principal del texto?", answer: "La amistad y el entrenamiento conjunto importaron mas que ganar", options: ["La amistad y el entrenamiento conjunto importaron mas que ganar", "Hugo se enfado porque perdio la final", "Nico entreno solo todo el verano"] },
+      { type: "choice", prompt: "Que hizo Hugo cuando Nico gano?", answer: "Lo felicito con un abrazo", options: ["Lo felicito con un abrazo", "Se fue enfadado a casa", "Pidio la revancha inmediatamente"] },
+      { type: "truefalse", prompt: "Hugo y Nico se entrenaron por separado, cada uno solo.", answer: false }
+    ],
+    writingPrompt: "Que opinas de la actitud de Hugo al perder la final? Explica por que.",
+    writingKeywords: ["opino", "actitud", "porque"]
+  },
+  {
+    id: "read-n13",
+    subject: "language",
+    skill: "lang_inference",
+    textType: "narrative",
+    difficulty: 4,
+    wordCount: 98,
+    title: "La carrera contra el reloj",
+    text: "Quedaban solo diez minutos para que cerraran las inscripciones del torneo de verano cuando Pablo se dio cuenta de que habia olvidado el justificante medico en su otra mochila, la que se habia quedado en el coche de su tio.\n\nSin perder un segundo, cogio su bicicleta y pedaleo mas rapido de lo que lo habia hecho jamas, esquivando charcos y saludando apenas a los vecinos que lo veian pasar a toda velocidad. Llego empapado de sudor justo cuando la organizadora estaba guardando la lista, pero consiguio entregar el papel a tiempo, con una sonrisa de alivio enorme.",
+    questions: [
+      { type: "choice", prompt: "Que habia olvidado Pablo?", answer: "El justificante medico", options: ["El justificante medico", "Su peonza", "El dinero de la inscripcion"] },
+      { type: "choice", prompt: "Como resolvio Pablo el problema?", answer: "Pedaleando muy rapido para llegar a tiempo", options: ["Pedaleando muy rapido para llegar a tiempo", "Pidiendo a su tio que lo llevara en coche", "Llamando por telefono a la organizadora"] },
+      { type: "truefalse", prompt: "Pablo llego tarde y no pudo inscribirse.", answer: false },
+      { type: "vocabulary", prompt: "En el texto, \"alivio\" describe un sentimiento de...", answer: "tranquilidad despues de un momento de tension", options: ["tranquilidad despues de un momento de tension", "tristeza profunda", "aburrimiento total"] }
+    ],
+    writingPrompt: "Describe una vez que tuviste que darte mucha prisa para llegar a tiempo a algo.",
+    writingKeywords: ["prisa", "tiempo", "llegue"]
+  },
+  {
+    id: "read-n14",
+    subject: "language",
+    skill: "lang_main_idea",
+    textType: "narrative",
+    difficulty: 4,
+    wordCount: 91,
+    title: "El consejo de la entrenadora",
+    text: "Despues de perder tres partidos seguidos, Iris estaba convencida de que ya no merecia la pena seguir entrenando con tanto esfuerzo. Se lo conto a su entrenadora, esperando que le dijera que tenia razon en sentirse asi.\n\nEn cambio, la entrenadora le enseño una foto antigua de ella misma, mucho mas joven, perdiendo un campeonato entero. Le explico que aquella derrota la habia ayudado a entender exactamente que debia mejorar para el año siguiente. Iris entendio entonces que perder no significaba haber fracasado, sino simplemente no haber terminado todavia de aprender.",
+    questions: [
+      { type: "choice", prompt: "Por que se sentia desanimada Iris?", answer: "Porque habia perdido tres partidos seguidos", options: ["Porque habia perdido tres partidos seguidos", "Porque se habia lesionado", "Porque su equipo se disolvio"] },
+      { type: "choice", prompt: "Que le ensenio la entrenadora?", answer: "Una foto suya perdiendo un campeonato", options: ["Una foto suya perdiendo un campeonato", "Un trofeo que habia ganado", "Un video de otro equipo"] },
+      { type: "truefalse", prompt: "La entrenadora le dijo a Iris que dejara de entrenar.", answer: false },
+      { type: "vocabulary", prompt: "En el texto, \"fracasado\" se refiere a alguien que...", answer: "no logro lo que intentaba", options: ["no logro lo que intentaba", "gano todos los premios", "nunca lo intento"] }
+    ],
+    writingPrompt: "Que le dirias tu a alguien que quiere rendirse despues de varios fracasos?",
+    writingKeywords: ["diria", "rendirse", "intentar"]
+  },
+  {
+    id: "read-n15",
+    subject: "language",
+    skill: "lang_inference",
+    textType: "narrative",
+    difficulty: 5,
+    wordCount: 126,
+    title: "El verano que cambio de opinion",
+    text: "Desde pequeña, Luna habia repetido siempre que odiaba madrugar y que jamas se apuntaria a un campamento de verano como hacian sus primos. Sin embargo, aquel año sus padres tenian que trabajar y no le quedo otra opcion que apuntarse, malhumorada y convencida de que serian las peores semanas de su vida.\n\nLas dos primeras mañanas se levanto de mal humor, pero poco a poco empezo a esperar con ganas las actividades de la tarde, sobre todo las carreras de orientacion por el bosque. Para finales de julio, era ella quien despertaba a su madre los sabados, pidiendole llegar antes al autobus para no perderse ni un minuto. Sus primos, al verla tan entusiasmada, no dejaban de tomarle el pelo recordandole sus propias palabras de junio.",
+    questions: [
+      { type: "choice", prompt: "Por que se apunto Luna al campamento al final?", answer: "Porque sus padres tenian que trabajar y no tenia otra opcion", options: ["Porque sus padres tenian que trabajar y no tenia otra opcion", "Porque sus primos la convencieron con regalos", "Porque ganaba dinero por ir"] },
+      { type: "choice", prompt: "Que actividad le empezo a gustar especialmente?", answer: "Las carreras de orientacion por el bosque", options: ["Las carreras de orientacion por el bosque", "Nadar en la piscina", "Pintar murales"] },
+      { type: "truefalse", prompt: "Luna sigue odiando madrugar tanto como al principio del verano.", answer: false },
+      { type: "vocabulary", prompt: "En el texto, \"entusiasmada\" significa que Luna estaba...", answer: "muy ilusionada y con muchas ganas", options: ["muy ilusionada y con muchas ganas", "enfadada y de mal humor", "cansada y sin energia"] }
+    ],
+    writingPrompt: "Cuenta algo que al principio no te gustaba nada pero que despues acabo encantandote.",
+    writingKeywords: ["principio", "despues", "cambio"]
+  },
+  {
+    id: "read-n16",
+    subject: "language",
+    skill: "lang_main_idea",
+    textType: "narrative",
+    difficulty: 5,
+    wordCount: 119,
+    title: "El proyecto de los tres",
+    text: "Cuando la profesora de verano anuncio que el proyecto final debia hacerse en grupos de tres, Dani, Ana y Carlitos se miraron preocupados: nunca habian trabajado juntos y cada uno tenia una idea completamente distinta sobre que construir para la feria de ciencias.\n\nDurante la primera reunion discutieron tanto que casi decidieron pedir cambiar de grupo. Sin embargo, alguien propuso escribir las tres ideas en papeles separados y buscar, entre las tres, algo en comun. Asi descubrieron que todas tenian relacion con el agua: el volcan de Dani, el barco de Ana y el reciclaje de Carlitos. Combinaron las tres ideas en una sola maqueta sobre el ciclo del agua que termino ganando el primer premio de su categoria.",
+    questions: [
+      { type: "choice", prompt: "Cual es la idea principal del texto?", answer: "Combinar ideas distintas les ayudo a crear un proyecto ganador", options: ["Combinar ideas distintas les ayudo a crear un proyecto ganador", "Los tres niños se pelearon y no entregaron el proyecto", "La profesora elegio el tema por ellos"] },
+      { type: "choice", prompt: "Que tenian en comun las tres ideas iniciales?", answer: "Estaban relacionadas con el agua", options: ["Estaban relacionadas con el agua", "Eran sobre animales", "Trataban del espacio"] },
+      { type: "truefalse", prompt: "El grupo cambio de integrantes a mitad del proyecto.", answer: false },
+      { type: "vocabulary", prompt: "En el texto, \"maqueta\" se refiere a...", answer: "una reproduccion pequeña hecha a mano", options: ["una reproduccion pequeña hecha a mano", "un dibujo digital", "un texto escrito largo"] }
+    ],
+    writingPrompt: "Si tuvieras que hacer un proyecto en grupo, que tema elegirias y por que?",
+    writingKeywords: ["proyecto", "tema", "porque"]
+  },
+  {
+    id: "read-i01",
+    subject: "language",
+    skill: "lang_literal",
+    textType: "informative",
+    difficulty: 1,
+    wordCount: 56,
+    title: "Las hormigas y su fuerza",
+    text: "Las hormigas son insectos muy pequeños, pero increiblemente fuertes. Algunas pueden cargar objetos que pesan hasta cincuenta veces mas que su propio cuerpo.\n\nTrabajan siempre en equipo, siguiendo un rastro de olor que dejan otras hormigas para guiar al resto hacia la comida. Por eso, cuando ves una fila de hormigas, en realidad estan trabajando juntas.",
+    questions: [
+      { type: "choice", prompt: "Cuanto pueden cargar algunas hormigas?", answer: "Hasta cincuenta veces su propio peso", options: ["Hasta cincuenta veces su propio peso", "El doble de su peso", "Nada mas que su propio peso"] },
+      { type: "choice", prompt: "Como se guian las hormigas hacia la comida?", answer: "Con un rastro de olor", options: ["Con un rastro de olor", "Mirando el sol", "Escuchando sonidos"] },
+      { type: "truefalse", prompt: "Las hormigas trabajan siempre solas.", answer: false }
+    ],
+    writingPrompt: "Que otro animal pequeño conoces que sea sorprendentemente fuerte o rapido?",
+    writingKeywords: ["animal", "fuerte", "porque"]
+  },
+  {
+    id: "read-i02",
+    subject: "language",
+    skill: "lang_main_idea",
+    textType: "informative",
+    difficulty: 2,
+    wordCount: 69,
+    title: "Por que el cielo es azul",
+    text: "La luz del sol parece blanca, pero en realidad esta formada por muchos colores mezclados. Cuando esa luz entra en la atmosfera de la Tierra, choca con particulas muy pequeñas de aire.\n\nEl color azul es el que mas se dispersa en todas direcciones, por eso lo vemos por todo el cielo. Al atardecer, la luz atraviesa mas atmosfera y por eso el cielo se ve naranja o rojo.",
+    questions: [
+      { type: "choice", prompt: "Cual es la idea principal del texto?", answer: "El color azul del cielo se debe a como se dispersa la luz", options: ["El color azul del cielo se debe a como se dispersa la luz", "El cielo siempre es del mismo color", "El sol cambia de color cada dia"] },
+      { type: "choice", prompt: "Por que el cielo se ve naranja al atardecer?", answer: "Porque la luz atraviesa mas atmosfera", options: ["Porque la luz atraviesa mas atmosfera", "Porque el sol se apaga un poco", "Porque hay menos nubes"] },
+      { type: "truefalse", prompt: "La luz del sol esta formada por un solo color.", answer: false }
+    ],
+    writingPrompt: "Que otra pregunta sobre el cielo o el espacio te gustaria investigar?",
+    writingKeywords: ["pregunta", "investigar", "cielo"]
+  },
+  {
+    id: "read-i03",
+    subject: "language",
+    skill: "lang_literal",
+    textType: "informative",
+    difficulty: 2,
+    wordCount: 76,
+    title: "Como se forma un arcoiris",
+    text: "Un arcoiris aparece cuando la luz del sol atraviesa gotas de agua que quedan en el aire despues de la lluvia. Al entrar en cada gota, la luz se separa en los colores que la forman: rojo, naranja, amarillo, verde, azul y violeta.\n\nPara verlo, el sol debe estar detras de la persona que mira, y la lluvia, delante. Por eso los arcoiris suelen aparecer justo cuando deja de llover y el sol vuelve a salir.",
+    questions: [
+      { type: "choice", prompt: "Que necesita la luz del sol para formar un arcoiris?", answer: "Atravesar gotas de agua en el aire", options: ["Atravesar gotas de agua en el aire", "Pasar por una ventana", "Reflejarse en la nieve"] },
+      { type: "choice", prompt: "Donde debe estar el sol para ver el arcoiris?", answer: "Detras de la persona que mira", options: ["Detras de la persona que mira", "Justo encima de la cabeza", "Escondido entre nubes"] },
+      { type: "truefalse", prompt: "Los arcoiris solo se pueden ver de noche.", answer: false }
+    ],
+    writingPrompt: "Describe el ultimo arcoiris que recuerdes haber visto, o como te lo imaginas.",
+    writingKeywords: ["arcoiris", "colores", "vi"]
+  },
+  {
+    id: "read-i04",
+    subject: "language",
+    skill: "lang_vocabulary",
+    textType: "informative",
+    difficulty: 3,
+    wordCount: 78,
+    title: "Los camaleones y su camuflaje",
+    text: "Los camaleones son famosos por su capacidad para cambiar de color, aunque mucha gente cree que lo hacen solo para esconderse. En realidad, esta habilidad les sirve principalmente para comunicarse con otros camaleones y para regular su temperatura corporal.\n\nCuando un camaleon se enfada o quiere atraer pareja, sus colores se vuelven mas intensos y llamativos. El camuflaje, en cambio, suele depender mas de su forma alargada y de su capacidad de quedarse completamente inmovil entre las ramas.",
+    questions: [
+      { type: "choice", prompt: "Para que sirve principalmente el cambio de color del camaleon?", answer: "Para comunicarse y regular su temperatura", options: ["Para comunicarse y regular su temperatura", "Solo para esconderse de otros animales", "Para nadar mejor"] },
+      { type: "truefalse", prompt: "El camuflaje del camaleon depende solo de su color cambiante.", answer: false },
+      { type: "vocabulary", prompt: "En el texto, \"inmovil\" significa que el camaleon...", answer: "no se mueve nada", options: ["no se mueve nada", "se mueve muy rapido", "cambia de color cada segundo"] },
+      { type: "choice", prompt: "Cuando se vuelven mas intensos los colores del camaleon?", answer: "Cuando se enfada o quiere atraer pareja", options: ["Cuando se enfada o quiere atraer pareja", "Solo cuando duerme", "Cuando hace mucho frio"] }
+    ],
+    writingPrompt: "Que otro animal usa el camuflaje para protegerse? Explica como lo hace.",
+    writingKeywords: ["camuflaje", "animal", "protegerse"]
+  },
+  {
+    id: "read-i05",
+    subject: "language",
+    skill: "lang_main_idea",
+    textType: "informative",
+    difficulty: 3,
+    wordCount: 85,
+    title: "De donde viene el chocolate",
+    text: "El chocolate que comemos empieza siendo una semilla amarga dentro de una fruta llamada mazorca de cacao, que crece en arboles de zonas tropicales como America Central y Africa Occidental.\n\nPara convertir esas semillas en chocolate, primero se dejan fermentar varios dias, despues se secan al sol y finalmente se tuestan, igual que se hace con el cafe. Solo despues de todo ese proceso, las semillas se muelen hasta formar una pasta que, mezclada con azucar y leche, se transforma en el chocolate que conocemos.",
+    questions: [
+      { type: "choice", prompt: "Cual es la idea principal del texto?", answer: "El chocolate pasa por un largo proceso desde la semilla de cacao", options: ["El chocolate pasa por un largo proceso desde la semilla de cacao", "El chocolate crece directamente en los arboles", "El chocolate se fabrica solo en Europa"] },
+      { type: "choice", prompt: "Donde crecen los arboles de cacao?", answer: "En zonas tropicales como America Central y Africa", options: ["En zonas tropicales como America Central y Africa", "Solo en Europa", "En zonas con mucha nieve"] },
+      { type: "truefalse", prompt: "Las semillas de cacao se comen dulces directamente del arbol.", answer: false }
+    ],
+    writingPrompt: "Que otro alimento te gustaria investigar para saber de donde viene?",
+    writingKeywords: ["alimento", "investigar", "viene"]
+  },
+  {
+    id: "read-i06",
+    subject: "language",
+    skill: "lang_vocabulary",
+    textType: "informative",
+    difficulty: 4,
+    wordCount: 91,
+    title: "Las abejas y la polinizacion",
+    text: "Cuando una abeja visita una flor para recolectar nectar, su cuerpo peludo se cubre de granos de polen sin que ella se de cuenta. Al volar hasta la siguiente flor, parte de ese polen se desprende y fecunda la nueva planta, permitiendo que produzca frutos y semillas.\n\nEste proceso, llamado polinizacion, es esencial para la mayoria de los cultivos que comemos los humanos, desde manzanas hasta almendras. Por eso, cuando las poblaciones de abejas disminuyen, los cientificos se preocupan: sin estos pequeños insectos, muchos alimentos serian mucho mas dificiles de producir.",
+    questions: [
+      { type: "choice", prompt: "Que es la polinizacion?", answer: "El proceso por el que el polen fecunda nuevas plantas", options: ["El proceso por el que el polen fecunda nuevas plantas", "La forma en que las abejas construyen sus colmenas", "El modo en que las flores cambian de color"] },
+      { type: "vocabulary", prompt: "En el texto, \"esencial\" significa algo...", answer: "muy necesario, casi imprescindible", options: ["muy necesario, casi imprescindible", "poco importante", "opcional y facil de sustituir"] },
+      { type: "truefalse", prompt: "Las abejas recogen polen a proposito para fecundar flores.", answer: false },
+      { type: "choice", prompt: "Por que se preocupan los cientificos si bajan las abejas?", answer: "Porque muchos alimentos serian mas dificiles de producir", options: ["Porque muchos alimentos serian mas dificiles de producir", "Porque las abejas dan miel para todos los postres", "Porque las flores se quedarian sin color"] }
+    ],
+    writingPrompt: "Que podriamos hacer las personas para ayudar a proteger a las abejas?",
+    writingKeywords: ["proteger", "abejas", "podriamos"]
+  },
+  {
+    id: "read-i07",
+    subject: "language",
+    skill: "lang_main_idea",
+    textType: "informative",
+    difficulty: 4,
+    wordCount: 99,
+    title: "El ciclo del agua",
+    text: "El agua de nuestro planeta nunca desaparece, simplemente cambia de forma y de lugar en un proceso que se repite sin descanso. El calor del sol hace que el agua de mares y rios se evapore, convirtiendose en vapor que sube hacia el cielo.\n\nAl enfriarse en las alturas, ese vapor se condensa formando nubes. Cuando las gotas dentro de las nubes se vuelven demasiado pesadas, caen como lluvia, nieve o granizo. Parte de esa agua se filtra bajo la tierra, otra parte llega a los rios y, finalmente, todo vuelve al mar, donde el ciclo comienza de nuevo.",
+    questions: [
+      { type: "choice", prompt: "Cual es la idea principal del texto?", answer: "El agua cambia de forma y lugar en un ciclo continuo", options: ["El agua cambia de forma y lugar en un ciclo continuo", "El agua del mar se acaba poco a poco", "Solo llueve cuando el mar se calienta demasiado"] },
+      { type: "choice", prompt: "Que pasa cuando el vapor de agua se enfria en las alturas?", answer: "Se condensa y forma nubes", options: ["Se condensa y forma nubes", "Se convierte en hielo para siempre", "Desaparece del todo"] },
+      { type: "truefalse", prompt: "El agua del planeta desaparece poco a poco cada año.", answer: false }
+    ],
+    writingPrompt: "Explica con tus propias palabras que parte del ciclo del agua te parece mas interesante.",
+    writingKeywords: ["ciclo", "agua", "interesante"]
+  },
+  {
+    id: "read-i08",
+    subject: "language",
+    skill: "lang_vocabulary",
+    textType: "informative",
+    difficulty: 5,
+    wordCount: 112,
+    title: "Los volcanes y su erupcion",
+    text: "Bajo la superficie de la Tierra existe una capa de roca tan caliente que se mantiene en estado liquido, conocida como magma. Cuando la presion en el interior del planeta aumenta lo suficiente, ese magma busca una salida hacia el exterior a traves de grietas, dando lugar a lo que conocemos como erupcion volcanica.\n\nNo todas las erupciones son iguales: algunas son lentas y expulsan lava de forma tranquila, mientras que otras son explosivas y lanzan ceniza, gases y fragmentos de roca a gran velocidad. Los cientificos que estudian los volcanes, llamados vulcanologos, observan pequeños cambios en el terreno y los gases liberados para intentar predecir cuando podria producirse la siguiente erupcion.",
+    questions: [
+      { type: "choice", prompt: "Que es el magma?", answer: "Roca tan caliente que se mantiene liquida bajo la superficie", options: ["Roca tan caliente que se mantiene liquida bajo la superficie", "Un tipo de ceniza volcanica", "El nombre del crater del volcan"] },
+      { type: "vocabulary", prompt: "En el texto, \"vulcanologos\" son personas que...", answer: "estudian los volcanes", options: ["estudian los volcanes", "viven cerca de los volcanes", "construyen volcanes artificiales"] },
+      { type: "truefalse", prompt: "Todas las erupciones volcanicas son igual de explosivas.", answer: false },
+      { type: "choice", prompt: "Para que observan los vulcanologos los cambios en el terreno?", answer: "Para intentar predecir la siguiente erupcion", options: ["Para intentar predecir la siguiente erupcion", "Para construir nuevas ciudades", "Para medir la temperatura del mar"] }
+    ],
+    writingPrompt: "Que te gustaria preguntarle a un vulcanologo si pudieras entrevistarlo?",
+    writingKeywords: ["preguntaria", "volcan", "cientifico"]
+  },
+  {
+    id: "read-l01",
+    subject: "language",
+    skill: "lang_text_structure",
+    textType: "letter",
+    difficulty: 2,
+    wordCount: 65,
+    title: "Carta desde el campamento",
+    text: "Querida mama:\n\nTe escribo desde el campamento de verano. Hace dos dias que llegue y ya he hecho dos amigos nuevos, Pau y Nico. Ayer aprendimos a montar una tienda de campaña y por la noche vimos un cielo lleno de estrellas.\n\nSe me olvido traer la linterna, asi que si puedes enviarmela con la siguiente carta, te lo agradeceria.\n\nUn abrazo muy fuerte,\nDaniela",
+    questions: [
+      { type: "choice", prompt: "Quien escribe la carta?", answer: "Daniela", options: ["Daniela", "Pau", "Nico"] },
+      { type: "choice", prompt: "Que le pide Daniela a su madre?", answer: "Que le envie una linterna", options: ["Que le envie una linterna", "Que la vaya a buscar", "Que le mande mas ropa"] },
+      { type: "choice", prompt: "Que parte de la carta indica quien la escribe?", answer: "La despedida con la firma al final", options: ["La despedida con la firma al final", "El saludo inicial", "El primer parrafo"] }
+    ],
+    writingPrompt: "Escribe el inicio de una carta a un amigo contandole algo divertido de esta semana.",
+    writingKeywords: ["querido", "hola", "semana"]
+  },
+  {
+    id: "read-l02",
+    subject: "language",
+    skill: "lang_text_structure",
+    textType: "letter",
+    difficulty: 3,
+    wordCount: 84,
+    title: "Carta a la abuela",
+    text: "Querida abuela:\n\nEspero que estes bien. Quiero contarte que por fin gane mi primer torneo de natacion. Estaba muy nerviosa antes de la salida, pero en cuanto sono el silbato me olvide de todo y solo pense en nadar lo mejor posible.\n\nMis padres dicen que vendran a visitarte el mes que viene y que yo podre ir con ellos. Tengo muchas ganas de contarte la carrera con todos los detalles y de comer tu tarta de manzana otra vez.\n\nUn besazo grande,\nClara",
+    questions: [
+      { type: "choice", prompt: "Que logro consiguio Clara?", answer: "Gano su primer torneo de natacion", options: ["Gano su primer torneo de natacion", "Aprendio a montar en bicicleta", "Termino un libro muy largo"] },
+      { type: "choice", prompt: "Que tiene ganas de comer Clara cuando visite a su abuela?", answer: "Tarta de manzana", options: ["Tarta de manzana", "Galletas de chocolate", "Helado de fresa"] },
+      { type: "truefalse", prompt: "Clara estaba completamente tranquila antes de la carrera.", answer: false }
+    ],
+    writingPrompt: "Cuentale a un familiar, en una carta breve, un logro reciente del que estes orgulloso.",
+    writingKeywords: ["querido", "logro", "orgulloso"]
+  },
+  {
+    id: "read-l03",
+    subject: "language",
+    skill: "lang_text_structure",
+    textType: "letter",
+    difficulty: 4,
+    wordCount: 102,
+    title: "Carta al club deportivo",
+    text: "Estimado señor director del club:\n\nMe dirijo a usted para proponer una idea que creo que podria gustar a muchos socios. Durante el verano, varios niños del equipo hemos notado que no existe ningun torneo pensado especialmente para principiantes, y eso hace que algunos compañeros se sientan inseguros para participar.\n\nPor eso, le propongo crear una categoria nueva, solo para quienes lleven menos de un año practicando. Estoy seguro de que esto animaria a mas niños a apuntarse sin miedo a perder siempre contra los mas experimentados.\n\nQuedo a su disposicion para hablar con mas detalle sobre esta propuesta.\n\nAtentamente,\nMarcos Lopez",
+    questions: [
+      { type: "choice", prompt: "Que propone Marcos en su carta?", answer: "Crear una categoria nueva para principiantes", options: ["Crear una categoria nueva para principiantes", "Cerrar el club durante el verano", "Subir el precio de las inscripciones"] },
+      { type: "choice", prompt: "A quien va dirigida la carta?", answer: "Al director del club", options: ["Al director del club", "A su entrenador personal", "A sus compañeros de equipo"] },
+      { type: "truefalse", prompt: "Marcos escribe la carta de forma muy informal, como a un amigo.", answer: false },
+      { type: "vocabulary", prompt: "En el texto, \"atentamente\" es una formula que se usa para...", answer: "despedirse de forma educada y formal", options: ["despedirse de forma educada y formal", "pedir disculpas", "empezar una carta"] }
+    ],
+    writingPrompt: "Escribe una propuesta breve que harias tu a un club o colegio para mejorar algo.",
+    writingKeywords: ["propongo", "mejorar", "porque"]
+  },
+  {
+    id: "read-l04",
+    subject: "language",
+    skill: "lang_text_structure",
+    textType: "letter",
+    difficulty: 3,
+    wordCount: 68,
+    title: "Carta de disculpa",
+    text: "Querido Hugo:\n\nTe escribo esta carta porque queria disculparme por lo que paso el otro dia en el entrenamiento. No deberia haberme enfadado contigo solo porque ganaste la ronda, fue una reaccion injusta de mi parte.\n\nMe di cuenta de que estaba mas preocupado por perder que por disfrutar del juego, y eso no esta bien. Espero que podamos seguir entrenando juntos como hasta ahora.\n\nTu amigo,\nDiego",
+    questions: [
+      { type: "choice", prompt: "Por que se disculpa Diego?", answer: "Por enfadarse injustamente cuando Hugo gano", options: ["Por enfadarse injustamente cuando Hugo gano", "Por llegar tarde al entrenamiento", "Por romper la peonza de Hugo"] },
+      { type: "choice", prompt: "Que se dio cuenta Diego sobre si mismo?", answer: "Que le preocupaba mas perder que disfrutar", options: ["Que le preocupaba mas perder que disfrutar", "Que ya no queria entrenar mas", "Que Hugo no era un buen amigo"] },
+      { type: "truefalse", prompt: "Diego no quiere volver a entrenar con Hugo.", answer: false }
+    ],
+    writingPrompt: "Escribe una breve carta de disculpa a alguien por algo que podria haber pasado.",
+    writingKeywords: ["disculpa", "siento", "porque"]
+  },
+  {
+    id: "read-no01",
+    subject: "language",
+    skill: "lang_text_structure",
+    textType: "notice",
+    difficulty: 1,
+    wordCount: 43,
+    title: "Normas de la piscina municipal",
+    text: "NORMAS DE LA PISCINA\n\n1. Es obligatorio ducharse antes de entrar al agua.\n2. No se permite correr alrededor de la piscina.\n3. Los menores de 8 años deben ir acompañados de un adulto.\n4. Esta prohibido comer dentro del recinto de baño.",
+    questions: [
+      { type: "choice", prompt: "Que se debe hacer antes de entrar al agua?", answer: "Ducharse", options: ["Ducharse", "Comer algo", "Correr una vuelta"] },
+      { type: "truefalse", prompt: "Un niño de 6 años puede entrar solo, sin un adulto.", answer: false },
+      { type: "choice", prompt: "Que esta prohibido segun el cartel?", answer: "Comer en el recinto de baño", options: ["Comer en el recinto de baño", "Llevar gafas de bucear", "Hablar con otros niños"] }
     ]
+  },
+  {
+    id: "read-no02",
+    subject: "language",
+    skill: "lang_text_structure",
+    textType: "notice",
+    difficulty: 2,
+    wordCount: 49,
+    title: "Normas de la biblioteca infantil",
+    text: "BIBLIOTECA INFANTIL - NORMAS DE USO\n\n1. Habla en voz baja para no molestar a otros lectores.\n2. Puedes llevarte hasta 3 libros a casa durante 15 dias.\n3. Si manchas o rompes un libro, debes avisar al bibliotecario.\n4. Esta prohibido comer o beber dentro de la sala.",
+    questions: [
+      { type: "choice", prompt: "Cuantos libros se pueden llevar a casa como maximo?", answer: "3", options: ["3", "5", "10"] },
+      { type: "choice", prompt: "Durante cuanto tiempo se pueden tener los libros prestados?", answer: "15 dias", options: ["15 dias", "Una semana", "Un mes"] },
+      { type: "truefalse", prompt: "Si rompes un libro, no hace falta avisar a nadie.", answer: false }
+    ],
+    writingPrompt: "Inventa una norma nueva para la biblioteca y explica para que serviria.",
+    writingKeywords: ["norma", "biblioteca", "porque"]
+  },
+  {
+    id: "read-no03",
+    subject: "language",
+    skill: "lang_text_structure",
+    textType: "notice",
+    difficulty: 2,
+    wordCount: 42,
+    title: "Anuncio: clases de natacion",
+    text: "CLASES DE NATACION - VERANO\n\nApúntate a nuestras clases para niños de 6 a 10 años.\nHorario: martes y jueves, de 17:00 a 18:00.\nLugar: piscina municipal, pista 2.\nMaterial necesario: bañador, gorro y toalla.\nPlazas limitadas a 12 niños por grupo.",
+    questions: [
+      { type: "choice", prompt: "Que dias son las clases de natacion?", answer: "Martes y jueves", options: ["Martes y jueves", "Lunes y miercoles", "Sabado y domingo"] },
+      { type: "choice", prompt: "Cuantos niños como maximo hay por grupo?", answer: "12", options: ["12", "20", "6"] },
+      { type: "truefalse", prompt: "Las clases son para niños de cualquier edad.", answer: false }
+    ],
+    writingPrompt: "Escribe un anuncio breve para una actividad que te gustaria ofrecer este verano.",
+    writingKeywords: ["horario", "lugar", "apuntate"]
+  },
+  {
+    id: "read-no04",
+    subject: "language",
+    skill: "lang_text_structure",
+    textType: "notice",
+    difficulty: 3,
+    wordCount: 55,
+    title: "Normas del torneo de peonzas",
+    text: "REGLAMENTO DEL TORNEO DE VERANO\n\n1. Cada participante puede usar solo una peonza por ronda.\n2. Esta prohibido modificar la peonza durante la competicion.\n3. Si la peonza sale del circulo, el lanzamiento se considera nulo.\n4. En caso de empate, se repite el lanzamiento una sola vez.\n5. Las decisiones del arbitro son definitivas.",
+    questions: [
+      { type: "choice", prompt: "Que pasa si la peonza sale del circulo?", answer: "El lanzamiento se considera nulo", options: ["El lanzamiento se considera nulo", "Se suma un punto extra", "Se repite el torneo entero"] },
+      { type: "choice", prompt: "Que ocurre en caso de empate?", answer: "Se repite el lanzamiento una vez", options: ["Se repite el lanzamiento una vez", "Ganan los dos participantes", "Se elimina a ambos"] },
+      { type: "truefalse", prompt: "Se puede modificar la peonza durante la competicion.", answer: false },
+      { type: "vocabulary", prompt: "En el texto, \"definitivas\" significa que las decisiones del arbitro...", answer: "no se pueden cambiar despues", options: ["no se pueden cambiar despues", "se pueden discutir libremente", "las decide el publico"] }
+    ],
+    writingPrompt: "Si pudieras añadir una norma al reglamento del torneo, cual seria y por que?",
+    writingKeywords: ["norma", "reglamento", "porque"]
+  },
+  {
+    id: "read-no05",
+    subject: "language",
+    skill: "lang_text_structure",
+    textType: "notice",
+    difficulty: 4,
+    wordCount: 76,
+    title: "Aviso del campamento: cambio de horario",
+    text: "AVISO IMPORTANTE PARA LAS FAMILIAS\n\nDebido a la previsión de tormentas para esta tarde, las actividades al aire libre programadas entre las 16:00 y las 18:00 quedan canceladas. En su lugar, se realizaran talleres de manualidades dentro del pabellon principal.\n\nLa recogida de los niños se mantiene a la hora habitual, las 18:30, pero se ruega a las familias entrar por la puerta lateral debido a las obras en la entrada principal.\n\nGracias por su comprension.",
+    questions: [
+      { type: "choice", prompt: "Por que se cancelan las actividades al aire libre?", answer: "Por la previsión de tormentas", options: ["Por la previsión de tormentas", "Porque el pabellon esta cerrado", "Porque no hay suficientes monitores"] },
+      { type: "choice", prompt: "Que se hara en su lugar?", answer: "Talleres de manualidades", options: ["Talleres de manualidades", "Una pelicula en el salon", "Un partido de futbol"] },
+      { type: "truefalse", prompt: "La hora de recogida de los niños tambien cambia.", answer: false },
+      { type: "choice", prompt: "Por que puerta deben entrar las familias?", answer: "Por la puerta lateral", options: ["Por la puerta lateral", "Por la puerta principal", "Por el aparcamiento"] }
+    ],
+    writingPrompt: "Explica con tus palabras que cambios anuncia este aviso y por que ocurren.",
+    writingKeywords: ["cambio", "porque", "aviso"]
+  },
+  {
+    id: "read-d01",
+    subject: "language",
+    skill: "lang_literal",
+    textType: "dialogue",
+    difficulty: 2,
+    wordCount: 58,
+    title: "En la tienda de peonzas",
+    text: "-Buenos dias -dijo Hugo-. Busco una peonza para el torneo del sabado.\n\n-Tenemos varios modelos -respondio la vendedora-. Esta roja gira mas tiempo, pero esta azul pesa menos y es mas facil de lanzar.\n\n-Soy nuevo en esto -admitio Hugo-. Cual recomienda para empezar?\n\n-Para empezar, mejor la azul -dijo ella-. Cuando tengas mas practica, prueba la roja.",
+    questions: [
+      { type: "choice", prompt: "Que busca Hugo en la tienda?", answer: "Una peonza para el torneo", options: ["Una peonza para el torneo", "Un regalo para su madre", "Una bicicleta nueva"] },
+      { type: "choice", prompt: "Que peonza recomienda la vendedora para empezar?", answer: "La azul", options: ["La azul", "La roja", "Ninguna de las dos"] },
+      { type: "truefalse", prompt: "Hugo ya tiene mucha experiencia con las peonzas.", answer: false }
+    ],
+    writingPrompt: "Escribe dos frases mas de dialogo entre Hugo y la vendedora, continuando la conversacion.",
+    writingKeywords: ["dijo", "respondio", "Hugo"]
+  },
+  {
+    id: "read-d02",
+    subject: "language",
+    skill: "lang_inference",
+    textType: "dialogue",
+    difficulty: 3,
+    wordCount: 66,
+    title: "Una discusion en el recreo",
+    text: "-No es justo -protesto Maria-. Siempre eliges tu los equipos y siempre te tocan los mismos amigos.\n\n-Es que asi jugamos mejor -se defendio Carlos-. Llevamos meses entrenando juntos.\n\n-Pero asi nunca aprendemos a jugar con gente nueva -insistio Maria-. Que te parece si esta vez sacamos los nombres de una bolsa?\n\nCarlos se quedo callado un momento.\n\n-Vale -dijo finalmente-. Probemos tu idea esta vez.",
+    questions: [
+      { type: "choice", prompt: "De que se queja Maria?", answer: "De que siempre se eligen los mismos equipos", options: ["De que siempre se eligen los mismos equipos", "De que el partido dura poco", "De que no hay suficiente balones"] },
+      { type: "choice", prompt: "Que propone Maria como solucion?", answer: "Sacar los nombres de una bolsa", options: ["Sacar los nombres de una bolsa", "Jugar sin equipos", "Cancelar el partido"] },
+      { type: "truefalse", prompt: "Carlos rechaza la idea de Maria sin pensarlo.", answer: false },
+      { type: "vocabulary", prompt: "En el texto, \"insistio\" significa que Maria...", answer: "repitio su idea con firmeza", options: ["repitio su idea con firmeza", "se rindio enseguida", "se rio de la situacion"] }
+    ],
+    writingPrompt: "Que opinas de la solucion que propuso Maria? Te parece justa?",
+    writingKeywords: ["opino", "justa", "porque"]
+  },
+  {
+    id: "read-d03",
+    subject: "language",
+    skill: "lang_main_idea",
+    textType: "dialogue",
+    difficulty: 4,
+    wordCount: 112,
+    title: "La entrevista del periodico escolar",
+    text: "-Gracias por aceptar esta entrevista -empezo Lucia, libreta en mano-. Mi primera pregunta es: que se siente al ganar tres torneos seguidos?\n\n-La verdad -respondio el campeon, sonriendo- es que cada torneo se siente distinto. El primero fue puro nerviosismo, el segundo ya disfrute mas y en el tercero solo pensaba en divertirme.\n\n-Y que consejo le darias a alguien que esta empezando? -continuo Lucia.\n\n-Que no se compare con los demas -dijo el sin dudarlo-. Cada uno avanza a su ritmo, y lo importante es disfrutar del proceso, no solo del resultado final.\n\n-Una ultima pregunta: seguiras compitiendo el año que viene?\n\n-Sin ninguna duda -afirmo, mirando su peonza con cariño.",
+    questions: [
+      { type: "choice", prompt: "Cual es la idea principal de la entrevista?", answer: "El campeon valora mas disfrutar del proceso que ganar", options: ["El campeon valora mas disfrutar del proceso que ganar", "El campeon quiere dejar de competir", "Lucia esta entrenando para el proximo torneo"] },
+      { type: "choice", prompt: "Que consejo da el campeon a los principiantes?", answer: "Que no se comparen con los demas", options: ["Que no se comparen con los demas", "Que entrenen ocho horas al dia", "Que compren la peonza mas cara"] },
+      { type: "truefalse", prompt: "El campeon dice que dejara de competir el año que viene.", answer: false }
+    ],
+    writingPrompt: "Si pudieras entrevistar a alguien que admiras, que tres preguntas le harias?",
+    writingKeywords: ["preguntaria", "entrevista", "admiro"]
+  },
+  {
+    id: "read-c01",
+    subject: "language",
+    skill: "lang_order_text",
+    textType: "comic",
+    difficulty: 2,
+    wordCount: 63,
+    title: "Comic: El despertador rebelde",
+    text: "VIÑETA 1: Leo duerme profundamente. El despertador suena: \"RIIIIIN!\". Leo murmura: \"Cinco minutos mas...\".\n\nVIÑETA 2: El despertador suena otra vez, mas fuerte. Leo dice: \"Vale, vale, ya me levanto!\".\n\nVIÑETA 3: Leo mira el reloj con los ojos como platos y grita: \"Llego tarde al entrenamiento!\".\n\nVIÑETA 4: Leo sale corriendo de casa con un zapato puesto y otro en la mano.",
+    questions: [
+      { type: "choice", prompt: "Que hace Leo en la primera viñeta?", answer: "Sigue durmiendo y pide cinco minutos mas", options: ["Sigue durmiendo y pide cinco minutos mas", "Se levanta de un salto", "Llama a un amigo"] },
+      { type: "choice", prompt: "Por que grita Leo en la viñeta 3?", answer: "Porque se da cuenta de que llega tarde", options: ["Porque se da cuenta de que llega tarde", "Porque ve una araña", "Porque ha perdido su peonza"] },
+      { type: "truefalse", prompt: "Leo sale de casa completamente vestido y preparado.", answer: false }
+    ],
+    writingPrompt: "Inventa una viñeta 5 que continue la historia de Leo corriendo hacia el entrenamiento.",
+    writingKeywords: ["viñeta", "Leo", "corriendo"]
+  },
+  {
+    id: "read-c02",
+    subject: "language",
+    skill: "lang_inference",
+    textType: "comic",
+    difficulty: 3,
+    wordCount: 82,
+    title: "Comic: El plan secreto",
+    text: "VIÑETA 1: Ana y Carla cuchichean detras de un arbol. Ana susurra: \"Tenemos que preparar la sorpresa antes de que llegue\".\n\nVIÑETA 2: Las dos amigas corren cargando globos y una caja con un lazo enorme.\n\nVIÑETA 3: Esconden la caja detras del sofa justo cuando se oye la puerta abrirse.\n\nVIÑETA 4: Dani entra y ve un cartel que dice \"FELIZ CUMPLEAÑOS\". Su cara muestra sorpresa total.\n\nVIÑETA 5: Los tres se abrazan riendo, con globos cayendo por toda la habitacion.",
+    questions: [
+      { type: "choice", prompt: "Que estaban preparando Ana y Carla?", answer: "Una sorpresa de cumpleaños para Dani", options: ["Una sorpresa de cumpleaños para Dani", "Una broma para asustarlo", "Una mudanza de muebles"] },
+      { type: "choice", prompt: "Donde escondieron la caja?", answer: "Detras del sofa", options: ["Detras del sofa", "En el armario", "Debajo de la cama"] },
+      { type: "truefalse", prompt: "Dani sabia desde el principio que le preparaban una sorpresa.", answer: false },
+      { type: "vocabulary", prompt: "En el texto, \"cuchichean\" significa que Ana y Carla hablan...", answer: "en voz muy baja, en secreto", options: ["en voz muy baja, en secreto", "gritando muy fuerte", "cantando una cancion"] }
+    ],
+    writingPrompt: "Describe que viñeta añadirias justo despues de la numero 5 para terminar la historia.",
+    writingKeywords: ["viñeta", "final", "historia"]
+  },
+  {
+    id: "read-c03",
+    subject: "language",
+    skill: "lang_main_idea",
+    textType: "comic",
+    difficulty: 4,
+    wordCount: 101,
+    title: "Comic: El invento que no funcionaba",
+    text: "VIÑETA 1: Pablo presenta orgulloso su invento: una maquina hecha con piezas de juguete. \"Servira para ordenar mi habitacion sola!\", anuncia.\n\nVIÑETA 2: Pulsa el boton y la maquina empieza a moverse, lanzando calcetines por todas partes en lugar de guardarlos.\n\nVIÑETA 3: Su hermana entra justo cuando un calcetin le cae en la cabeza. Pablo se rie nervioso: \"Esta, eh, casi funciona perfecto...\".\n\nVIÑETA 4: Los dos terminan recogiendo la habitacion juntos, entre risas, mientras la maquina sigue lanzando calcetines de fondo.\n\nVIÑETA 5: Pablo apunta en su libreta: \"Version 2: hacer que guarde los calcetines, no que los lance\".",
+    questions: [
+      { type: "choice", prompt: "Cual es la idea principal del comic?", answer: "El invento de Pablo fallo, pero el sigue intentando mejorarlo", options: ["El invento de Pablo fallo, pero el sigue intentando mejorarlo", "Pablo se enfado y rompio su invento", "La hermana de Pablo arreglo la maquina"] },
+      { type: "choice", prompt: "Que hace la maquina en vez de ordenar?", answer: "Lanza calcetines por todas partes", options: ["Lanza calcetines por todas partes", "Se apaga sola", "Ordena los libros"] },
+      { type: "truefalse", prompt: "Pablo decide no volver a intentar mejorar su invento.", answer: false }
+    ],
+    writingPrompt: "Inventa tu propia maquina imaginaria y explica para que serviria y que problema podria tener.",
+    writingKeywords: ["invento", "maquina", "serviria"]
+  },
+  {
+    id: "read-n17",
+    subject: "language",
+    skill: "lang_literal",
+    textType: "narrative",
+    difficulty: 1,
+    wordCount: 58,
+    title: "El helado derretido",
+    text: "Carlitos compro un helado de chocolate en el quiosco de la playa. Estaba tan entretenido construyendo un castillo de arena que se olvido de comerselo a tiempo.\n\nCuando se acordo, el helado ya se habia derretido por completo en el cucurucho. Carlitos se rio de su despiste y fue corriendo a comprar otro, esta vez prometiendo comerselo rapido.",
+    questions: [
+      { type: "choice", prompt: "De que sabor era el helado de Carlitos?", answer: "Chocolate", options: ["Chocolate", "Fresa", "Vainilla"] },
+      { type: "choice", prompt: "Por que se derritio el helado?", answer: "Porque Carlitos se olvido de comerlo a tiempo", options: ["Porque Carlitos se olvido de comerlo a tiempo", "Porque hacia mucho frio", "Porque se le cayo al suelo"] },
+      { type: "truefalse", prompt: "Carlitos se enfado mucho por el helado derretido.", answer: false }
+    ],
+    writingPrompt: "Cuenta algo que se te haya olvidado hacer a tiempo alguna vez.",
+    writingKeywords: ["olvide", "tiempo"]
+  },
+  {
+    id: "read-n18",
+    subject: "language",
+    skill: "lang_inference",
+    textType: "narrative",
+    difficulty: 2,
+    wordCount: 86,
+    title: "El regalo escondido",
+    text: "Sara busco por toda la casa su regalo de cumpleaños, convencida de que sus padres lo habrian escondido en algun lugar facil de encontrar. Miro en el armario, bajo la cama y hasta en el garaje, pero no encontro nada.\n\nEl dia de su cumpleaños, su padre le entrego una caja pequeña: dentro habia una nota que decia \"Mira en el lugar donde guardamos los recuerdos\". Sara corrio hacia el album de fotos familiar y alli, entre las paginas, encontro las llaves de su bicicleta nueva.",
+    questions: [
+      { type: "choice", prompt: "Donde busco Sara primero su regalo?", answer: "En el armario, bajo la cama y en el garaje", options: ["En el armario, bajo la cama y en el garaje", "En la cocina", "En el jardin"] },
+      { type: "choice", prompt: "Donde encontro finalmente la pista del regalo?", answer: "En el album de fotos familiar", options: ["En el album de fotos familiar", "En su mochila del colegio", "Debajo de su almohada"] },
+      { type: "truefalse", prompt: "El regalo de Sara era directamente una bicicleta envuelta.", answer: false }
+    ],
+    writingPrompt: "Inventa una pista divertida que esconderias para que alguien encuentre un regalo.",
+    writingKeywords: ["pista", "regalo", "esconderia"]
+  },
+  {
+    id: "read-n19",
+    subject: "language",
+    skill: "lang_main_idea",
+    textType: "narrative",
+    difficulty: 2,
+    wordCount: 66,
+    title: "El club de los lunes",
+    text: "Cada lunes por la tarde, un grupo de niños del barrio se reunia en el parque para intercambiar cromos, comics y peonzas usadas. No habia normas estrictas, solo una: nadie podia irse del club sin haber hecho al menos un intercambio justo.\n\nCon el tiempo, aquel pequeño grupo se convirtio en el momento favorito de la semana para muchos, mas alla de lo que consiguieran intercambiar.",
+    questions: [
+      { type: "choice", prompt: "Cual es la idea principal del texto?", answer: "El club se convirtio en el momento favorito de la semana para los niños", options: ["El club se convirtio en el momento favorito de la semana para los niños", "Los niños se peleaban cada lunes", "El club se disolvio rapidamente"] },
+      { type: "choice", prompt: "Cual era la unica norma del club?", answer: "Hacer al menos un intercambio justo", options: ["Hacer al menos un intercambio justo", "Llevar siempre la misma peonza", "No hablar con nadie nuevo"] },
+      { type: "truefalse", prompt: "El club se reunia todos los dias de la semana.", answer: false }
+    ],
+    writingPrompt: "Que normas pondrias tu si creases un club con tus amigos?",
+    writingKeywords: ["club", "normas", "amigos"]
+  },
+  {
+    id: "read-n20",
+    subject: "language",
+    skill: "lang_inference",
+    textType: "narrative",
+    difficulty: 3,
+    wordCount: 90,
+    title: "La carrera que no gano",
+    text: "Aunque entreno todos los dias durante un mes, Carla termino la carrera del colegio en quinto lugar, muy lejos del podio que tanto habia soñado. Al principio sintio una decepcion enorme y queria irse a casa sin hablar con nadie.\n\nSin embargo, su profesor de educacion fisica le señalo algo que ella no habia notado: su tiempo era casi un minuto mejor que el de la carrera anterior. Carla se dio cuenta entonces de que, aunque no hubiera ganado a sus compañeros, si habia ganado claramente contra su propio record.",
+    questions: [
+      { type: "choice", prompt: "En que posicion termino Carla la carrera?", answer: "Quinta", options: ["Quinta", "Primera", "Ultima"] },
+      { type: "choice", prompt: "Que le hizo notar el profesor a Carla?", answer: "Que habia mejorado mucho su propio tiempo", options: ["Que habia mejorado mucho su propio tiempo", "Que el resto de corredores habian hecho trampa", "Que la carrera se repetiria"] },
+      { type: "truefalse", prompt: "Carla se sintio feliz desde el primer momento al terminar la carrera.", answer: false },
+      { type: "vocabulary", prompt: "En el texto, \"decepcion\" describe un sentimiento de...", answer: "tristeza por no lograr lo esperado", options: ["tristeza por no lograr lo esperado", "alegria muy grande", "sorpresa agradable"] }
+    ],
+    writingPrompt: "Cuenta una vez que mejoraste en algo aunque no quedaras el primero.",
+    writingKeywords: ["mejore", "aunque", "primero"]
+  },
+  {
+    id: "read-n21",
+    subject: "language",
+    skill: "lang_main_idea",
+    textType: "narrative",
+    difficulty: 3,
+    wordCount: 89,
+    title: "El huerto compartido",
+    text: "Cuando el colegio propuso crear un huerto comunitario para el verano, casi nadie se ofrecio porque sonaba a mucho trabajo bajo el sol. Solo cuatro niños, entre ellos Iris, decidieron apuntarse sin saber muy bien por donde empezar.\n\nDurante las primeras semanas, regaron tomates que no crecian y plantaron semillas en el lugar equivocado. Poco a poco, gracias a los consejos de un vecino jardinero, el huerto empezo a dar fruto. Para septiembre, todo el colegio disfrutaba de las verduras que aquel pequeño grupo habia conseguido cultivar con paciencia.",
+    questions: [
+      { type: "choice", prompt: "Cual es la idea principal del texto?", answer: "Un grupo pequeño consiguio un huerto exitoso con esfuerzo y paciencia", options: ["Un grupo pequeño consiguio un huerto exitoso con esfuerzo y paciencia", "El huerto fracaso por completo", "Todo el colegio trabajo en el huerto desde el principio"] },
+      { type: "choice", prompt: "Quien ayudo a mejorar el huerto?", answer: "Un vecino jardinero", options: ["Un vecino jardinero", "El director del colegio", "Un programa de television"] },
+      { type: "truefalse", prompt: "Las primeras semanas del huerto fueron un exito total.", answer: false }
+    ],
+    writingPrompt: "Que cultivarias tu si tuvieras un pequeño huerto? Explica por que.",
+    writingKeywords: ["cultivaria", "huerto", "porque"]
+  },
+  {
+    id: "read-n22",
+    subject: "language",
+    skill: "lang_order_text",
+    textType: "narrative",
+    difficulty: 2,
+    wordCount: 59,
+    title: "El cumpleaños sorpresa",
+    text: "Para organizar la fiesta sorpresa de Nico, sus amigos siguieron un plan muy concreto. Primero, decoraron el salon mientras el estaba en el entrenamiento. Despues, escondieron los regalos detras de las cortinas.\n\nCuando Nico llego a casa, todos se escondieron en silencio. Por ultimo, al encender las luces, gritaron juntos \"sorpresa!\" mientras Nico se quedaba boquiabierto en la puerta.",
+    questions: [
+      { type: "choice", prompt: "Que hicieron primero los amigos de Nico?", answer: "Decorar el salon", options: ["Decorar el salon", "Esconder los regalos", "Gritar sorpresa"] },
+      { type: "choice", prompt: "Donde escondieron los regalos?", answer: "Detras de las cortinas", options: ["Detras de las cortinas", "Debajo de la mesa", "En el armario"] },
+      { type: "truefalse", prompt: "Nico sabia de la fiesta sorpresa desde el principio.", answer: false }
+    ],
+    writingPrompt: "Describe los pasos que seguirias tu para organizar una fiesta sorpresa.",
+    writingKeywords: ["primero", "despues", "sorpresa"]
+  },
+  {
+    id: "read-i09",
+    subject: "language",
+    skill: "lang_literal",
+    textType: "informative",
+    difficulty: 1,
+    wordCount: 50,
+    title: "El pulpo y sus ocho brazos",
+    text: "El pulpo es un animal marino que tiene ocho brazos cubiertos de pequeñas ventosas. Estas ventosas le permiten agarrarse a las rocas y tambien sentir el sabor de lo que toca.\n\nAdemas, el pulpo no tiene huesos, lo que le permite esconderse en huecos diminutos para escapar de sus depredadores.",
+    questions: [
+      { type: "choice", prompt: "Cuantos brazos tiene un pulpo?", answer: "Ocho", options: ["Ocho", "Seis", "Diez"] },
+      { type: "choice", prompt: "Para que le sirven las ventosas al pulpo?", answer: "Para agarrarse y sentir sabores", options: ["Para agarrarse y sentir sabores", "Para nadar mas rapido", "Para respirar bajo el agua"] },
+      { type: "truefalse", prompt: "El pulpo tiene huesos como la mayoria de los animales.", answer: false }
+    ],
+    writingPrompt: "Que otra caracteristica curiosa de un animal marino conoces?",
+    writingKeywords: ["animal", "marino", "curioso"]
+  },
+  {
+    id: "read-i10",
+    subject: "language",
+    skill: "lang_main_idea",
+    textType: "informative",
+    difficulty: 2,
+    wordCount: 78,
+    title: "Como hacen miel las abejas",
+    text: "Las abejas obreras visitan cientos de flores cada dia para recolectar nectar, un liquido dulce que guardan en una bolsa especial dentro de su cuerpo. De vuelta en la colmena, lo pasan de una abeja a otra hasta que se transforma poco a poco en miel.\n\nDespues, depositan la miel en celdas de cera y la abanican con sus alas para que se seque un poco. Una sola colmena puede producir varios kilos de miel en un verano.",
+    questions: [
+      { type: "choice", prompt: "Cual es la idea principal del texto?", answer: "Como las abejas transforman el nectar en miel paso a paso", options: ["Como las abejas transforman el nectar en miel paso a paso", "Las abejas no producen miel en verano", "Las abejas viven siempre solas"] },
+      { type: "choice", prompt: "Donde guardan la miel las abejas?", answer: "En celdas de cera", options: ["En celdas de cera", "En hojas de arbol", "En el suelo"] },
+      { type: "truefalse", prompt: "Las abejas hacen miel con agua de lluvia.", answer: false }
+    ],
+    writingPrompt: "Que pasos seguirias tu para explicarle a alguien como se hace la miel?",
+    writingKeywords: ["pasos", "miel", "abejas"]
+  },
+  {
+    id: "read-i11",
+    subject: "language",
+    skill: "lang_vocabulary",
+    textType: "informative",
+    difficulty: 3,
+    wordCount: 67,
+    title: "Los osos polares y el hielo",
+    text: "Los osos polares dependen del hielo marino del Artico para cazar focas, su alimento principal. Caminan largas distancias sobre el hielo, esperando pacientemente junto a los agujeros donde las focas salen a respirar.\n\nEn los ultimos años, el calentamiento global ha reducido la cantidad de hielo disponible cada verano, lo que obliga a estos animales a nadar distancias cada vez mas largas para encontrar zonas donde cazar.",
+    questions: [
+      { type: "choice", prompt: "De que se alimentan principalmente los osos polares?", answer: "De focas", options: ["De focas", "De peces pequeños", "De plantas marinas"] },
+      { type: "vocabulary", prompt: "En el texto, \"pacientemente\" significa que los osos esperan...", answer: "con calma, sin prisa", options: ["con calma, sin prisa", "con mucha rapidez", "gritando fuerte"] },
+      { type: "truefalse", prompt: "El hielo marino esta aumentando cada año en el Artico.", answer: false }
+    ],
+    writingPrompt: "Por que crees que es importante proteger el hielo del Artico?",
+    writingKeywords: ["proteger", "hielo", "porque"]
+  },
+  {
+    id: "read-i12",
+    subject: "language",
+    skill: "lang_main_idea",
+    textType: "informative",
+    difficulty: 3,
+    wordCount: 74,
+    title: "Las bibliotecas publicas",
+    text: "Las primeras bibliotecas publicas, abiertas a cualquier persona sin importar su dinero, comenzaron a extenderse hace poco mas de cien años. Antes de eso, los libros eran muy caros y solo unas pocas personas podian permitirse tener una coleccion propia.\n\nHoy en dia, las bibliotecas no solo prestan libros, sino que tambien organizan talleres, clubes de lectura y actividades para niños durante el verano, convirtiendose en un lugar de encuentro para toda la comunidad.",
+    questions: [
+      { type: "choice", prompt: "Cual es la idea principal del texto?", answer: "Las bibliotecas han evolucionado para ser espacios abiertos a todos", options: ["Las bibliotecas han evolucionado para ser espacios abiertos a todos", "Los libros siempre fueron baratos", "Las bibliotecas solo prestan libros"] },
+      { type: "choice", prompt: "Que otras actividades organizan las bibliotecas hoy?", answer: "Talleres y clubes de lectura", options: ["Talleres y clubes de lectura", "Partidos de futbol", "Conciertos de musica"] },
+      { type: "truefalse", prompt: "Antiguamente todas las personas podian comprar libros facilmente.", answer: false }
+    ],
+    writingPrompt: "Que actividad te gustaria que organizara tu biblioteca favorita?",
+    writingKeywords: ["biblioteca", "actividad", "gustaria"]
+  },
+  {
+    id: "read-i13",
+    subject: "language",
+    skill: "lang_vocabulary",
+    textType: "informative",
+    difficulty: 4,
+    wordCount: 101,
+    title: "Los terremotos y las placas tectonicas",
+    text: "La superficie de la Tierra esta dividida en enormes piezas de roca llamadas placas tectonicas, que se mueven muy lentamente, apenas unos centimetros por año. Aunque ese movimiento parece insignificante, con el tiempo acumula una enorme cantidad de energia en los bordes donde dos placas se rozan entre si.\n\nCuando esa energia se libera de golpe, se produce un terremoto: el suelo tiembla durante unos segundos mientras la energia acumulada se propaga en todas direcciones. Los cientificos llamados sismologos utilizan instrumentos llamados sismografos para medir la intensidad de estos movimientos y estudiar donde es mas probable que ocurran en el futuro.",
+    questions: [
+      { type: "choice", prompt: "Que son las placas tectonicas?", answer: "Enormes piezas de roca que forman la superficie terrestre", options: ["Enormes piezas de roca que forman la superficie terrestre", "Instrumentos para medir terremotos", "Capas de la atmosfera"] },
+      { type: "vocabulary", prompt: "En el texto, \"insignificante\" significa algo...", answer: "muy pequeño o de poca importancia", options: ["muy pequeño o de poca importancia", "extremadamente grande", "peligroso y dañino"] },
+      { type: "truefalse", prompt: "Las placas tectonicas se mueven muy rapido, varios metros por segundo.", answer: false },
+      { type: "choice", prompt: "Para que usan los sismologos los sismografos?", answer: "Para medir la intensidad de los terremotos", options: ["Para medir la intensidad de los terremotos", "Para predecir el tiempo atmosferico", "Para estudiar a los animales marinos"] }
+    ],
+    writingPrompt: "Que medidas de seguridad crees que deberiamos seguir si ocurre un terremoto?",
+    writingKeywords: ["seguridad", "terremoto", "medidas"]
+  },
+  {
+    id: "read-l05",
+    subject: "language",
+    skill: "lang_text_structure",
+    textType: "letter",
+    difficulty: 2,
+    wordCount: 58,
+    title: "Carta de invitacion",
+    text: "Hola Marcos:\n\nEste sabado celebro mi cumpleaños en el parque grande, a partir de las cinco de la tarde. Habra tarta, juegos de agua y un torneo improvisado de peonzas, asi que no olvides traer la tuya.\n\nMe haria mucha ilusion que vinieras. Avisame si puedes venir para reservarte un trozo de tarta de chocolate.\n\nUn saludo,\nElena",
+    questions: [
+      { type: "choice", prompt: "Que celebra Elena?", answer: "Su cumpleaños", options: ["Su cumpleaños", "El fin de curso", "Una mudanza"] },
+      { type: "choice", prompt: "Que debe traer Marcos segun la carta?", answer: "Su peonza", options: ["Su peonza", "Un regalo caro", "Comida para todos"] },
+      { type: "truefalse", prompt: "La fiesta es por la mañana.", answer: false }
+    ],
+    writingPrompt: "Escribe una breve invitacion para una fiesta o quedada que te gustaria organizar.",
+    writingKeywords: ["invito", "fiesta", "hora"]
+  },
+  {
+    id: "read-l06",
+    subject: "language",
+    skill: "lang_text_structure",
+    textType: "letter",
+    difficulty: 4,
+    wordCount: 96,
+    title: "Carta al periodico local",
+    text: "Estimados señores del periodico:\n\nLes escribo porque me gustaria compartir una idea con los demas vecinos del barrio. Desde hace meses, el parque cercano a mi casa esta lleno de papeles y botellas que la gente deja despues de comer alli.\n\nMe parece que seria una buena idea organizar una jornada de limpieza entre los vecinos, especialmente los niños, para aprender a cuidar nuestro espacio comun. Estoy seguro de que muchas familias estarian dispuestas a participar si se anunciara con tiempo.\n\nGracias por darme la oportunidad de compartir esta propuesta.\n\nAtentamente,\nuna vecina de nueve años",
+    questions: [
+      { type: "choice", prompt: "Cual es el problema que describe la carta?", answer: "El parque esta lleno de basura", options: ["El parque esta lleno de basura", "No hay suficientes parques", "El parque esta cerrado"] },
+      { type: "choice", prompt: "Que propone la autora de la carta?", answer: "Organizar una jornada de limpieza con vecinos", options: ["Organizar una jornada de limpieza con vecinos", "Cerrar el parque para siempre", "Construir un parque nuevo"] },
+      { type: "truefalse", prompt: "La carta esta escrita por el alcalde del pueblo.", answer: false },
+      { type: "vocabulary", prompt: "En el texto, \"comun\" se refiere a un espacio que...", answer: "es compartido por todos", options: ["es compartido por todos", "pertenece a una sola familia", "esta prohibido visitar"] }
+    ],
+    writingPrompt: "Que problema de tu barrio o colegio te gustaria solucionar? Como lo harias?",
+    writingKeywords: ["problema", "solucion", "barrio"]
+  },
+  {
+    id: "read-d04",
+    subject: "language",
+    skill: "lang_literal",
+    textType: "dialogue",
+    difficulty: 2,
+    wordCount: 54,
+    title: "En la frutería",
+    text: "-Buenos dias -dijo la madre de Dani-. Necesito un kilo de manzanas y medio kilo de fresas, por favor.\n\n-Aqui tiene -respondio el frutero-. Las fresas estan muy dulces esta semana.\n\n-Genial, ponme otro medio kilo entonces -dijo ella sonriendo-. Mi hijo las adora.\n\nDani, que esperaba en la puerta, sonrio al escuchar eso.",
+    questions: [
+      { type: "choice", prompt: "Que compra la madre de Dani al principio?", answer: "Manzanas y fresas", options: ["Manzanas y fresas", "Naranjas y platanos", "Solo manzanas"] },
+      { type: "choice", prompt: "Por que decide comprar mas fresas?", answer: "Porque estan muy dulces y a su hijo le encantan", options: ["Porque estan muy dulces y a su hijo le encantan", "Porque estan de oferta", "Porque se le habian olvidado"] },
+      { type: "truefalse", prompt: "A Dani no le gustan las fresas.", answer: false }
+    ],
+    writingPrompt: "Escribe un breve dialogo entre un cliente y un vendedor en una tienda que te guste.",
+    writingKeywords: ["dijo", "respondio", "tienda"]
+  },
+  {
+    id: "read-d05",
+    subject: "language",
+    skill: "lang_inference",
+    textType: "dialogue",
+    difficulty: 5,
+    wordCount: 118,
+    title: "La decision dificil",
+    text: "-No se que hacer -confeso Marta, sentada junto a su hermano mayor-. Me han invitado al cumpleaños de Laura el mismo dia que tengo la final del torneo.\n\n-Y que es lo que realmente quieres hacer tu? -preguntó el, sin darle ninguna pista de su opinion.\n\n-Quiero jugar la final, pero me preocupa que Laura se enfade conmigo si no voy -respondio Marta, mirando al suelo.\n\n-A veces, las decisiones dificiles no tienen una opcion perfecta -dijo su hermano-. Lo importante es elegir lo que de verdad te importa y, despues, explicarselo con sinceridad a la otra persona.\n\nMarta se quedo pensativa un momento y, finalmente, asintio con la cabeza, como si por fin hubiera encontrado su respuesta.",
+    questions: [
+      { type: "choice", prompt: "Cual es el dilema de Marta?", answer: "Elegir entre la final del torneo y el cumpleaños de Laura", options: ["Elegir entre la final del torneo y el cumpleaños de Laura", "No saber que regalo comprar", "No tener transporte para ir a ningun sitio"] },
+      { type: "choice", prompt: "Que consejo le da el hermano de Marta?", answer: "Elegir lo que de verdad le importa y explicarlo con sinceridad", options: ["Elegir lo que de verdad le importa y explicarlo con sinceridad", "Ir a las dos cosas a la vez", "No ir a ninguna de las dos"] },
+      { type: "truefalse", prompt: "El hermano le dice directamente a Marta lo que debe elegir.", answer: false },
+      { type: "vocabulary", prompt: "En el texto, \"pensativa\" describe a alguien que esta...", answer: "reflexionando en silencio", options: ["reflexionando en silencio", "riendo a carcajadas", "corriendo muy rapido"] }
+    ],
+    writingPrompt: "Que harias tu en el lugar de Marta? Explica tu decision.",
+    writingKeywords: ["decision", "porque", "elegiria"]
+  },
+  {
+    id: "read-no06",
+    subject: "language",
+    skill: "lang_text_structure",
+    textType: "notice",
+    difficulty: 1,
+    wordCount: 37,
+    title: "Cartel del comedor del campamento",
+    text: "COMEDOR DEL CAMPAMENTO\n\n- El desayuno es de 8:00 a 8:45.\n- La comida es de 13:00 a 14:00.\n- La cena es de 20:00 a 20:45.\n- Por favor, lavate las manos antes de cada comida.",
+    questions: [
+      { type: "choice", prompt: "A que hora es la comida?", answer: "De 13:00 a 14:00", options: ["De 13:00 a 14:00", "De 8:00 a 8:45", "De 20:00 a 20:45"] },
+      { type: "truefalse", prompt: "El cartel pide lavarse las manos antes de comer.", answer: true },
+      { type: "choice", prompt: "Cuanto dura el desayuno?", answer: "45 minutos", options: ["45 minutos", "Una hora", "15 minutos"] }
+    ]
+  },
+  {
+    id: "read-no07",
+    subject: "language",
+    skill: "lang_text_structure",
+    textType: "notice",
+    difficulty: 3,
+    wordCount: 59,
+    title: "Anuncio: se busca mascota perdida",
+    text: "SE BUSCA: PERRO PERDIDO\n\nResponde al nombre de Toby. Es pequeño, de color marron con una mancha blanca en el pecho. Se perdio el martes por la tarde cerca del parque central.\n\nLleva un collar azul sin chapa. Si lo ves, por favor llama al telefono de la familia que aparece en el cartel. Hay una recompensa por encontrarlo.",
+    questions: [
+      { type: "choice", prompt: "Como se llama el perro perdido?", answer: "Toby", options: ["Toby", "Max", "Rocky"] },
+      { type: "choice", prompt: "Donde se perdio el perro?", answer: "Cerca del parque central", options: ["Cerca del parque central", "En la playa", "En el colegio"] },
+      { type: "truefalse", prompt: "El collar de Toby tiene una chapa con su nombre.", answer: false }
+    ],
+    writingPrompt: "Si encontraras a Toby, que harias para devolverlo a su familia?",
+    writingKeywords: ["encontrar", "familia", "haria"]
+  },
+  {
+    id: "read-no08",
+    subject: "language",
+    skill: "lang_text_structure",
+    textType: "notice",
+    difficulty: 4,
+    wordCount: 66,
+    title: "Normas de seguridad para la excursion",
+    text: "EXCURSION AL BOSQUE - NORMAS DE SEGURIDAD\n\n1. Permanece siempre dentro del grupo y a la vista de un monitor.\n2. No te alejes del camino señalizado bajo ninguna circunstancia.\n3. Lleva siempre tu botella de agua y un silbato de emergencia.\n4. Si te separas del grupo, quedate en el mismo sitio y haz sonar el silbato.\n5. Esta prohibido tocar plantas o animales desconocidos.",
+    questions: [
+      { type: "choice", prompt: "Que debes hacer si te separas del grupo?", answer: "Quedarte en el mismo sitio y usar el silbato", options: ["Quedarte en el mismo sitio y usar el silbato", "Correr a buscar al grupo por tu cuenta", "Esconderte hasta que anochezca"] },
+      { type: "choice", prompt: "Que esta prohibido segun las normas?", answer: "Tocar plantas o animales desconocidos", options: ["Tocar plantas o animales desconocidos", "Llevar botella de agua", "Hablar con los monitores"] },
+      { type: "truefalse", prompt: "Se permite alejarse del camino señalizado si hay un adulto cerca.", answer: false },
+      { type: "vocabulary", prompt: "En el texto, \"señalizado\" significa que el camino esta...", answer: "marcado con señales claras", options: ["marcado con señales claras", "cerrado al publico", "cubierto de nieve"] }
+    ],
+    writingPrompt: "Por que crees que es importante seguir estas normas en una excursion al bosque?",
+    writingKeywords: ["seguridad", "importante", "porque"]
+  },
+  {
+    id: "read-c04",
+    subject: "language",
+    skill: "lang_order_text",
+    textType: "comic",
+    difficulty: 3,
+    wordCount: 86,
+    title: "Comic: La carrera de sacos",
+    text: "VIÑETA 1: Cinco niños se meten dentro de sacos, listos para la carrera. El monitor grita: \"Preparados, listos, ya!\".\n\nVIÑETA 2: Todos saltan torpemente. Carla se cae al segundo salto, pero se rie y se levanta rapido.\n\nVIÑETA 3: Pablo va en cabeza, saltando con fuerza, mientras los demas intentan alcanzarlo.\n\nVIÑETA 4: Justo antes de la meta, Pablo tropieza con una piedra y cae al suelo.\n\nVIÑETA 5: Carla, que venia detras, cruza la meta entre risas justo cuando Pablo se levanta sacudiendose la arena.",
+    questions: [
+      { type: "choice", prompt: "Que le pasa a Carla al principio de la carrera?", answer: "Se cae pero se levanta riendo", options: ["Se cae pero se levanta riendo", "Gana la carrera enseguida", "Se queda fuera del saco"] },
+      { type: "choice", prompt: "Quien gana finalmente la carrera?", answer: "Carla", options: ["Carla", "Pablo", "Ninguno de los dos termina"] },
+      { type: "truefalse", prompt: "Pablo gana la carrera sin ningun problema.", answer: false }
+    ],
+    writingPrompt: "Inventa otra viñeta divertida que podria pasar en una carrera de sacos.",
+    writingKeywords: ["viñeta", "carrera", "divertido"]
+  },
+  {
+    id: "read-c05",
+    subject: "language",
+    skill: "lang_inference",
+    textType: "comic",
+    difficulty: 5,
+    wordCount: 109,
+    title: "Comic: El cientifico distraido",
+    text: "VIÑETA 1: El profesor Marcos mezcla liquidos de colores en su laboratorio improvisado en el garaje. \"Esta vez si va a funcionar!\", dice con confianza.\n\nVIÑETA 2: Añade una pizca de polvo blanco a la mezcla. Un pequeño \"POF!\" suena, y una nube de humo morado llena la habitacion.\n\nVIÑETA 3: Cuando el humo se disipa, todo el garaje, incluido el profesor, ha quedado pintado de un color morado brillante.\n\nVIÑETA 4: Su hermana entra, lo mira de arriba a abajo y suelta una carcajada: \"Otra vez no!\".\n\nVIÑETA 5: El profesor Marcos, sin perder el animo, anota en su libreta: \"Experimento 47: descubierta pintura morada accidental. Intentar venderla.\"",
+    questions: [
+      { type: "choice", prompt: "Que ocurre cuando Marcos añade el polvo blanco?", answer: "Se produce una explosion de humo morado", options: ["Se produce una explosion de humo morado", "El liquido se vuelve transparente", "Nada, el experimento no hace efecto"] },
+      { type: "choice", prompt: "Como reacciona la hermana de Marcos?", answer: "Se rie porque ya ha pasado antes", options: ["Se rie porque ya ha pasado antes", "Se enfada muchisimo", "Llama a los bomberos"] },
+      { type: "truefalse", prompt: "Marcos se desanima por completo y deja de experimentar.", answer: false },
+      { type: "vocabulary", prompt: "En el texto, \"se disipa\" significa que el humo...", answer: "desaparece poco a poco", options: ["desaparece poco a poco", "se hace mas espeso", "cambia de color"] }
+    ],
+    writingPrompt: "Inventa el experimento 48 del profesor Marcos: que probaria y que podria salir mal?",
+    writingKeywords: ["experimento", "profesor", "pasaria"]
+  },
+  {
+    id: "read-n23",
+    subject: "language",
+    skill: "lang_literal",
+    textType: "narrative",
+    difficulty: 1,
+    wordCount: 55,
+    title: "El paraguas equivocado",
+    text: "Iris cogio el paraguas de su hermano por error y salio corriendo hacia el colegio bajo la lluvia. Era mucho mas grande que el suyo y le costaba sujetarlo con el viento.\n\nCuando llego a clase, su mejor amiga se rio al verla luchando contra el paraguas gigante, pero al menos Iris llego completamente seca.",
+    questions: [
+      { type: "choice", prompt: "De quien era el paraguas que cogio Iris?", answer: "De su hermano", options: ["De su hermano", "De su madre", "De su amiga"] },
+      { type: "choice", prompt: "Que problema tuvo Iris con el paraguas?", answer: "Le costaba sujetarlo por el viento", options: ["Le costaba sujetarlo por el viento", "Se le rompio enseguida", "Se le olvido en casa"] },
+      { type: "truefalse", prompt: "Iris llego mojada al colegio.", answer: false }
+    ],
+    writingPrompt: "Cuenta una vez que usaste algo que no era tuyo por error.",
+    writingKeywords: ["error", "cogi", "porque"]
+  },
+  {
+    id: "read-n24",
+    subject: "language",
+    skill: "lang_inference",
+    textType: "narrative",
+    difficulty: 2,
+    wordCount: 67,
+    title: "El examen sorpresa",
+    text: "Cuando el profesor anuncio un examen sorpresa de matematicas, la mayoria de la clase se quejo en voz alta. Carlitos, sin embargo, se quedo tranquilo: llevaba toda la semana repasando las tablas de multiplicar por su cuenta, sin que nadie se lo pidiera.\n\nAl final del dia, fue uno de los pocos que aprobo con buena nota, y sus compañeros empezaron a preguntarle su secreto para estudiar.",
+    questions: [
+      { type: "choice", prompt: "Como reacciono la mayoria de la clase al examen sorpresa?", answer: "Se quejaron", options: ["Se quejaron", "Se alegraron mucho", "No dijeron nada"] },
+      { type: "choice", prompt: "Por que estaba tranquilo Carlitos?", answer: "Porque habia repasado por su cuenta toda la semana", options: ["Porque habia repasado por su cuenta toda la semana", "Porque ya sabia que no habria examen", "Porque copio las respuestas"] },
+      { type: "truefalse", prompt: "Carlitos suspendio el examen como casi todos.", answer: false }
+    ],
+    writingPrompt: "Que habito de estudio crees que te ayudaria a ti a prepararte mejor para los examenes?",
+    writingKeywords: ["estudio", "habito", "ayudaria"]
+  },
+  {
+    id: "read-n25",
+    subject: "language",
+    skill: "lang_main_idea",
+    textType: "narrative",
+    difficulty: 3,
+    wordCount: 89,
+    title: "El traductor improvisado",
+    text: "Cuando una familia recien llegada de otro pais se mudo al barrio, su hija Mei no hablaba todavia mucho español. En el primer dia de campamento, se sentaba sola durante los descansos, sin saber como unirse a los juegos.\n\nDani, que habia aprendido algunas palabras de ingles en el colegio, empezo a usar gestos y dibujos para explicarle las normas de los juegos. Poco a poco, entre risas y malentendidos divertidos, Mei aprendio suficiente español para jugar sin ayuda, y Dani se convirtio en su mejor amigo del verano.",
+    questions: [
+      { type: "choice", prompt: "Cual es la idea principal del texto?", answer: "Dani ayudo a Mei a integrarse usando gestos y paciencia", options: ["Dani ayudo a Mei a integrarse usando gestos y paciencia", "Mei se quedo sola todo el verano", "Dani aprendio chino con Mei"] },
+      { type: "choice", prompt: "Como se comunicaba Dani con Mei al principio?", answer: "Con gestos y dibujos", options: ["Con gestos y dibujos", "Hablando muy alto en español", "Escribiendo cartas largas"] },
+      { type: "truefalse", prompt: "Mei nunca aprendio a jugar con el resto del grupo.", answer: false }
+    ],
+    writingPrompt: "Como ayudarias tu a alguien nuevo que no entiende bien tu idioma?",
+    writingKeywords: ["ayudaria", "idioma", "gestos"]
+  },
+  {
+    id: "read-n26",
+    subject: "language",
+    skill: "lang_inference",
+    textType: "narrative",
+    difficulty: 4,
+    wordCount: 115,
+    title: "El silencio de Carla",
+    text: "Carla llevaba toda la tarde mas callada de lo habitual, contestando con monosilabos cada vez que alguien le preguntaba algo. Sus amigas pensaron primero que estaba enfadada con ellas, asi que intentaron recordar si habian dicho algo que la hubiera molestado.\n\nFue su hermana mayor quien, al verla asi durante la cena, le pregunto directamente que le pasaba. Carla confeso entonces que estaba muy nerviosa por la audicion de baile del dia siguiente, y que no queria contarlo por miedo a que sus amigas se rieran si fallaba. Su hermana le recordo que sus amigas nunca se habian reido de ella por intentar algo nuevo, y Carla se sintio mucho mejor solo por haberlo compartido.",
+    questions: [
+      { type: "choice", prompt: "Por que estaba callada Carla?", answer: "Estaba nerviosa por una audicion de baile", options: ["Estaba nerviosa por una audicion de baile", "Estaba enfadada con sus amigas", "Se habia peleado con su hermana"] },
+      { type: "choice", prompt: "Que pensaron primero sus amigas?", answer: "Que estaba enfadada con ellas", options: ["Que estaba enfadada con ellas", "Que estaba enferma", "Que se habia mudado de casa"] },
+      { type: "truefalse", prompt: "Carla le conto su preocupacion a sus amigas antes que a su hermana.", answer: false },
+      { type: "vocabulary", prompt: "En el texto, \"monosilabos\" se refiere a respuestas...", answer: "muy cortas, de una sola palabra", options: ["muy cortas, de una sola palabra", "muy largas y detalladas", "escritas en otro idioma"] }
+    ],
+    writingPrompt: "Por que crees que es importante contar a alguien cuando estamos preocupados por algo?",
+    writingKeywords: ["contar", "preocupado", "importante"]
+  },
+  {
+    id: "read-i14",
+    subject: "language",
+    skill: "lang_literal",
+    textType: "informative",
+    difficulty: 1,
+    wordCount: 50,
+    title: "Las jirafas y su cuello largo",
+    text: "Las jirafas tienen el cuello mas largo de todos los animales terrestres, pudiendo medir hasta dos metros. Sin embargo, tienen el mismo numero de huesos en el cuello que las personas: solo siete.\n\nLa diferencia esta en que cada hueso de la jirafa es mucho mas grande que el nuestro.",
+    questions: [
+      { type: "choice", prompt: "Cuanto puede medir el cuello de una jirafa?", answer: "Hasta dos metros", options: ["Hasta dos metros", "Medio metro", "Diez metros"] },
+      { type: "choice", prompt: "Cuantos huesos tiene el cuello de una jirafa?", answer: "Siete", options: ["Siete", "Veinte", "Tres"] },
+      { type: "truefalse", prompt: "Las jirafas tienen muchos mas huesos en el cuello que las personas.", answer: false }
+    ],
+    writingPrompt: "Que otro animal con una caracteristica fisica sorprendente conoces?",
+    writingKeywords: ["animal", "caracteristica"]
+  },
+  {
+    id: "read-i15",
+    subject: "language",
+    skill: "lang_vocabulary",
+    textType: "informative",
+    difficulty: 2,
+    wordCount: 66,
+    title: "Como funcionan los semaforos",
+    text: "Los semaforos ayudan a organizar el trafico para que coches y peatones puedan moverse de forma segura. La luz roja indica que hay que detenerse por completo, la amarilla avisa de que el cambio esta proximo, y la verde permite avanzar.\n\nEn algunos paises, los semaforos para peatones muestran un muñeco que camina o que esta quieto, para que sea facil entenderlos incluso sin saber leer.",
+    questions: [
+      { type: "choice", prompt: "Que indica la luz amarilla del semaforo?", answer: "Que el cambio de luz esta proximo", options: ["Que el cambio de luz esta proximo", "Que hay que detenerse del todo", "Que se puede avanzar rapido"] },
+      { type: "vocabulary", prompt: "En el texto, \"peatones\" son las personas que...", answer: "caminan por la calle", options: ["caminan por la calle", "conducen coches", "viajan en avion"] },
+      { type: "truefalse", prompt: "La luz verde indica que hay que detenerse.", answer: false }
+    ],
+    writingPrompt: "Por que crees que es importante respetar los semaforos al cruzar la calle?",
+    writingKeywords: ["semaforo", "seguridad", "importante"]
+  },
+  {
+    id: "read-i16",
+    subject: "language",
+    skill: "lang_main_idea",
+    textType: "informative",
+    difficulty: 4,
+    wordCount: 92,
+    title: "El reciclaje y sus contenedores",
+    text: "Separar correctamente la basura ayuda a que los materiales puedan reutilizarse en lugar de acabar acumulados durante años en vertederos. Por eso, en muchas ciudades existen contenedores de distintos colores: el amarillo para envases de plastico y latas, el azul para papel y carton, el verde para vidrio, y el marron para restos organicos.\n\nAunque al principio puede parecer complicado recordar cada color, con la practica se convierte en un habito sencillo que, multiplicado por millones de personas, reduce de forma importante la cantidad de basura que termina contaminando el medio ambiente.",
+    questions: [
+      { type: "choice", prompt: "Cual es la idea principal del texto?", answer: "Separar la basura correctamente ayuda a reducir la contaminacion", options: ["Separar la basura correctamente ayuda a reducir la contaminacion", "Todos los contenedores son del mismo color", "El reciclaje no sirve para nada"] },
+      { type: "choice", prompt: "Para que sirve el contenedor amarillo?", answer: "Para envases de plastico y latas", options: ["Para envases de plastico y latas", "Para papel y carton", "Para restos de comida"] },
+      { type: "truefalse", prompt: "El reciclaje no tiene ningun efecto sobre el medio ambiente.", answer: false }
+    ],
+    writingPrompt: "Que cosas reciclas tu en casa? Explica como lo haces.",
+    writingKeywords: ["reciclo", "casa", "contenedor"]
+  },
+  {
+    id: "read-l07",
+    subject: "language",
+    skill: "lang_text_structure",
+    textType: "letter",
+    difficulty: 3,
+    wordCount: 69,
+    title: "Carta de agradecimiento",
+    text: "Querida monitora Sofia:\n\nAhora que termina el campamento, queria darte las gracias por toda la paciencia que tuviste conmigo cuando no sabia nadar bien. Al principio me daba mucho miedo meterme en la parte profunda de la piscina.\n\nGracias a tus consejos y a que nunca te enfadaste por mis dudas, ahora puedo nadar todo el largo sin pararme. Espero verte el verano que viene.\n\nCon mucho cariño,\nValeria",
+    questions: [
+      { type: "choice", prompt: "Por que agradece Valeria a su monitora?", answer: "Por su paciencia enseñandole a nadar", options: ["Por su paciencia enseñandole a nadar", "Por regalarle un bañador", "Por llevarla a casa cada dia"] },
+      { type: "choice", prompt: "Que le daba miedo a Valeria al principio?", answer: "La parte profunda de la piscina", options: ["La parte profunda de la piscina", "El sol fuerte", "Los demas niños del grupo"] },
+      { type: "truefalse", prompt: "Valeria sigue sin saber nadar al final de la carta.", answer: false }
+    ],
+    writingPrompt: "Escribe una carta breve de agradecimiento a alguien que te haya ayudado a aprender algo.",
+    writingKeywords: ["gracias", "aprendi", "ayuda"]
+  },
+  {
+    id: "read-l08",
+    subject: "language",
+    skill: "lang_text_structure",
+    textType: "letter",
+    difficulty: 5,
+    wordCount: 119,
+    title: "Carta a mi yo del futuro",
+    text: "Querido yo del futuro:\n\nTe escribo esta carta el ultimo dia de tercero de primaria, justo antes de las vacaciones de verano. No se cuantos años tendras cuando la leas, pero espero que sigas recordando lo nervioso que estabas hoy por el examen final de matematicas.\n\nMe gustaria preguntarte si conseguiste, como tanto querias, formar parte del equipo de natacion del colegio el año que viene. Tambien quiero que sepas que este verano voy a intentar aprender a montar en monociclo, aunque ahora mismo me parezca imposible.\n\nSea lo que sea que estes haciendo cuando leas esto, espero que te acuerdes de seguir intentando cosas nuevas, igual que yo intento hacerlo ahora.\n\nCon cariño,\nTu yo de nueve años",
+    questions: [
+      { type: "choice", prompt: "Cuando escribe la carta el autor?", answer: "El ultimo dia de tercero de primaria", options: ["El ultimo dia de tercero de primaria", "En su cumpleaños", "El primer dia de clase"] },
+      { type: "choice", prompt: "Que quiere aprender a hacer este verano?", answer: "Montar en monociclo", options: ["Montar en monociclo", "Tocar la guitarra", "Hablar otro idioma"] },
+      { type: "truefalse", prompt: "El autor ya sabe con seguridad si entrara en el equipo de natacion.", answer: false },
+      { type: "vocabulary", prompt: "En el texto, la expresion \"seguir intentando cosas nuevas\" sugiere un mensaje de...", answer: "animo y curiosidad hacia el futuro", options: ["animo y curiosidad hacia el futuro", "miedo a equivocarse", "tristeza por el pasado"] }
+    ],
+    writingPrompt: "Escribe tu propia carta breve dirigida a ti mismo dentro de cinco años.",
+    writingKeywords: ["futuro", "espero", "yo"]
+  },
+  {
+    id: "read-no09",
+    subject: "language",
+    skill: "lang_text_structure",
+    textType: "notice",
+    difficulty: 2,
+    wordCount: 37,
+    title: "Normas del taller de manualidades",
+    text: "TALLER DE MANUALIDADES\n\n1. Pide siempre permiso antes de usar las tijeras.\n2. Comparte el material con tus compañeros.\n3. Limpia tu mesa al terminar cada actividad.\n4. Guarda tus trabajos en la carpeta con tu nombre.",
+    questions: [
+      { type: "choice", prompt: "Que se debe pedir antes de usar las tijeras?", answer: "Permiso", options: ["Permiso", "Dinero", "Un dibujo"] },
+      { type: "truefalse", prompt: "Cada niño debe guardar sus trabajos en una carpeta con su nombre.", answer: true },
+      { type: "choice", prompt: "Que se debe hacer al terminar la actividad?", answer: "Limpiar la mesa", options: ["Limpiar la mesa", "Romper los dibujos", "Salir corriendo"] }
+    ]
+  },
+  {
+    id: "read-no10",
+    subject: "language",
+    skill: "lang_text_structure",
+    textType: "notice",
+    difficulty: 5,
+    wordCount: 89,
+    title: "Reglamento oficial del campeonato regional",
+    text: "REGLAMENTO DEL CAMPEONATO REGIONAL DE PEONZAS\n\nArticulo 1: Podran participar todos los niños inscritos previamente en su club correspondiente antes del 30 de junio.\n\nArticulo 2: Cada categoria se establecera segun la edad del participante a fecha del campeonato, no segun la edad con la que se inscribio.\n\nArticulo 3: Cualquier reclamacion debera presentarse por escrito al comite organizador antes de que finalice la jornada de competicion.\n\nArticulo 4: El comite organizador se reserva el derecho de modificar el horario de las pruebas en caso de condiciones meteorologicas adversas.",
+    questions: [
+      { type: "choice", prompt: "Hasta cuando se podian inscribir los participantes?", answer: "Hasta el 30 de junio", options: ["Hasta el 30 de junio", "Hasta el dia del campeonato", "No hay fecha limite"] },
+      { type: "choice", prompt: "Como se determina la categoria de cada participante?", answer: "Segun su edad en la fecha del campeonato", options: ["Segun su edad en la fecha del campeonato", "Segun su edad cuando se inscribio", "Por sorteo aleatorio"] },
+      { type: "truefalse", prompt: "Las reclamaciones se pueden presentar de forma oral en cualquier momento.", answer: false },
+      { type: "vocabulary", prompt: "En el texto, \"adversas\" describe condiciones meteorologicas...", answer: "desfavorables o malas", options: ["desfavorables o malas", "perfectas y soleadas", "sin ningun viento"] }
+    ],
+    writingPrompt: "Por que crees que es importante que un campeonato tenga un reglamento claro y escrito?",
+    writingKeywords: ["reglamento", "importante", "claro"]
+  },
+  {
+    id: "read-d06",
+    subject: "language",
+    skill: "lang_main_idea",
+    textType: "dialogue",
+    difficulty: 3,
+    wordCount: 83,
+    title: "El consejo del entrenador",
+    text: "-No entiendo por que sigo perdiendo si entreno todos los dias -se quejo Nico, frustrado.\n\n-Cuanto tiempo dedicas a cada tecnica? -preguntó el entrenador.\n\n-Pues... la misma que a todas -respondio Nico, dudando.\n\n-Ahi esta el problema -dijo el entrenador-. Llevas semanas fallando el mismo lanzamiento, pero le dedicas el mismo tiempo que a los que ya dominas. Prueba a entrenar mas ese lanzamiento concreto esta semana.\n\nNico lo intento, y en el siguiente torneo, ese lanzamiento se convirtio en su mejor arma.",
+    questions: [
+      { type: "choice", prompt: "Cual es la idea principal del dialogo?", answer: "Entrenar mas lo que falla ayuda a mejorar", options: ["Entrenar mas lo que falla ayuda a mejorar", "Nico debe dejar de entrenar", "El entrenador no sabe ayudar a Nico"] },
+      { type: "choice", prompt: "Que error cometia Nico al entrenar?", answer: "Dedicaba el mismo tiempo a todo, sin enfocarse en lo que fallaba", options: ["Dedicaba el mismo tiempo a todo, sin enfocarse en lo que fallaba", "No entrenaba nunca", "Entrenaba solo los fines de semana"] },
+      { type: "truefalse", prompt: "Nico ignoro el consejo del entrenador.", answer: false }
+    ],
+    writingPrompt: "Que estrategia usarias tu para mejorar en algo que se te resulta dificil?",
+    writingKeywords: ["mejorar", "estrategia", "dificil"]
+  },
+  {
+    id: "read-c06",
+    subject: "language",
+    skill: "lang_main_idea",
+    textType: "comic",
+    difficulty: 4,
+    wordCount: 95,
+    title: "Comic: El robot ayudante",
+    text: "VIÑETA 1: Sara presenta su robot casero a la clase. \"Se llama Tornillo y puede recoger juguetes\", explica orgullosa.\n\nVIÑETA 2: Pulsa el boton y Tornillo avanza lentamente, agarra un peluche con su pinza mecanica.\n\nVIÑETA 3: De repente, Tornillo gira hacia el lado equivocado y choca contra la pizarra, soltando el peluche por los aires.\n\nVIÑETA 4: Toda la clase se rie, pero tambien aplaude, sorprendida de que un robot casero hiciera tanto.\n\nVIÑETA 5: El profesor le dice a Sara: \"Esto demuestra mucho mas ingenio que un robot perfecto comprado en una tienda\".",
+    questions: [
+      { type: "choice", prompt: "Para que sirve el robot de Sara?", answer: "Para recoger juguetes", options: ["Para recoger juguetes", "Para hacer la comida", "Para hablar idiomas"] },
+      { type: "choice", prompt: "Que ocurre cuando Tornillo se mueve?", answer: "Choca contra la pizarra y suelta el peluche", options: ["Choca contra la pizarra y suelta el peluche", "Funciona perfectamente sin errores", "Se apaga inmediatamente"] },
+      { type: "truefalse", prompt: "El profesor se enfada porque el robot no funciono bien.", answer: false }
+    ],
+    writingPrompt: "Inventa otro robot casero util y explica para que serviria.",
+    writingKeywords: ["robot", "serviria", "inventaria"]
+  },
+  {
+    id: "read-n27",
+    subject: "language",
+    skill: "lang_main_idea",
+    textType: "narrative",
+    difficulty: 5,
+    wordCount: 130,
+    title: "El verano de las cartas perdidas",
+    text: "Antes de irse de campamento, Lucia y su mejor amiga prometieron escribirse cada semana, como hacian las protagonistas de su libro favorito. Sin embargo, despues de enviar tres cartas sin recibir ninguna respuesta, Lucia empezo a sentirse dolida, convencida de que su amiga se habia olvidado de ella.\n\nAl volver a casa en septiembre, descubrio la verdad: el buzon del campamento de su amiga tenia un problema y llevaba semanas sin repartir correctamente la correspondencia. Todas las cartas de Lucia habian llegado de golpe el ultimo dia, junto con las que su amiga si habia escrito durante todo el verano.\n\nLas dos se rieron mucho al imaginarse la cara de extrañeza del cartero al ver aquel monton de cartas atrasadas, y prometieron, esta vez, llamarse por telefono ademas de escribirse.",
+    questions: [
+      { type: "choice", prompt: "Por que dejo de recibir cartas Lucia?", answer: "Porque el buzon del campamento tenia un problema", options: ["Porque el buzon del campamento tenia un problema", "Porque su amiga ya no queria escribirle", "Porque Lucia dejo de escribir primero"] },
+      { type: "choice", prompt: "Que sintio Lucia al no recibir respuesta?", answer: "Se sintio dolida, pensando que su amiga la habia olvidado", options: ["Se sintio dolida, pensando que su amiga la habia olvidado", "Se alegro de no tener que escribir mas", "No le importo en absoluto"] },
+      { type: "truefalse", prompt: "La amiga de Lucia nunca le escribio ninguna carta.", answer: false },
+      { type: "vocabulary", prompt: "En el texto, \"correspondencia\" se refiere a...", answer: "las cartas que se envian y reciben", options: ["las cartas que se envian y reciben", "el dinero ahorrado", "los juegos del campamento"] }
+    ],
+    writingPrompt: "Cuenta una vez que pensaste algo equivocado sobre una situacion y luego descubriste la verdad.",
+    writingKeywords: ["pense", "verdad", "descubri"]
+  },
+  {
+    id: "read-n28",
+    subject: "language",
+    skill: "lang_order_text",
+    textType: "narrative",
+    difficulty: 3,
+    wordCount: 75,
+    title: "El plan de estudio de Marcos",
+    text: "Antes de los examenes finales, Marcos organizo su tiempo en tres partes claras. Primero, dedicaba media hora cada tarde a repasar matematicas, su asignatura mas dificil. Despues, leia un capitulo del libro de lectura obligatoria.\n\nPor ultimo, se permitia veinte minutos de videojuegos como premio si habia cumplido con las dos primeras tareas. Gracias a ese orden, llego a los examenes mucho mas tranquilo que sus compañeros, que repasaban todo de golpe la noche anterior.",
+    questions: [
+      { type: "choice", prompt: "Que hacia Marcos primero cada tarde?", answer: "Repasar matematicas", options: ["Repasar matematicas", "Jugar videojuegos", "Leer un capitulo"] },
+      { type: "choice", prompt: "Cuando se permitia Marcos jugar a videojuegos?", answer: "Despues de cumplir las dos primeras tareas", options: ["Despues de cumplir las dos primeras tareas", "Antes de estudiar", "Solo los fines de semana"] },
+      { type: "truefalse", prompt: "Marcos repasaba todo la noche antes del examen, como sus compañeros.", answer: false }
+    ],
+    writingPrompt: "Organiza tu propio plan de estudio con tres pasos en orden.",
+    writingKeywords: ["primero", "despues", "plan"]
+  },
+  {
+    id: "read-n29",
+    subject: "language",
+    skill: "lang_vocabulary",
+    textType: "narrative",
+    difficulty: 4,
+    wordCount: 94,
+    title: "La actuacion improvisada",
+    text: "Cuando el actor principal de la obra del campamento se puso enfermo justo antes del estreno, todos pensaron que tendrian que cancelar la funcion. Sin embargo, Carla, que se sabia el guion entero de memoria por haber ayudado a los actores a ensayar, se ofrecio a sustituirlo sin dudarlo.\n\nAunque estaba visiblemente nerviosa al principio, su conocimiento del texto le permitio improvisar con naturalidad cuando se le olvido una linea. El publico, que no sabia nada del cambio de ultima hora, aplaudio entusiasmado al final, sin sospechar la hazaña que habia ocurrido entre bastidores.",
+    questions: [
+      { type: "choice", prompt: "Por que pudo Carla sustituir al actor?", answer: "Porque se sabia el guion de memoria", options: ["Porque se sabia el guion de memoria", "Porque era la directora de la obra", "Porque ya habia actuado antes en ese papel"] },
+      { type: "vocabulary", prompt: "En el texto, \"entre bastidores\" se refiere a lo que ocurre...", answer: "detras del escenario, sin que el publico lo vea", options: ["detras del escenario, sin que el publico lo vea", "en el escenario principal", "fuera del teatro"] },
+      { type: "truefalse", prompt: "El publico sabia desde el principio que habia un cambio de actor.", answer: false }
+    ],
+    writingPrompt: "Cuenta una vez que tuviste que improvisar porque algo no salio como esperabas.",
+    writingKeywords: ["improvise", "nervios", "porque"]
+  },
+  {
+    id: "read-i17",
+    subject: "language",
+    skill: "lang_literal",
+    textType: "informative",
+    difficulty: 2,
+    wordCount: 67,
+    title: "Las estaciones del año",
+    text: "La Tierra tarda un año en dar una vuelta completa alrededor del sol, y durante ese recorrido, su inclinacion provoca los cambios de estacion. En primavera, las plantas florecen; en verano, los dias son mas largos y calurosos.\n\nEn otoño, las hojas de muchos arboles cambian de color y caen, y en invierno los dias se acortan y las temperaturas bajan considerablemente en muchas regiones del planeta.",
+    questions: [
+      { type: "choice", prompt: "Cuanto tarda la Tierra en dar una vuelta al sol?", answer: "Un año", options: ["Un año", "Un mes", "Una semana"] },
+      { type: "choice", prompt: "Que ocurre con las hojas de los arboles en otoño?", answer: "Cambian de color y caen", options: ["Cambian de color y caen", "Crecen mas rapido", "Se vuelven mas verdes"] },
+      { type: "truefalse", prompt: "Los dias son mas largos en invierno que en verano.", answer: false }
+    ],
+    writingPrompt: "Cual es tu estacion favorita del año? Explica por que.",
+    writingKeywords: ["estacion", "favorita", "porque"]
+  },
+  {
+    id: "read-i18",
+    subject: "language",
+    skill: "lang_vocabulary",
+    textType: "informative",
+    difficulty: 5,
+    wordCount: 107,
+    title: "La memoria y como aprendemos",
+    text: "Cuando aprendemos algo nuevo, nuestro cerebro crea conexiones entre neuronas que, al principio, son muy debiles y se olvidan facilmente. Sin embargo, cada vez que repasamos esa informacion, esas conexiones se fortalecen, haciendo que el recuerdo sea cada vez mas estable y duradero.\n\nPor eso, repasar un mismo contenido varios dias seguidos, en sesiones cortas, resulta mucho mas efectivo que estudiar todo de golpe la noche anterior a un examen. Los cientificos llaman a este fenomeno repeticion espaciada, y han demostrado que ayuda a que la informacion pase de la memoria a corto plazo a la memoria a largo plazo, donde permanece disponible durante mucho mas tiempo.",
+    questions: [
+      { type: "choice", prompt: "Que ocurre en el cerebro cuando aprendemos algo nuevo?", answer: "Se crean conexiones entre neuronas", options: ["Se crean conexiones entre neuronas", "El cerebro se hace mas grande", "Se borran recuerdos antiguos automaticamente"] },
+      { type: "vocabulary", prompt: "En el texto, \"duradero\" significa que algo...", answer: "se mantiene durante mucho tiempo", options: ["se mantiene durante mucho tiempo", "desaparece muy rapido", "cambia constantemente"] },
+      { type: "truefalse", prompt: "Segun el texto, estudiar todo de golpe la noche anterior es mas efectivo que repasar varios dias.", answer: false },
+      { type: "choice", prompt: "Como se llama la tecnica de repasar varios dias en sesiones cortas?", answer: "Repeticion espaciada", options: ["Repeticion espaciada", "Memoria fotografica", "Aprendizaje pasivo"] }
+    ],
+    writingPrompt: "Que tecnica de estudio usarias tu a partir de ahora despues de leer este texto?",
+    writingKeywords: ["tecnica", "estudio", "usaria"]
+  },
+  {
+    id: "read-no11",
+    subject: "language",
+    skill: "lang_text_structure",
+    textType: "notice",
+    difficulty: 3,
+    wordCount: 48,
+    title: "Anuncio: feria de ciencias",
+    text: "FERIA DE CIENCIAS DEL CAMPAMENTO\n\nFecha: sabado 12 de julio, de 10:00 a 13:00.\nLugar: pabellon deportivo.\nCada grupo debera presentar su proyecto en una mesa numerada que se asignara el dia anterior.\nSe ruega traer el material propio, ya que el campamento solo facilitara mesas y enchufes.",
+    questions: [
+      { type: "choice", prompt: "Donde se celebrara la feria de ciencias?", answer: "En el pabellon deportivo", options: ["En el pabellon deportivo", "En el comedor", "En la piscina"] },
+      { type: "choice", prompt: "Que debe traer cada grupo?", answer: "Su propio material", options: ["Su propio material", "Solo las mesas", "Comida para todos"] },
+      { type: "truefalse", prompt: "El campamento facilitara todo el material necesario para los proyectos.", answer: false }
+    ],
+    writingPrompt: "Que proyecto de ciencias presentarias tu en una feria como esta?",
+    writingKeywords: ["proyecto", "ciencias", "presentaria"]
+  },
+  {
+    id: "read-d07",
+    subject: "language",
+    skill: "lang_vocabulary",
+    textType: "dialogue",
+    difficulty: 4,
+    wordCount: 89,
+    title: "La negociacion del horario",
+    text: "-Si terminamos antes el entrenamiento, podriamos ir a la piscina -propuso Ana al resto del equipo.\n\n-Pero entonces no nos dara tiempo a practicar el ejercicio nuevo -objeto el capitan, dudoso.\n\n-Y si lo practicamos mañana a primera hora? -sugirio Ana-. Asi aprovechamos hoy que hace tanto calor.\n\nEl capitan se quedo pensando un momento antes de responder.\n\n-Me parece un buen compromiso -admitio finalmente-. Pero solo si todos estan de acuerdo en venir mas temprano mañana.\n\nTodos asintieron, satisfechos con el plan negociado entre Ana y el capitan.",
+    questions: [
+      { type: "choice", prompt: "Que propone Ana al equipo?", answer: "Terminar antes para ir a la piscina", options: ["Terminar antes para ir a la piscina", "Cancelar el entrenamiento entero", "Cambiar de deporte"] },
+      { type: "vocabulary", prompt: "En el texto, \"compromiso\" se refiere a un acuerdo en el que...", answer: "ambas partes ceden un poco", options: ["ambas partes ceden un poco", "una parte impone su voluntad", "nadie consigue lo que queria"] },
+      { type: "truefalse", prompt: "El capitan acepta la propuesta de Ana sin ninguna condicion.", answer: false }
+    ],
+    writingPrompt: "Cuenta una vez en la que tuviste que llegar a un acuerdo con alguien para resolver un problema.",
+    writingKeywords: ["acuerdo", "resolvimos", "compromiso"]
+  },
+  {
+    id: "read-c07",
+    subject: "language",
+    skill: "lang_order_text",
+    textType: "comic",
+    difficulty: 2,
+    wordCount: 61,
+    title: "Comic: La torre de cubos",
+    text: "VIÑETA 1: Tres niños empiezan a apilar cubos de madera, uno encima de otro, con cuidado.\n\nVIÑETA 2: La torre va creciendo cada vez mas alta, mas alta que la mesa.\n\nVIÑETA 3: Cuando ponen el ultimo cubo, la torre tiembla un instante.\n\nVIÑETA 4: La torre se mantiene en pie y los tres niños saltan de alegria, chocando las manos.",
+    questions: [
+      { type: "choice", prompt: "Que construyen los niños?", answer: "Una torre de cubos de madera", options: ["Una torre de cubos de madera", "Un puente de papel", "Un castillo de arena"] },
+      { type: "choice", prompt: "Que pasa cuando ponen el ultimo cubo?", answer: "La torre tiembla pero se mantiene en pie", options: ["La torre tiembla pero se mantiene en pie", "La torre se cae completamente", "Deciden no poner mas cubos"] },
+      { type: "truefalse", prompt: "La torre se cae al final de la historia.", answer: false }
+    ],
+    writingPrompt: "Inventa una viñeta 5 explicando que hacen los niños despues de terminar la torre.",
+    writingKeywords: ["viñeta", "torre", "despues"]
   }
 );
 
