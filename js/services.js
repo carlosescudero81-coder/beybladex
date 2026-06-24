@@ -664,7 +664,9 @@ class ProgressService {
     session.attempts += 1;
     session.bestAccuracy = Math.max(session.bestAccuracy || 0, stats.accuracy || 0);
 
-    const firstCompletion = !session.completedAt && !completed.has(floor);
+    // firstCompletion depends only on completedFloors — session.completedAt can be stale
+    // (e.g. if completedFloors was lost/reset) and must not block the unlock.
+    const firstCompletion = !completed.has(floor);
     if (firstCompletion) {
       session.completedAt = today;
       completed.add(floor);
