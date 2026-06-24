@@ -1996,6 +1996,370 @@ function appendLargeLocalQuestionBank(targetTotal = 5000, seedOffset = 0) {
 }
 
 appendMathExpansion();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EXPANSION: math_word_problems  –  48 problemas curados  (IDs wp-01 a wp-48)
+// Curriculo LOMLOE 3 Primaria · universo Beyblade · sin tildes en strings
+// ─────────────────────────────────────────────────────────────────────────────
+
+function appendWordProblemsExpansion() {
+
+  // ── BLOQUE 1: Suma/resta con llevadas en contexto (dif 1-2) ── 10 preguntas
+  [
+    [
+      'En el Estadio X habia 347 espectadores. Llegaron 256 mas. Cuantos espectadores hay ahora?',
+      603,
+      [593, 503],
+      'Se suman los espectadores: 347 + 256 = 603. La llevada en las decenas da 10 decenas = 1 centena extra.'
+    ],
+    [
+      'Carlos tiene 428 cromos de Beys. Regala 165 a Nico. Cuantos cromos le quedan?',
+      263,
+      [273, 363],
+      'Se restan los cromos regalados: 428 - 165 = 263. Al restar las decenas hay que pedir prestado a las centenas.'
+    ],
+    [
+      'En el taller de piezas habia 512 tornillos. Se usaron 274 para reparar Beys. Cuantos quedan?',
+      238,
+      [348, 228],
+      '512 - 274 = 238. Hay que reagrupar dos veces para completar la resta.'
+    ],
+    [
+      'Valt colecciono 185 piezas en enero y 349 en febrero. Cuantas piezas tiene en total?',
+      534,
+      [524, 434],
+      '185 + 349 = 534. En las unidades 5+9=14, escribimos 4 y llevamos 1 a las decenas.'
+    ],
+    [
+      'En la Arena Extrema hubo 621 batallas este mes y 198 el mes pasado. Cuantas batallas mas hubo este mes?',
+      423,
+      [413, 523],
+      '621 - 198 = 423. Hay que reagrupar en decenas y en centenas.'
+    ],
+    [
+      'Aiger guarda 376 lanzadores en su mochila y encuentra 248 mas en el taller. Cuantos tiene en total?',
+      624,
+      [614, 714],
+      '376 + 248 = 624. Las unidades dan 14: se escribe 4 y se lleva 1 decena.'
+    ],
+    [
+      'En el torneo habia 800 pegatinas de Beys para repartir. Se repartieron 537. Cuantas pegatinas quedan?',
+      263,
+      [273, 363],
+      '800 - 537 = 263. Al restar de una centena exacta hay que reagrupar varias veces.'
+    ],
+    [
+      'Dante colecciona cartas de Beys. Tenia 453 y gano 289 en el torneo. Cuantas tiene ahora?',
+      742,
+      [732, 642],
+      '453 + 289 = 742. En unidades: 3+9=12, se escribe 2 y se lleva 1 decena.'
+    ],
+    [
+      'En el Coliseo de Combate hay 920 asientos. 386 estan ocupados. Cuantos asientos estan vacios?',
+      534,
+      [544, 434],
+      '920 - 386 = 534. Hay que pedir prestado a las centenas porque 0 no puede restar 6.'
+    ],
+    [
+      'Luna tiene 267 piezas de repuesto y Bird tiene 358. Cuantas piezas tienen entre los dos?',
+      625,
+      [615, 525],
+      '267 + 358 = 625. Unidades: 7+8=15, se escribe 5 y se lleva 1. Decenas: 1+6+5=12, se lleva 1 mas.'
+    ]
+  ].forEach(([prompt, answer, wrongs, explanation], i) => {
+    QUESTION_BANK.push(makeChoiceQuestion(
+      `math-wp-curated-${String(i + 1).padStart(2, '0')}`,
+      'math', 'math_word_problems',
+      i < 5 ? 1 : 2,
+      prompt, answer, wrongs, explanation
+    ));
+  });
+
+  // ── BLOQUE 2: Problemas de 2 pasos (dif 2-3) ── 8 preguntas
+  [
+    [
+      'En el taller habia 48 piezas. Llego un cargamento de 36 piezas mas. Despues se usaron 25 para reparar Beys. Cuantas piezas quedan?',
+      59,
+      [84, 11],
+      'Paso 1: 48 + 36 = 84 piezas. Paso 2: 84 - 25 = 59 piezas. Son dos pasos: primero se suma el cargamento y despues se restan las usadas.'
+    ],
+    [
+      'Valt tenia 57 cromos. Compro 28 en la tienda del Estadio X. Luego regalo 19 a Aiger. Cuantos cromos tiene Valt?',
+      66,
+      [85, 10],
+      'Paso 1: 57 + 28 = 85. Paso 2: 85 - 19 = 66 cromos.'
+    ],
+    [
+      'En el Tornado Stadium habian 145 espectadores por la manana y llegaron 87 mas al mediodia. Por la tarde se fueron 96. Cuantos habia al final de la tarde?',
+      136,
+      [232, 58],
+      'Paso 1: 145 + 87 = 232. Paso 2: 232 - 96 = 136. Primero el total y luego se restan los que se fueron.'
+    ],
+    [
+      'Carlos guardo 6 cajas con 7 lanzadores cada una. Despues perdio 13 lanzadores en el torneo. Cuantos lanzadores le quedan?',
+      29,
+      [42, 55],
+      'Paso 1: 6 x 7 = 42 lanzadores. Paso 2: 42 - 13 = 29. Primero se calcula el total multiplicando, luego se resta.'
+    ],
+    [
+      'En la Arena X habia 4 grupos de 9 Bladers cada uno. Despues se apuntaron 8 Bladers mas. Cuantos Bladers hay en total?',
+      44,
+      [36, 53],
+      'Paso 1: 4 x 9 = 36 Bladers. Paso 2: 36 + 8 = 44. Primero se calculan los grupos y luego se suman los nuevos.'
+    ],
+    [
+      'Bell gano 56 monedas en el primer torneo y 78 en el segundo. Despues gasto 95 en piezas nuevas para su Bey. Cuantas monedas le quedan?',
+      39,
+      [134, 17],
+      'Paso 1: 56 + 78 = 134 monedas. Paso 2: 134 - 95 = 39. Se suman primero las dos ganancias y luego se resta el gasto.'
+    ],
+    [
+      'En el taller habia 120 tornillos. Se usaron 45 por la manana y 38 por la tarde. Cuantos tornillos quedan?',
+      37,
+      [75, 83],
+      'Paso 1: 45 + 38 = 83 tornillos usados. Paso 2: 120 - 83 = 37. Puedes sumar los usados primero y luego restar del total.'
+    ],
+    [
+      'Nico compro 5 paquetes de 8 cromos cada uno. Luego intercambio 12 cromos con Sara. Cuantos cromos tiene Nico ahora?',
+      28,
+      [40, 60],
+      'Paso 1: 5 x 8 = 40 cromos. Paso 2: 40 - 12 = 28. Primero se calcula el total con la multiplicacion y luego se restan los intercambiados.'
+    ]
+  ].forEach(([prompt, answer, wrongs, explanation], i) => {
+    QUESTION_BANK.push(makeChoiceQuestion(
+      `math-wp-curated-${String(i + 11).padStart(2, '0')}`,
+      'math', 'math_word_problems',
+      i < 4 ? 2 : 3,
+      prompt, answer, wrongs, explanation
+    ));
+  });
+
+  // ── BLOQUE 3: Dato irrelevante (dif 3) ── 6 preguntas
+  [
+    [
+      'En el Estadio X hay 8 pistas, 45 sillas rojas y 63 sillas azules. Cuantas sillas hay en total?',
+      108,
+      [71, 116],
+      'Las 8 pistas son un dato que no se necesita. Solo hay que sumar las sillas: 45 + 63 = 108.'
+    ],
+    [
+      'Carlos tiene 3 Beys favoritos. Hoy gano 27 cromos y ayer habia ganado 34. Cuantos cromos gano en total?',
+      61,
+      [30, 64],
+      'El numero de Beys favoritos no se usa. Solo se suman los cromos: 27 + 34 = 61.'
+    ],
+    [
+      'En el taller hay 15 tornillos de repuesto, 48 piezas grandes y 36 piezas pequenas. Cuantas piezas hay en total?',
+      84,
+      [99, 48],
+      'Los tornillos son un dato irrelevante. Solo se suman las piezas: 48 + 36 = 84.'
+    ],
+    [
+      'Aiger entrena 6 dias a la semana. El lunes lanzo su Bey 52 veces y el martes 39 veces. Cuantos lanzamientos hizo en esos dos dias?',
+      91,
+      [97, 85],
+      'Los 6 dias de entrenamiento no hacen falta. Solo se suman los lanzamientos: 52 + 39 = 91.'
+    ],
+    [
+      'En la Arena Extrema hay 12 jueces, 94 Bladers apuntados y se han jugado 7 partidas hoy. Cuantos Bladers hay apuntados?',
+      94,
+      [101, 113],
+      'Los jueces y las partidas de hoy no son necesarios. La pregunta pide los Bladers apuntados, que son 94.'
+    ],
+    [
+      'Dante tiene 9 medallas, 64 puntos en la clasificacion y gano 18 puntos hoy. Cuantos puntos tiene ahora en la clasificacion?',
+      82,
+      [91, 73],
+      'Las 9 medallas no se usan. Solo se suman los puntos de clasificacion: 64 + 18 = 82.'
+    ]
+  ].forEach(([prompt, answer, wrongs, explanation], i) => {
+    QUESTION_BANK.push(makeChoiceQuestion(
+      `math-wp-curated-${String(i + 19).padStart(2, '0')}`,
+      'math', 'math_word_problems',
+      3,
+      prompt, answer, wrongs, explanation
+    ));
+  });
+
+  // ── BLOQUE 4: Multiplicacion en contexto, grupos iguales (dif 2) ── 8 preguntas
+  [
+    [
+      'En el torneo hay 6 equipos de Bladers. Cada equipo tiene 7 miembros. Cuantos Bladers participan en total?',
+      42,
+      [13, 36],
+      '6 equipos x 7 miembros = 42 Bladers. Multiplicar es juntar grupos iguales.'
+    ],
+    [
+      'Carlos guarda sus Beys en cajas. Tiene 4 cajas y en cada caja caben 9 Beys. Cuantos Beys caben en total?',
+      36,
+      [13, 45],
+      '4 cajas x 9 Beys = 36 Beys. Son 4 grupos de 9.'
+    ],
+    [
+      'Cada Blader del club lleva 5 lanzadores al torneo. Si hay 8 Bladers en el club, cuantos lanzadores llevan entre todos?',
+      40,
+      [13, 35],
+      '8 Bladers x 5 lanzadores = 40 lanzadores. Son 8 grupos de 5.'
+    ],
+    [
+      'En la tienda del Estadio X, cada paquete de cromos cuesta 3 monedas. Si Valt compra 9 paquetes, cuanto paga?',
+      27,
+      [12, 18],
+      '9 paquetes x 3 monedas = 27 monedas. Son 9 grupos de 3.'
+    ],
+    [
+      'Hay 7 mesas en el taller de Beys. En cada mesa trabajan 6 mecanicos. Cuantos mecanicos hay en el taller?',
+      42,
+      [13, 48],
+      '7 mesas x 6 mecanicos = 42. Son 7 grupos de 6.'
+    ],
+    [
+      'En cada ronda del Tornado Stadium se celebran 8 batallas. Si hay 5 rondas, cuantas batallas hay en total?',
+      40,
+      [13, 35],
+      '5 rondas x 8 batallas = 40 batallas en total.'
+    ],
+    [
+      'Bird reparte cromos entre sus amigos: da 10 cromos a cada uno y tiene 4 amigos. Cuantos cromos reparte?',
+      40,
+      [14, 30],
+      '4 amigos x 10 cromos = 40 cromos. Son 4 grupos de 10.'
+    ],
+    [
+      'En el campeonato, cada participante paga 2 monedas de inscripcion. Si se inscriben 9 participantes, cuanto se recauda?',
+      18,
+      [11, 16],
+      '9 participantes x 2 monedas = 18 monedas. Son 9 grupos de 2.'
+    ]
+  ].forEach(([prompt, answer, wrongs, explanation], i) => {
+    QUESTION_BANK.push(makeChoiceQuestion(
+      `math-wp-curated-${String(i + 25).padStart(2, '0')}`,
+      'math', 'math_word_problems',
+      2,
+      prompt, answer, wrongs, explanation
+    ));
+  });
+
+  // ── BLOQUE 5: Division como reparto exacto (dif 2) ── 8 preguntas
+  [
+    [
+      'Hay 35 cromos de Beys para repartir entre 5 amigos. Cuantos cromos le tocan a cada uno?',
+      7,
+      [6, 8],
+      '35 : 5 = 7. Al repartir 35 en 5 grupos iguales salen 7 por grupo.'
+    ],
+    [
+      'Carlos tiene 24 piezas de repuesto y las guarda en 4 cajitas iguales. Cuantas piezas hay en cada cajita?',
+      6,
+      [5, 7],
+      '24 : 4 = 6. Se dividen 24 piezas en 4 grupos iguales de 6 cada uno.'
+    ],
+    [
+      'En el taller hay 48 tornillos para repartir entre 6 mecanicos. Cuantos tornillos le tocan a cada mecanico?',
+      8,
+      [7, 9],
+      '48 : 6 = 8. Cada mecanico recibe 8 tornillos.'
+    ],
+    [
+      'Valt tiene 30 lanzadores y los coloca en grupos de 3. Cuantos grupos puede hacer?',
+      10,
+      [9, 13],
+      '30 : 3 = 10. Se pueden formar 10 grupos de 3 lanzadores.'
+    ],
+    [
+      'Hay 56 pegatinas de Beys para 8 participantes del torneo. Cuantas pegatinas recibe cada participante?',
+      7,
+      [6, 9],
+      '56 : 8 = 7. Al repartir 56 en 8 partes iguales tocan 7 a cada uno.'
+    ],
+    [
+      'Aiger quiere colocar 63 cartas en sobres de 7 cartas cada uno. Cuantos sobres necesita?',
+      9,
+      [8, 7],
+      '63 : 7 = 9. Se necesitan 9 sobres para meter 63 cartas de 7 en 7.'
+    ],
+    [
+      'En el campeonato hay 40 Bladers y se forman equipos de 5. Cuantos equipos se pueden hacer?',
+      8,
+      [7, 9],
+      '40 : 5 = 8. Con 40 Bladers y 5 por equipo salen 8 equipos.'
+    ],
+    [
+      'Bell reparte 18 medallas entre 9 ganadores del torneo. Cuantas medallas recibe cada ganador?',
+      2,
+      [3, 1],
+      '18 : 9 = 2. Cada ganador recibe 2 medallas.'
+    ]
+  ].forEach(([prompt, answer, wrongs, explanation], i) => {
+    QUESTION_BANK.push(makeChoiceQuestion(
+      `math-wp-curated-${String(i + 33).padStart(2, '0')}`,
+      'math', 'math_word_problems',
+      2,
+      prompt, answer, wrongs, explanation
+    ));
+  });
+
+  // ── BLOQUE 6: Comparacion cuantos mas/menos y cuantas veces mas (dif 2-3) ── 8 preguntas
+  [
+    [
+      'Carlos tiene 48 cromos y Nico tiene 31. Cuantos cromos mas tiene Carlos que Nico?',
+      17,
+      [79, 14],
+      '48 - 31 = 17. Cuantos mas siempre es una resta entre los dos numeros.'
+    ],
+    [
+      'En el Estadio X hay 65 sillas azules y 39 sillas rojas. Cuantas sillas azules mas hay que rojas?',
+      26,
+      [104, 29],
+      '65 - 39 = 26. La diferencia entre los dos tipos de sillas es 26.'
+    ],
+    [
+      'Valt gano 72 puntos y Aiger gano 58 puntos. Cuantos puntos menos gano Aiger?',
+      14,
+      [130, 16],
+      '72 - 58 = 14. Cuantos menos siempre es una resta.'
+    ],
+    [
+      'Dante tiene 4 Beys y Carlos tiene 28 cromos. Carlos tiene cuantas veces mas cromos que Beys tiene Dante?',
+      7,
+      [24, 32],
+      '28 : 4 = 7. Cuantas veces mas es una division: cuantos grupos del numero pequeno caben en el grande.'
+    ],
+    [
+      'En el taller hay 36 piezas grandes y 9 piezas pequenas. Las piezas grandes son cuantas veces mas que las pequenas?',
+      4,
+      [27, 45],
+      '36 : 9 = 4. Las piezas grandes son 4 veces mas que las pequenas.'
+    ],
+    [
+      'Bell tiene 56 pegatinas y Sara tiene 7. Cuantas veces mas pegatinas tiene Bell?',
+      8,
+      [49, 63],
+      '56 : 7 = 8. Bell tiene 8 veces mas pegatinas que Sara.'
+    ],
+    [
+      'En la clasificacion, Luna tiene 83 puntos y Iris tiene 67 puntos. Cuantos puntos le falta a Iris para llegar a Luna?',
+      16,
+      [150, 14],
+      '83 - 67 = 16. Cuantos le faltan es una resta entre el numero mas grande y el mas pequeno.'
+    ],
+    [
+      'En el torneo hay 5 veces mas Beys metalicos que Beys de plastico. Si hay 6 Beys de plastico, cuantos Beys metalicos hay?',
+      30,
+      [11, 25],
+      '6 x 5 = 30. Si algo es 5 veces mas, se multiplica la cantidad base por 5.'
+    ]
+  ].forEach(([prompt, answer, wrongs, explanation], i) => {
+    QUESTION_BANK.push(makeChoiceQuestion(
+      `math-wp-curated-${String(i + 41).padStart(2, '0')}`,
+      'math', 'math_word_problems',
+      i < 3 ? 2 : 3,
+      prompt, answer, wrongs, explanation
+    ));
+  });
+}
+
+appendWordProblemsExpansion();
 appendLanguageExpansion();
 appendEnglishExpansion();
 appendScienceArtsMovementExpansion();
