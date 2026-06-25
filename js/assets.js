@@ -968,7 +968,7 @@ function getCharacterProgress(state, characterId) {
 function getEffectiveCharacterStats(character, state = null, isPlayer = false) {
   const base = getCharacterBaseStats(character);
   const progress = isPlayer && state ? getCharacterProgress(state, character.id) : null;
-  const levelBonus = progress ? Math.min(24, Math.floor(progress.xp / 120) + Math.floor(progress.wins / 3)) : 0;
+  const levelBonus = progress ? Math.min(24, Math.floor(progress.xp / 120) + progress.wins) : 0;
   return {
     attack: Math.min(125, base.attack + levelBonus),
     defense: Math.min(125, base.defense + levelBonus),
@@ -984,7 +984,7 @@ function recordCharacterBattleResult(state, characterId, won, rewardXp = 0) {
   if (won) progress.wins += 1;
   else progress.losses += 1;
   progress.xp += Math.max(10, Math.round(rewardXp || 20));
-  progress.level = Math.max(1, Math.min(30, 1 + Math.floor(progress.xp / 120) + Math.floor(progress.wins / 3)));
+  progress.level = Math.max(1, Math.min(30, 1 + Math.floor(progress.xp / 120) + progress.wins));
   return progress;
 }
 
@@ -1383,8 +1383,9 @@ const WORKSHOP_PART_FILES = {
 };
 
 function buildWorkshopParts(type, files) {
-  const folder = type === 'core' ? 'Nucleo' : type === 'ring' ? 'Anillo' : 'Punta';
+  const safeFolder = type === 'core' ? 'core' : type === 'ring' ? 'ring' : 'driver';
   const prefix = type === 'core' ? 'Nucleo' : type === 'ring' ? 'Anillo' : 'Punta';
+  const safePrefix = type === 'core' ? 'core' : type === 'ring' ? 'ring' : 'driver';
   const rarityByIndex = ['comun', 'comun', 'raro', 'raro', 'epico', 'epico', 'legendario', 'legendario', 'cosmico', 'cosmico'];
   return files.map((file, index) => {
     const number = index + 1;
@@ -1407,7 +1408,8 @@ function buildWorkshopParts(type, files) {
       name: `${prefix} X-${String(number).padStart(2, '0')}`,
       rarity: rarityByIndex[Math.min(rarityByIndex.length - 1, Math.floor(index / Math.max(1, files.length / rarityByIndex.length)))],
       stat,
-      image: `imagenes_limpias/Taller/${folder}/${encodeURIComponent(file)}`,
+      // Rutas web-safe para GitHub Pages: sin espacios, comas, parentesis ni caracteres sensibles.
+      image: `assets/workshop/${safeFolder}/${safePrefix}_${String(number).padStart(2, '0')}.png`,
       svg: ''
     };
   });

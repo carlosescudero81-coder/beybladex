@@ -49,6 +49,7 @@ class CombatSession {
     this.rivalCombatant = null;
     this.selectedAction = 'attack';
     this.rivalIntent = null;
+    this.rivalPattern = null;
     this.actionLocked = false;
     this.lastSpinUsed = false;
     this.fastAnswerStreak = 0;
@@ -329,6 +330,7 @@ class CombatSession {
     this.rivalCharacterStats = typeof getEffectiveCharacterStats === 'function'
       ? getEffectiveCharacterStats(rival, this.state, false)
       : { attack: 55, defense: 55, stamina: 55, speed: 55, focus: 55, level: 1 };
+    this.rivalPattern = this.getRivalBattlePattern(rival, rivalBey, this.rivalCharacterStats);
     const baseHp = this.getRivalMaxHP();
     this.playerMaxHP = this.getPlayerMaxHP();
     this.rivalMaxHP = Math.max(38, Math.round(baseHp * (round?.hpScale || 1)));
@@ -349,6 +351,32 @@ class CombatSession {
     if (rivalTopLabel) rivalTopLabel.innerText = rivalBey.nombre;
     const floorLabel = document.getElementById('combat-floor-label');
     if (floorLabel) floorLabel.innerText = this.getRoundLabelText();
+  }
+
+  getRivalBattlePattern(rival, bey, stats = {}) {
+    const type = this.getBeyType(bey);
+    const attack = Number(stats.attack) || 55;
+    const defense = Number(stats.defense) || 55;
+    const stamina = Number(stats.stamina) || 55;
+    const speed = Number(stats.speed) || 55;
+    const focus = Number(stats.focus) || 55;
+    const name = rival?.nombre || 'Rival';
+    if (attack >= defense + 8 || type === 'ataque') {
+      return { id: 'pressure', name: `${name} presiona`, preferredIntent: 'attack', damageBonus: 4, blockSpeedBonus: 180, hint: 'Ataca fuerte: defiende o bloquea fino.' };
+    }
+    if (defense >= attack + 8 || type === 'defensa') {
+      return { id: 'wall', name: `${name} se cierra`, preferredIntent: 'defense', damageBonus: 1, blockSpeedBonus: -80, hint: 'Se cubre: carga energia y no te precipites.' };
+    }
+    if (stamina >= attack + 7 || type === 'estamina') {
+      return { id: 'stamina', name: `${name} alarga el giro`, preferredIntent: 'charge', damageBonus: 2, blockSpeedBonus: 80, hint: 'Carga giro: cortalo con ataque.' };
+    }
+    if (speed >= 64) {
+      return { id: 'sprinter', name: `${name} cambia de carril`, preferredIntent: 'attack', damageBonus: 3, blockSpeedBonus: 260, hint: 'Muy rapido: mira el bloqueo.' };
+    }
+    if (focus >= 64) {
+      return { id: 'tactician', name: `${name} lee tus rachas`, preferredIntent: 'defense', damageBonus: 2, blockSpeedBonus: 120, hint: 'Si haces combo, se defendera.' };
+    }
+    return { id: 'balanced', name: `${name} adapta su plan`, preferredIntent: 'charge', damageBonus: 2, blockSpeedBonus: 0, hint: 'Balanceado: observa su intencion.' };
   }
 
   applySavedTowerBattle(savedBattle) {
@@ -382,7 +410,11 @@ class CombatSession {
     this.usedTowerQuestionIds = new Set(savedBattle.usedQuestionIds || []);
     this.usedTowerQuestionSignatures = new Set(savedBattle.usedQuestionSignatures || []);
     if (Array.isArray(savedBattle.questionBank) && savedBattle.questionBank.length > 0) {
-      this.questionsList = savedBattle.questionBank.map(question => ({ ...question, options: Array.isArray(question.options) ? [...question.options] : [] }));
+      this.questionsList = savedBattle.questionBank.map(question => {
+        const restored = { ...question, options: Array.isArray(question.options) ? [...question.options] : [] };
+        restored.text = this.getChildFriendlyQuestionText({ ...restored, prompt: restored.text });
+        return restored;
+      });
       this.questionCount = this.questionsList.length;
       this.rounds = Array.isArray(savedBattle.rounds) && savedBattle.rounds.length > 0 ? savedBattle.rounds : this.rounds;
     }
@@ -702,8 +734,24 @@ class CombatSession {
 
   chooseRivalIntent() {
     const type = this.rivalBey?.tipo || 'balance';
+    const pattern = this.rivalPattern || this.getRivalBattlePattern(this.rivalCharacter, this.rivalBey, this.rivalCharacterStats);
     if (this.difficulty >= 7 && this.playerHP <= 45 && Math.random() < 0.45) {
       return { type: 'attack', label: 'El rival huele la victoria', hint: 'Defiende y acierta.' };
+    }
+    if (pattern?.id === 'tactician' && this.correctStreak >= 2) {
+      return { type: 'defense', label: pattern.name, hint: 'Ha leido tu combo: carga o responde con precision.' };
+    }
+    if (pattern?.id === 'sprinter' && Math.random() < 0.45) {
+      return { type: 'attack', label: pattern.name, hint: 'Golpe rapido: prepara Defensa.' };
+    }
+    if (pattern?.id === 'wall' && Math.random() < 0.5) {
+      return { type: 'defense', label: pattern.name, hint: pattern.hint };
+    }
+    if (pattern?.id === 'stamina' && Math.random() < 0.5) {
+      return { type: 'charge', label: pattern.name, hint: pattern.hint };
+    }
+    if (pattern?.id === 'pressure' && Math.random() < 0.55) {
+      return { type: 'attack', label: pattern.name, hint: pattern.hint };
     }
     if (this.difficulty >= 5 && this.correctStreak === 0 && Math.random() < 0.35) {
       return { type: 'charge', label: 'El rival carga giro', hint: 'Ataca antes de que suba.' };
@@ -1138,7 +1186,7 @@ class CombatSession {
       curriculumId: question.id,
       skill: question.skill,
       subject: question.subject,
-      text: question.prompt,
+      text: this.getChildFriendlyQuestionText(question),
       answer: question.answer,
       options: question.options,
       hint: question.explanation || 'Piensa en los datos importantes y elige el procedimiento antes de responder.',
@@ -1147,6 +1195,164 @@ class CombatSession {
       isGuidedIntro: question.isGuidedIntro === true,
       guidedIntro: question.guidedIntro || null
     };
+  }
+
+  getChildFriendlyQuestionText(question) {
+    const rawPrompt = String(question?.prompt || question?.text || '').trim();
+    if (!rawPrompt) return rawPrompt;
+    if (question?.subject === 'english' || this.looksLikeEnglishPrompt(rawPrompt)) {
+      return this.rewriteEnglishPromptForChild(rawPrompt);
+    }
+    return this.rewriteGeneralPromptForChild(rawPrompt, question);
+  }
+
+  looksLikeEnglishPrompt(prompt) {
+    return /^(best answer:|choose the best answer:|choose the |how do you say |which word means |what color is |what is "|complete:|a:\s*)/i.test(prompt);
+  }
+
+  rewriteEnglishPromptForChild(prompt) {
+    const text = String(prompt || '').trim();
+    const bestAnswer = text.match(/^(?:choose the best answer:|best answer:)\s*["“]?(.+?)["”]?$/i);
+    if (bestAnswer) {
+      const phrase = bestAnswer[1].trim().replace(/\s+/g, ' ');
+      const normalizedPhrase = phrase.replace(/[.!?]+$/, '');
+      const isQuestion = /^(what|how|do|does|can|where|when|who|which|is|are)\b/i.test(normalizedPhrase);
+      return isQuestion
+        ? `En ingles, si alguien pregunta "${normalizedPhrase}?", que respondes?`
+        : `En ingles, si alguien dice "${normalizedPhrase}", que respondes?`;
+    }
+
+    const dialogue = text.match(/^A:\s*(.+?)\s+B:\s*___\.?$/i);
+    if (dialogue) {
+      return `Completa el dialogo en ingles:\nA: ${dialogue[1].trim()}\nB: ___`;
+    }
+
+    const howSay = text.match(/^How do you say\s+"(.+?)"\??$/i);
+    if (howSay) return `Como se dice "${howSay[1]}" en ingles?`;
+
+    const wordMeans = text.match(/^Which word means\s+"(.+?)"\??$/i);
+    if (wordMeans) return `Que palabra significa "${wordMeans[1]}"?`;
+
+    const colorMeans = text.match(/^What color is\s+"(.+?)"\??$/i);
+    if (colorMeans) return `Que color significa "${colorMeans[1]}"?`;
+
+    const whatIs = text.match(/^What is\s+"(.+?)"\??$/i);
+    if (whatIs) return `Que significa "${whatIs[1]}"?`;
+
+    const complete = text.match(/^Complete:\s*(.+)$/i);
+    if (complete) return `Completa la frase en ingles: ${complete[1].trim()}`;
+
+    const chooseText = text.replace(/\s+/g, ' ').toLowerCase();
+    const choosePrompts = {
+      'choose a greeting.': 'Elige un saludo en ingles.',
+      'choose the greeting.': 'Elige un saludo en ingles.',
+      'choose the polite word.': 'Elige la palabra educada en ingles.',
+      'choose the question for a name.': 'Elige la pregunta que sirve para saber el nombre.',
+      'choose the animal.': 'Elige el animal en ingles.',
+      'choose the routine.': 'Elige la rutina diaria en ingles.',
+      'choose a routine.': 'Elige una rutina diaria en ingles.',
+      'choose a daily routine.': 'Elige una rutina diaria en ingles.',
+      'choose the school object.': 'Elige el objeto escolar en ingles.',
+      'choose the food.': 'Elige la comida o fruta en ingles.',
+      'choose the correct sentence.': 'Elige la frase correcta en ingles.',
+      'choose the negative.': 'Elige la frase negativa correcta en ingles.',
+      'best sentence for a hobby.': 'Elige la mejor frase en ingles para hablar de una aficion.'
+    };
+    if (choosePrompts[chooseText]) return choosePrompts[chooseText];
+
+    const chooseAnimal = text.match(/^Choose the animal:\s*(.+)$/i);
+    if (chooseAnimal) return `Que animal es "${chooseAnimal[1].trim()}" en ingles?`;
+
+    return text;
+  }
+
+  rewriteGeneralPromptForChild(prompt, question = {}) {
+    const text = String(prompt || '').trim();
+    const compact = text.replace(/\s+/g, ' ');
+    const lower = compact.toLowerCase();
+
+    if (question?.type === 'truefalse') {
+      return `Lee la frase y decide si es verdadera o falsa:\n${compact}`;
+    }
+
+    if (question?.type === 'vocabulary') {
+      return compact.startsWith('En el texto,')
+        ? `Vocabulario del texto:\n${compact}`
+        : `Elige el significado correcto:\n${compact}`;
+    }
+
+    // Separa los mini textos de lengua para que no parezcan una frase mezclada.
+    const miniText = compact.match(/^Texto:\s*(.+?)\s+¿?(Que|Qué|Cual|Cuál|Como|Cómo|Donde|Dónde|Por que|Por qué|De que|De qué|Cuando|Cuándo|Cuanto|Cuánto|Cuanta|Cuánta|Cuantos|Cuántos|Cuantas|Cuántas)\b(.+)$/i);
+    if (miniText) {
+      return `Lee este mini texto:\n${miniText[1].trim()}\n\n${miniText[2]}${miniText[3]}`.trim();
+    }
+
+    if (/^\d+\s*(?:\+|-|x|×)\s*\d+\s*=\s*\?$/i.test(compact)) {
+      return `Calcula esta operacion:\n${compact}`;
+    }
+
+    if (/^\d+\s+grupos?\s+de\s+\d+\s+son/i.test(compact)) {
+      return `Piensa en grupos iguales y calcula:\n${compact}`;
+    }
+
+    if (/^completa la tabla:/i.test(compact)) {
+      return compact.replace(/^Completa la tabla:/i, 'Completa la multiplicacion:');
+    }
+
+    if (/^que numero tiene/i.test(lower)) {
+      return `Construye el numero con las pistas:\n${compact}`;
+    }
+
+    if (/^cual es el numero mayor\??$/i.test(compact)) {
+      return 'Mira las opciones y elige el numero mayor.';
+    }
+
+    const placeValue = compact.match(/^En\s+(\d+),\s*(que cifra .+)$/i);
+    if (placeValue) {
+      return `Mira el numero ${placeValue[1]}.\n${placeValue[2]}`;
+    }
+
+    if (/^redondea\b/i.test(compact)) {
+      return `Redondea como te piden:\n${compact}`;
+    }
+
+    if (/^ordena\b/i.test(compact)) {
+      return `Pon las ideas en orden:\n${compact}`;
+    }
+
+    if (/^elige la palabra (?:bien escrita|correcta)\.?$/i.test(compact)) {
+      return 'Fijate bien en la escritura y elige la palabra correcta.';
+    }
+
+    if (/^elige la frase correcta\.?$/i.test(compact)) {
+      return 'Fijate en mayusculas, punto y sentido. Elige la frase correcta.';
+    }
+
+    if (/^el ritmo en musica es\.\.\.$/i.test(compact)) {
+      return 'Completa la idea: el ritmo en musica es...';
+    }
+
+    if (/^un color primario es\.\.\.$/i.test(compact)) {
+      return 'Elige cual de las opciones es un color primario.';
+    }
+
+    if (/^una textura puede ser\.\.\.$/i.test(compact)) {
+      return 'Elige cual de las opciones puede ser una textura.';
+    }
+
+    if (/^un storyboard sirve para\.\.\.$/i.test(compact)) {
+      return 'Elige para que sirve un storyboard.';
+    }
+
+    if (/^antes de comer conviene\.\.\.$/i.test(compact)) {
+      return 'Elige que conviene hacer antes de comer.';
+    }
+
+    if (/\.\.\.$/.test(compact)) {
+      return `Completa la idea:\n${compact}`;
+    }
+
+    return text;
   }
 
   createMultiplicationQuestion(table) {
@@ -1366,13 +1572,13 @@ class CombatSession {
         ? this.calculatePlayerDamage(normalizedAction)
         : 0;
 
-    // Bonus tactico visible: +5 pts si se elige la accion recomendada, -3 pts si se elige la directamente opuesta
-    // Contraste total aproximado con los cambios en calculatePlayerDamage: ~21 pts entre mejor y peor eleccion
+    // Bonus tactico visible: la accion recomendada debe notarse tambien en HP, no solo en texto.
+    // Rango moderado: +14 si contrarresta al rival, -10 si se elige la accion opuesta.
     if (isCorrect && !specialTriggered && playerDamage > 0) {
       if (isRecommended) {
-        playerDamage += 5;
+        playerDamage += 14;
       } else if (normalizedAction === oppositeAction) {
-        playerDamage = Math.max(7, playerDamage - 3);
+        playerDamage = Math.max(7, playerDamage - 10);
       }
     }
 
@@ -1396,7 +1602,10 @@ class CombatSession {
       playerDamage += this.lightningDamageBonus;
       this.lightningDamageBonus = 0;
     }
-    const finish = this.classifyFinish(isCorrect, isFastAnswer, specialTriggered, normalizedAction);
+    let finish = this.classifyFinish(isCorrect, isFastAnswer, specialTriggered, normalizedAction);
+    if (finish?.type === 'spin' && isRecommended && isCorrect && !specialTriggered) {
+      finish = { type: 'over', label: 'Tactical Over Finish', points: 2, damageMultiplier: 1.12 };
+    }
     if (finish && playerDamage > 0) {
       playerDamage = Math.round(playerDamage * finish.damageMultiplier);
       bannerTitle = bannerTitle || finish.label;
@@ -1500,6 +1709,81 @@ class CombatSession {
     };
   }
 
+  getRivalTurnDamage() {
+    const base = this.calculateRivalDamage('attack');
+    const intentBoost = this.rivalIntent?.type === 'attack' ? 3 : this.rivalIntent?.type === 'charge' ? 2 : 0;
+    const patternBoost = this.rivalPattern?.damageBonus || 0;
+    // Turno activo del rival: amenaza clara pero contenida para no romper el balance de planta.
+    return Math.max(6, Math.min(28, Math.round((base * 0.62) + intentBoost + patternBoost)));
+  }
+
+  getBlockTimingResult(startedAt, durationMs) {
+    const elapsed = Math.max(0, Date.now() - startedAt);
+    const cycle = (elapsed % (durationMs * 2)) / durationMs;
+    const progress = cycle <= 1 ? cycle : 2 - cycle;
+    const center = 0.5;
+    const tolerance = Math.max(0.1, 0.19 - (this.difficulty * 0.009));
+    const distance = Math.abs(progress - center);
+    if (distance <= tolerance) return { quality: 'perfect', reduction: 0.72, progress };
+    if (distance <= tolerance * 1.75) return { quality: 'partial', reduction: 0.42, progress };
+    return { quality: 'miss', reduction: 0, progress };
+  }
+
+  startRivalBlockPhase(outcome = {}) {
+    if (this.rivalHP <= 0 || this.playerHP <= 0) return Promise.resolve({ skipped: true, damage: 0 });
+    const overlay = document.getElementById('rival-block-overlay');
+    const button = document.getElementById('rival-block-btn');
+    const title = document.getElementById('rival-block-title');
+    const hint = document.getElementById('rival-block-hint');
+    if (!overlay || !button) return Promise.resolve({ skipped: true, damage: 0 });
+
+    const durationMs = Math.max(1250, 2600 - (this.difficulty * 110) - (this.rivalPattern?.blockSpeedBonus || 0));
+    const fullDamage = this.getRivalTurnDamage();
+    const startedAt = Date.now();
+    this.setCssVar(overlay, '--block-duration', `${durationMs}ms`);
+    overlay.classList.add('active');
+    overlay.setAttribute('aria-hidden', 'false');
+    if (title) title.innerText = this.rivalIntent?.type === 'charge' ? 'Frena el golpe cargado' : 'Bloquea el golpe';
+    if (hint) hint.innerText = this.rivalPattern?.hint || 'Pulsa cuando la luz pase por la zona amarilla';
+
+    return new Promise(resolve => {
+      let settled = false;
+      let timeoutId = null;
+      const finish = (timedOut = false) => {
+        if (settled) return;
+        settled = true;
+        const timing = timedOut ? { quality: 'miss', reduction: 0 } : this.getBlockTimingResult(startedAt, durationMs);
+        const damage = Math.max(0, Math.round(fullDamage * (1 - timing.reduction)));
+        overlay.classList.remove('active');
+        overlay.setAttribute('aria-hidden', 'true');
+        button.onclick = null;
+        if (timeoutId) clearTimeout(timeoutId);
+
+        if (damage > 0) {
+          this.playerHP = Math.max(0, this.playerHP - damage);
+          this.applyLastSpinIfNeeded();
+          this.updateHpBars();
+          this.showAttackBanner(
+            timing.quality === 'perfect' ? '¡Bloqueo perfecto!' : timing.quality === 'partial' ? 'Bloqueo parcial' : 'Golpe rival',
+            timing.quality === 'miss' ? `-${damage} HP` : `Reducido a -${damage} HP`,
+            timing.quality === 'miss' ? 'rival' : 'player',
+            timing.quality === 'miss' ? 'xtreme-risk' : 'round-cleared'
+          );
+          this.performAttackSequence('rival', timing.quality === 'miss' ? 'special' : 'counter', damage);
+        } else {
+          this.showAttackBanner('¡Bloqueo perfecto!', 'Sin daño', 'player', 'round-cleared');
+        }
+
+        this.persistTowerBattleState();
+        this.app.saveState();
+        setTimeout(() => resolve({ ...timing, damage, fullDamage }), damage > 0 ? 620 : 420);
+      };
+
+      button.onclick = () => finish(false);
+      timeoutId = setTimeout(() => finish(true), durationMs + 180);
+    });
+  }
+
   applyTurnOutcome(outcome, isCorrect) {
     if (!outcome) return;
 
@@ -1540,18 +1824,25 @@ class CombatSession {
     }
 
     const delay = outcome.specialTriggered || outcome.rivalDamage > 0 ? 980 : 720;
-    setTimeout(() => {
+    setTimeout(async () => {
       if (this.rivalHP <= 0) {
         this.completeRound();
       } else if (this.playerHP <= 0) {
         this.repeatCurrentRound('El rival gana esta ronda');
-      } else if (outcome.showExplanation) {
+      } else {
+        await this.startRivalBlockPhase(outcome);
+        if (this.playerHP <= 0) {
+          this.repeatCurrentRound('El rival gana esta ronda');
+          return;
+        }
+        if (outcome.showExplanation) {
         this.showPedagogicalExplanation();
       } else {
         this.currentQuestionIdx++;
         this.persistTowerBattleState();
         this.app.saveState();
         this.nextQuestion();
+      }
       }
     }, delay);
   }
@@ -1739,6 +2030,11 @@ class CombatSession {
   repeatCurrentRound(reason = 'Ronda perdida') {
     const round = this.getCurrentRound();
     this.roundAttempts[this.currentRoundIndex] = (this.roundAttempts[this.currentRoundIndex] || 1) + 1;
+    if (this.roundAttempts[this.currentRoundIndex] > this.getMaxRoundAttempts()) {
+      this.showAttackBanner('Eliminado de la ronda', 'El rival gana la planta', 'rival', 'round-retry');
+      this.endCombat(false);
+      return;
+    }
     this.roundsRepeated += 1;
     this.selectDeckBeyForRound(round, true);
     this.playerHP = this.playerMaxHP;
@@ -1756,6 +2052,13 @@ class CombatSession {
     this.persistTowerBattleState();
     this.app.saveState();
     setTimeout(() => this.nextQuestion(), 700);
+  }
+
+  getMaxRoundAttempts() {
+    if (!this.isTowerBattle) return 4;
+    if (this.difficulty >= 7) return 2;
+    if (this.difficulty >= 4) return 3;
+    return 4;
   }
 
   replaceRoundQuestions(round) {
@@ -2034,6 +2337,9 @@ class CombatSession {
     const charge = Math.max(0, Math.min(3, this.playerCombatant?.charge || 0));
     const fill = document.getElementById('x-gauge-fill');
     const label = document.getElementById('x-gauge-label');
+    const specialCard = document.getElementById('special-attack-card');
+    const specialName = document.getElementById('special-attack-name');
+    const specialHelp = document.getElementById('special-attack-help');
     if (fill) {
       fill.style.width = `${(charge / 3) * 100}%`;
       fill.classList.toggle('ready', charge >= 3);
@@ -2045,6 +2351,19 @@ class CombatSession {
     document.querySelectorAll('.x-gauge-panel').forEach(panel => panel.classList.toggle('dash-ready', dashReady));
     if (label) {
       label.innerText = charge >= 3 ? 'Especial listo' : `${charge}/3 para especial`;
+    }
+    if (specialCard) {
+      const streakReady = this.correctStreak >= 2;
+      const ready = charge >= 3 || streakReady;
+      const attackName = this.playerBey?.habilidad || 'Ataque X';
+      specialCard.classList.toggle('ready', ready);
+      specialCard.classList.toggle('charging', charge > 0 && !ready);
+      if (specialName) specialName.innerText = ready ? `${attackName} listo` : attackName;
+      if (specialHelp) {
+        specialHelp.innerText = ready
+          ? 'Acierta la siguiente pregunta para lanzar el especial.'
+          : `Carga: ${charge}/3 · Combo: ${Math.min(3, this.correctStreak)}/3 aciertos.`;
+      }
     }
     document.querySelectorAll('[data-combat-action="charge"]').forEach(button => {
       button.classList.toggle('special-ready', charge >= 3);
@@ -2090,8 +2409,14 @@ class CombatSession {
         ? ProgressService.recordTowerFloorCompletion(this.state, this.towerFloor, { accuracy: sessionAccuracy, week: this.weekNum })
         : ProgressService.recordCompletion(this.state, this.weekNum, this.isBoss, { accuracy: sessionAccuracy });
       const towerReward = this.getTowerBattleReward(sessionAccuracy);
+      const characterStatsBefore = typeof getEffectiveCharacterStats === 'function'
+        ? getEffectiveCharacterStats(this.playerCharacter, this.state, true)
+        : null;
       const characterProgress = typeof recordCharacterBattleResult === 'function'
         ? recordCharacterBattleResult(this.state, this.state.player.characterAvatarId, true, towerReward.xp)
+        : null;
+      const characterStatsAfter = typeof getEffectiveCharacterStats === 'function'
+        ? getEffectiveCharacterStats(this.playerCharacter, this.state, true)
         : null;
       let learningCompletion = null;
       let bossSummary = null;
@@ -2156,10 +2481,11 @@ class CombatSession {
         rewardAlreadyClaimed: !!completion.session.rewardClaimedAt,
         bossSummary,
         towerFloor: this.towerFloor,
-        matchSummary: this.buildMatchSummary()
+        matchSummary: this.buildMatchSummary(),
+        characterGrowth: this.buildCharacterGrowthSummary(characterStatsBefore, characterStatsAfter, characterProgress)
       });
       if (characterProgress) {
-        this.app.showNotice(`Tu avatar sube a nivel ${characterProgress.level}. Sus cualidades cuentan en combate.`, "Avatar mejorado");
+        this.showCharacterGrowthAnimation(characterStatsBefore, characterStatsAfter, characterProgress);
       }
     } else {
       this.clearTowerBattleState();
@@ -2191,6 +2517,60 @@ class CombatSession {
     };
   }
 
+  buildCharacterGrowthSummary(beforeStats, afterStats, progress) {
+    if (!beforeStats || !afterStats || !progress) return null;
+    const labels = [
+      ['attack', 'Ataque'],
+      ['defense', 'Defensa'],
+      ['stamina', 'Giro'],
+      ['speed', 'Velocidad'],
+      ['focus', 'Foco']
+    ];
+    return {
+      level: afterStats.level || progress.level || 1,
+      xp: progress.xp || 0,
+      wins: progress.wins || 0,
+      stats: labels.map(([key, label]) => ({
+        key,
+        label,
+        before: beforeStats[key] || 0,
+        after: afterStats[key] || 0,
+        delta: Math.max(0, (afterStats[key] || 0) - (beforeStats[key] || 0))
+      }))
+    };
+  }
+
+  showCharacterGrowthAnimation(beforeStats, afterStats, progress) {
+    const growth = this.buildCharacterGrowthSummary(beforeStats, afterStats, progress);
+    if (!growth || typeof document === 'undefined') return;
+    const avatarName = this.playerCharacter?.nombre || this.state?.player?.name || 'Blader';
+    const improved = growth.stats.filter(stat => stat.delta > 0);
+    const stats = growth.stats.map(stat => `
+      <div class="character-growth-stat ${stat.delta > 0 ? 'improved' : ''}">
+        <span>${stat.label}</span>
+        <strong>${stat.after}</strong>
+        <em>${stat.delta > 0 ? `+${stat.delta}` : '-'}</em>
+      </div>
+    `).join('');
+    const overlay = document.createElement('div');
+    overlay.className = 'character-growth-overlay';
+    overlay.innerHTML = `
+      <div class="character-growth-card">
+        <span class="character-growth-kicker">Avatar mejorado</span>
+        <strong>${avatarName} sube a nivel ${growth.level}</strong>
+        <p>${improved.length ? 'Tus cualidades ya cuentan mas en las batallas.' : 'Ganas experiencia para la siguiente mejora.'}</p>
+        <div class="character-growth-grid">${stats}</div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    if (typeof sounds !== 'undefined' && typeof sounds.playReward === 'function') sounds.playReward();
+    setTimeout(() => overlay.classList.add('visible'), 40);
+    setTimeout(() => {
+      overlay.classList.remove('visible');
+      setTimeout(() => overlay.remove(), 420);
+    }, 3600);
+  }
+
   getTowerBattleReward(sessionAccuracy) {
     const objectiveBonus = this.didCompleteSecondaryObjective(sessionAccuracy) ? 10 : 0;
     const xp = Math.max(24, (this.floorData?.rewardXP || this.floorData?.reward?.xp || 30) + objectiveBonus);
@@ -2209,4 +2589,3 @@ class CombatSession {
 }
 
 // ----------------------------------------------------
-
