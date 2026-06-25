@@ -46,7 +46,8 @@ const INITIAL_STATE = {
       completedFloors: [],
       dailyNewFloors: {}
     },
-    pendingReward: null
+    pendingReward: null,
+    activeTowerBattle: null
   },
   pedagogy: {
     learning: null,
@@ -193,6 +194,9 @@ class StorageService {
         ? raw.progress.tower
         : null;
       state.progress.pendingReward = raw.progress.pendingReward || null;
+      state.progress.activeTowerBattle = raw.progress.activeTowerBattle && typeof raw.progress.activeTowerBattle === 'object' && !Array.isArray(raw.progress.activeTowerBattle)
+        ? raw.progress.activeTowerBattle
+        : null;
     }
 
     if (raw.pedagogy && raw.pedagogy.math && typeof raw.pedagogy.math === 'object') {
@@ -410,7 +414,7 @@ class ProgressService {
   // Numero maximo de plantas NUEVAS (nunca completadas antes) que se pueden
   // desbloquear/jugar en un mismo dia. Las plantas ya completadas se pueden
   // repetir sin limite.
-  static DAILY_NEW_FLOOR_LIMIT = 3;
+  static DAILY_NEW_FLOOR_LIMIT = 1;
 
   static normalize(progress, player) {
     const normalized = {
@@ -425,6 +429,9 @@ class ProgressService {
         : null,
       pendingReward: progress && progress.pendingReward && typeof progress.pendingReward === 'object'
         ? progress.pendingReward
+        : null,
+      activeTowerBattle: progress && progress.activeTowerBattle && typeof progress.activeTowerBattle === 'object' && !Array.isArray(progress.activeTowerBattle)
+        ? progress.activeTowerBattle
         : null
     };
 
@@ -467,7 +474,40 @@ class ProgressService {
         };
       }
     }
+    normalized.activeTowerBattle = this.normalizeActiveTowerBattle(normalized.activeTowerBattle);
     return normalized;
+  }
+
+  static normalizeActiveTowerBattle(rawBattle) {
+    if (!rawBattle || typeof rawBattle !== 'object' || Array.isArray(rawBattle)) return null;
+    const floor = Math.max(1, Math.min(50, parseInt(rawBattle.floor, 10) || 1));
+    return {
+      key: typeof rawBattle.key === 'string' ? rawBattle.key : `tower-floor-${floor}`,
+      floor,
+      roundIndex: Math.max(0, parseInt(rawBattle.roundIndex, 10) || 0),
+      questionIndex: Math.max(0, parseInt(rawBattle.questionIndex, 10) || 0),
+      usedQuestionIds: Array.isArray(rawBattle.usedQuestionIds) ? [...new Set(rawBattle.usedQuestionIds.filter(Boolean))] : [],
+      usedQuestionSignatures: Array.isArray(rawBattle.usedQuestionSignatures) ? [...new Set(rawBattle.usedQuestionSignatures.filter(Boolean))] : [],
+      playerHP: Math.max(0, Number(rawBattle.playerHP) || 0),
+      rivalHP: Math.max(0, Number(rawBattle.rivalHP) || 0),
+      correctStreak: Math.max(0, parseInt(rawBattle.correctStreak, 10) || 0),
+      sessionCorrect: Math.max(0, parseInt(rawBattle.sessionCorrect, 10) || 0),
+      sessionIncorrect: Math.max(0, parseInt(rawBattle.sessionIncorrect, 10) || 0),
+      bestCombo: Math.max(0, parseInt(rawBattle.bestCombo, 10) || 0),
+      fastCorrect: Math.max(0, parseInt(rawBattle.fastCorrect, 10) || 0),
+      assistedCorrect: Math.max(0, parseInt(rawBattle.assistedCorrect, 10) || 0),
+      roundsWonFirstTry: Math.max(0, parseInt(rawBattle.roundsWonFirstTry, 10) || 0),
+      roundsRepeated: Math.max(0, parseInt(rawBattle.roundsRepeated, 10) || 0),
+      roundAttempts: rawBattle.roundAttempts && typeof rawBattle.roundAttempts === 'object' && !Array.isArray(rawBattle.roundAttempts)
+        ? Object.entries(rawBattle.roundAttempts).reduce((acc, [key, value]) => {
+            acc[key] = Math.max(1, parseInt(value, 10) || 1);
+            return acc;
+          }, {})
+        : {},
+      questionBank: Array.isArray(rawBattle.questionBank) ? rawBattle.questionBank.filter(item => item && typeof item === 'object').slice(0, 80) : [],
+      rounds: Array.isArray(rawBattle.rounds) ? rawBattle.rounds.filter(item => item && typeof item === 'object').slice(0, 12) : [],
+      savedAt: typeof rawBattle.savedAt === 'string' ? rawBattle.savedAt : StorageService.todayKey()
+    };
   }
 
   static normalizeTowerProgress(rawTower, player) {
@@ -693,19 +733,7 @@ class ProgressService {
   static claimReward(state, sessionKey) {
     const session = this.getSession(state, sessionKey);
     if (session.rewardClaimedAt) {
-      // For tower floors: reset stale claim if this floor isn't in completedFloors yet.
-      // session.towerFloor may be missing in old saves, so parse floor from sessionKey.
-      if (session.type === 'tower') {
-        const completedFloors = state?.progress?.tower?.completedFloors || [];
-        const floorNum = parseInt(sessionKey.replace('tower-floor-', ''), 10);
-        if (!isNaN(floorNum) && !completedFloors.includes(floorNum)) {
-          session.rewardClaimedAt = null; // reset stale claim
-        } else {
-          return false;
-        }
-      } else {
-        return false;
-      }
+      return false;
     }
     session.rewardClaimedAt = StorageService.todayKey();
     return true;

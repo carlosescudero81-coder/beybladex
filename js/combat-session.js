@@ -56,14 +56,27 @@ class CombatSession {
     this.battleIntroTimer = null;
     this.battleIntroExitTimer = null;
     this.battleIntroFinish = null;
+    this.rounds = [];
+    this.currentRoundIndex = 0;
+    this.roundAttempts = {};
+    this.usedTowerQuestionIds = new Set();
+    this.usedTowerQuestionSignatures = new Set();
+    this.bestCombo = 0;
+    this.fastCorrect = 0;
+    this.assistedCorrect = 0;
+    this.roundsWonFirstTry = 0;
+    this.roundsRepeated = 0;
+    this.lightningDamageBonus = 0;
+    this.resumedTowerBattle = false;
   }
 
   start() {
     // Generate questions
     this.generateQuestionsList();
+    this.buildTournamentRounds();
+    const savedBattle = this.getSavedTowerBattle();
     this.currentQuestionIdx = 0;
     this.playerHP = 100;
-    this.rivalHP = this.getRivalMaxHP();
     this.correctStreak = 0;
     this.sessionCorrect = 0;
     this.sessionIncorrect = 0;
@@ -71,46 +84,42 @@ class CombatSession {
     this.selectedAction = 'attack';
     this.lastSpinUsed = false;
     this.fastAnswerStreak = 0;
+    this.bestCombo = 0;
+    this.fastCorrect = 0;
+    this.assistedCorrect = 0;
+    this.roundsWonFirstTry = 0;
+    this.roundsRepeated = 0;
+    this.lightningDamageBonus = 0;
 
     // Reset HUD
     const weekData = WEEKS.find(w => w.week === this.weekNum) || WEEKS[0];
     const towerFloor = this.towerFloor;
     const floorData = this.floorData || getTowerFloorData(towerFloor);
-    const rival = BEYBLADE_X_CHARACTERS.find(character => character.id === floorData.rivalId) || getFloorRival(towerFloor);
     const playerCharacter = BEYBLADE_X_CHARACTERS.find(character => character.id === this.state.player.characterAvatarId) || BEYBLADE_X_CHARACTERS[0];
     const playerBey = getEquippedBey(this.state);
-    const rivalBey = getBeyById(floorData.rivalBeyId);
     const stadium = getFloorStadium(towerFloor);
     this.playerBey = playerBey;
-    this.rivalBey = rivalBey;
     this.playerCharacter = playerCharacter;
-    this.rivalCharacter = rival;
     this.playerCharacterStats = typeof getEffectiveCharacterStats === 'function'
       ? getEffectiveCharacterStats(playerCharacter, this.state, true)
       : { attack: 55, defense: 55, stamina: 55, speed: 55, focus: 55, level: 1 };
-    this.rivalCharacterStats = typeof getEffectiveCharacterStats === 'function'
-      ? getEffectiveCharacterStats(rival, this.state, false)
-      : { attack: 55, defense: 55, stamina: 55, speed: 55, focus: 55, level: 1 };
     this.playerMaxHP = this.getPlayerMaxHP();
-    this.rivalMaxHP = this.getRivalMaxHP();
-    this.playerHP = this.playerMaxHP;
-    this.rivalHP = this.rivalMaxHP;
+    this.applySavedTowerBattle(savedBattle);
+    this.configureActiveRoundOpponent(savedBattle);
     document.getElementById('hud-player').querySelector('.avatar-mini').innerHTML = renderAssetImage(playerCharacter.image, playerCharacter.nombre, 'asset-image header-character-avatar');
     document.getElementById('combat-player-name').innerText = this.state.player.name;
-    document.getElementById('combat-rival-img').src = rival.image;
-    document.getElementById('combat-rival-name').innerText = this.isBoss ? rival.nombre : floorData.rivalName;
     const floorLabel = document.getElementById('combat-floor-label');
     const stadiumName = document.getElementById('combat-stadium-name');
     const playerBeyName = document.getElementById('combat-player-bey-name');
     const rivalBeyName = document.getElementById('combat-rival-bey-name');
-    if (floorLabel) floorLabel.innerText = `X Tower Planta ${towerFloor} · ${floorData.secondaryObjective || 'Gana el duelo'}`;
+    if (floorLabel) floorLabel.innerText = this.getRoundLabelText();
     if (stadiumName) stadiumName.innerText = stadium.nombre;
     if (playerBeyName) playerBeyName.innerText = `Tu Bey: ${playerBey.nombre}`;
-    if (rivalBeyName) rivalBeyName.innerText = `Rival: ${rivalBey.nombre}`;
+    if (rivalBeyName) rivalBeyName.innerText = `Rival: ${this.rivalBey.nombre}`;
     const playerTopLabel = document.querySelector('.top-label-player');
     const rivalTopLabel = document.querySelector('.top-label-rival');
     if (playerTopLabel) playerTopLabel.innerText = playerBey.nombre;
-    if (rivalTopLabel) rivalTopLabel.innerText = rivalBey.nombre;
+    if (rivalTopLabel) rivalTopLabel.innerText = this.rivalBey.nombre;
     const stadiumImg = document.querySelector('.battle-stadium-img');
     if (stadiumImg) {
       stadiumImg.src = stadium.image;
@@ -125,20 +134,197 @@ class CombatSession {
     // Render Custom Tops in Combat
     document.getElementById('player-top').innerHTML = renderAssetImage(playerBey.image, playerBey.nombre, 'asset-image battle-bey player');
     
-    document.getElementById('rival-top').innerHTML = renderAssetImage(rivalBey.image, rivalBey.nombre, 'asset-image battle-bey rival');
+    document.getElementById('rival-top').innerHTML = renderAssetImage(this.rivalBey.image, this.rivalBey.nombre, 'asset-image battle-bey rival');
     this.decorateTopSprites();
     this.renderCombatants();
     this.updateXGauge();
 
+    if (this.resumedTowerBattle) {
+      this.startPhysicsSimulation();
+      this.nextQuestion();
+      return;
+    }
+
     this.playBattleIntro({
       playerCharacter,
-      rivalCharacter: rival,
+      rivalCharacter: this.rivalCharacter,
       playerBey,
-      rivalBey,
+      rivalBey: this.rivalBey,
       stadium,
       floorData,
       towerFloor
     }, () => this.startLaunchPhase());
+  }
+
+  getTowerBattleKey() {
+    return `tower-floor-${this.towerFloor}`;
+  }
+
+  getSavedTowerBattle() {
+    const saved = this.state?.progress?.activeTowerBattle;
+    if (!this.isTowerBattle || !saved || saved.floor !== this.towerFloor || saved.key !== this.getTowerBattleKey()) return null;
+    return saved;
+  }
+
+  buildTournamentRounds() {
+    this.rounds = [];
+    if (!this.isTowerBattle || this.questionsList.length === 0) {
+      this.rounds = [{
+        index: 0,
+        start: 0,
+        end: this.questionsList.length,
+        isFinal: true,
+        rivalId: this.floorData?.rivalId,
+        beyId: this.floorData?.rivalBeyId,
+        hpScale: 1
+      }];
+      return;
+    }
+
+    const total = this.questionsList.length;
+    const roundCount = Math.max(2, Math.min(4, Math.ceil(total / 10)));
+    const passRivals = this.selectPassRivals(roundCount - 1);
+    const roundSize = Math.ceil(total / roundCount);
+    for (let index = 0; index < roundCount; index += 1) {
+      const isFinal = index === roundCount - 1;
+      const start = index * roundSize;
+      const end = Math.min(total, start + roundSize);
+      const rival = isFinal ? null : passRivals[index];
+      const bey = isFinal
+        ? getBeyById(this.floorData?.rivalBeyId)
+        : this.pickRoundBey(index, rival);
+      const lightningIndex = !isFinal && end > start
+        ? start + Math.min(end - start - 1, Math.max(0, Math.floor((end - start) / 2)))
+        : null;
+      if (lightningIndex !== null && this.questionsList[lightningIndex]) {
+        this.questionsList[lightningIndex].isLightning = true;
+        this.questionsList[lightningIndex].lightningWindowMs = Math.max(2600, 4800 - (this.difficulty * 260));
+      }
+      this.rounds.push({
+        index,
+        start,
+        end,
+        isFinal,
+        rivalId: isFinal ? this.floorData?.rivalId : rival?.id,
+        rivalName: isFinal ? this.floorData?.rivalName : rival?.nombre,
+        beyId: bey?.id || this.floorData?.rivalBeyId,
+        hpScale: isFinal ? 1 : Math.min(0.6, 0.42 + (index * 0.08)),
+        lightningIndex
+      });
+    }
+  }
+
+  selectPassRivals(count) {
+    const finalRivalId = this.floorData?.rivalId;
+    return BEYBLADE_X_CHARACTERS
+      .filter(character => character.id !== finalRivalId && character.id !== this.state.player.characterAvatarId)
+      .sort((a, b) => (typeof getCharacterPowerScore === 'function' ? getCharacterPowerScore(a) : 50) - (typeof getCharacterPowerScore === 'function' ? getCharacterPowerScore(b) : 50))
+      .slice(0, Math.max(0, count));
+  }
+
+  pickRoundBey(index, rival) {
+    const associated = rival?.beyAsociado ? BEYBLADE_X_BEYS.find(bey => bey.nombre === rival.beyAsociado) : null;
+    if (associated) return associated;
+    const available = BEYBLADE_X_BEYS.filter(bey => bey.id !== this.floorData?.rivalBeyId && bey.id !== this.playerBey?.id);
+    return available[index % Math.max(1, available.length)] || getBeyById(this.floorData?.rivalBeyId);
+  }
+
+  getCurrentRound() {
+    return this.rounds[Math.max(0, Math.min(this.rounds.length - 1, this.currentRoundIndex))] || this.rounds[0];
+  }
+
+  configureActiveRoundOpponent(savedBattle = null) {
+    const round = this.getCurrentRound();
+    const rival = BEYBLADE_X_CHARACTERS.find(character => character.id === round?.rivalId)
+      || BEYBLADE_X_CHARACTERS.find(character => character.id === this.floorData?.rivalId)
+      || getFloorRival(this.towerFloor);
+    const rivalBey = getBeyById(round?.beyId || this.floorData?.rivalBeyId);
+    this.rivalCharacter = rival;
+    this.rivalBey = rivalBey;
+    this.rivalCharacterStats = typeof getEffectiveCharacterStats === 'function'
+      ? getEffectiveCharacterStats(rival, this.state, false)
+      : { attack: 55, defense: 55, stamina: 55, speed: 55, focus: 55, level: 1 };
+    const baseHp = this.getRivalMaxHP();
+    this.rivalMaxHP = Math.max(38, Math.round(baseHp * (round?.hpScale || 1)));
+    this.rivalHP = savedBattle ? Math.min(this.rivalMaxHP, Math.max(1, Number(savedBattle.rivalHP) || this.rivalMaxHP)) : this.rivalMaxHP;
+    this.playerHP = savedBattle ? Math.min(this.playerMaxHP, Math.max(1, Number(savedBattle.playerHP) || this.playerMaxHP)) : this.playerMaxHP;
+
+    const rivalImg = document.getElementById('combat-rival-img');
+    const rivalName = document.getElementById('combat-rival-name');
+    const rivalBeyName = document.getElementById('combat-rival-bey-name');
+    const rivalTopLabel = document.querySelector('.top-label-rival');
+    if (rivalImg) rivalImg.src = rival.image;
+    if (rivalName) rivalName.innerText = this.isBoss || round?.isFinal ? (round?.rivalName || rival.nombre) : `Rival ${round.index + 1}: ${round?.rivalName || rival.nombre}`;
+    if (rivalBeyName) rivalBeyName.innerText = `Rival: ${rivalBey.nombre}`;
+    if (rivalTopLabel) rivalTopLabel.innerText = rivalBey.nombre;
+    const floorLabel = document.getElementById('combat-floor-label');
+    if (floorLabel) floorLabel.innerText = this.getRoundLabelText();
+  }
+
+  applySavedTowerBattle(savedBattle) {
+    if (!savedBattle) return;
+    this.resumedTowerBattle = true;
+    this.currentRoundIndex = Math.max(0, Math.min(this.rounds.length - 1, parseInt(savedBattle.roundIndex, 10) || 0));
+    this.currentQuestionIdx = Math.max(this.getCurrentRound()?.start || 0, Math.min(this.getCurrentRound()?.end || this.questionCount, parseInt(savedBattle.questionIndex, 10) || 0));
+    this.correctStreak = Math.max(0, parseInt(savedBattle.correctStreak, 10) || 0);
+    this.sessionCorrect = Math.max(0, parseInt(savedBattle.sessionCorrect, 10) || 0);
+    this.sessionIncorrect = Math.max(0, parseInt(savedBattle.sessionIncorrect, 10) || 0);
+    this.bestCombo = Math.max(0, parseInt(savedBattle.bestCombo, 10) || 0);
+    this.fastCorrect = Math.max(0, parseInt(savedBattle.fastCorrect, 10) || 0);
+    this.assistedCorrect = Math.max(0, parseInt(savedBattle.assistedCorrect, 10) || 0);
+    this.roundsWonFirstTry = Math.max(0, parseInt(savedBattle.roundsWonFirstTry, 10) || 0);
+    this.roundsRepeated = Math.max(0, parseInt(savedBattle.roundsRepeated, 10) || 0);
+    this.roundAttempts = savedBattle.roundAttempts || {};
+    this.usedTowerQuestionIds = new Set(savedBattle.usedQuestionIds || []);
+    this.usedTowerQuestionSignatures = new Set(savedBattle.usedQuestionSignatures || []);
+    if (Array.isArray(savedBattle.questionBank) && savedBattle.questionBank.length > 0) {
+      this.questionsList = savedBattle.questionBank.map(question => ({ ...question, options: Array.isArray(question.options) ? [...question.options] : [] }));
+      this.questionCount = this.questionsList.length;
+      this.rounds = Array.isArray(savedBattle.rounds) && savedBattle.rounds.length > 0 ? savedBattle.rounds : this.rounds;
+    }
+  }
+
+  getRoundLabelText() {
+    const round = this.getCurrentRound();
+    const roundText = this.rounds.length > 1 ? `Ronda ${this.currentRoundIndex + 1}/${this.rounds.length}` : 'Duelo';
+    return `X Tower Planta ${this.towerFloor} · ${roundText} · ${this.floorData?.secondaryObjective || 'Gana el duelo'}`;
+  }
+
+  questionSignature(question) {
+    if (!question) return '';
+    return `${question.skill || question.type || 'q'}:${String(question.text || question.curriculumId || question.id || '').toLowerCase().replace(/\d+/g, '#')}`;
+  }
+
+  persistTowerBattleState() {
+    if (!this.isTowerBattle || !this.state?.progress) return;
+    this.state.progress.activeTowerBattle = {
+      key: this.getTowerBattleKey(),
+      floor: this.towerFloor,
+      roundIndex: this.currentRoundIndex,
+      questionIndex: this.currentQuestionIdx,
+      usedQuestionIds: [...this.usedTowerQuestionIds],
+      usedQuestionSignatures: [...this.usedTowerQuestionSignatures],
+      playerHP: Math.round(this.playerHP),
+      rivalHP: Math.round(this.rivalHP),
+      correctStreak: this.correctStreak,
+      sessionCorrect: this.sessionCorrect,
+      sessionIncorrect: this.sessionIncorrect,
+      bestCombo: this.bestCombo,
+      fastCorrect: this.fastCorrect,
+      assistedCorrect: this.assistedCorrect,
+      roundsWonFirstTry: this.roundsWonFirstTry,
+      roundsRepeated: this.roundsRepeated,
+      roundAttempts: this.roundAttempts,
+      questionBank: this.questionsList.map(question => ({ ...question, options: Array.isArray(question.options) ? [...question.options] : [] })),
+      rounds: this.rounds,
+      savedAt: StorageService.todayKey()
+    };
+  }
+
+  clearTowerBattleState() {
+    if (this.state?.progress?.activeTowerBattle?.key === this.getTowerBattleKey()) {
+      this.state.progress.activeTowerBattle = null;
+    }
   }
 
   playBattleIntro(details, onComplete) {
@@ -552,6 +738,7 @@ class CombatSession {
 
   dispose() {
     this.stopPhysicsSimulation();
+    this.clearTowerBattleState();
     if (this.gaugeInterval) clearInterval(this.gaugeInterval);
     this.gaugeInterval = null;
     if (this.battleIntroTimer) clearTimeout(this.battleIntroTimer);
@@ -817,7 +1004,9 @@ class CombatSession {
       options: question.options,
       hint: question.explanation || 'Piensa en los datos importantes y elige el procedimiento antes de responder.',
       explanation: question.explanation || '',
-      difficulty: question.difficulty || 1
+      difficulty: question.difficulty || 1,
+      isGuidedIntro: question.isGuidedIntro === true,
+      guidedIntro: question.guidedIntro || null
     };
   }
 
@@ -843,8 +1032,10 @@ class CombatSession {
   }
 
   nextQuestion() {
-    if (this.currentQuestionIdx >= this.questionCount) {
-      this.endCombat(true);
+    const round = this.getCurrentRound();
+    if (this.currentQuestionIdx >= (round?.end || this.questionCount)) {
+      if (this.rivalHP <= 0) this.completeRound();
+      else this.repeatCurrentRound('Sin energia suficiente para tumbar al rival');
       return;
     }
 
@@ -854,7 +1045,11 @@ class CombatSession {
     this.selectCombatAction(this.selectedAction || 'attack', false);
     
     // Update combat text indicators
-    document.getElementById('question-index-label').innerText = `Reto ${this.currentQuestionIdx + 1} de ${this.questionCount}`;
+    const roundQuestionNumber = Math.max(1, this.currentQuestionIdx - (round?.start || 0) + 1);
+    const roundQuestionTotal = Math.max(1, (round?.end || this.questionCount) - (round?.start || 0));
+    document.getElementById('question-index-label').innerText = this.currentQuestion.isLightning
+      ? `Reto relampago ${roundQuestionNumber}/${roundQuestionTotal}`
+      : `Ronda ${this.currentRoundIndex + 1}/${this.rounds.length} · Reto ${roundQuestionNumber}/${roundQuestionTotal}`;
     
     // Decrease question text size slightly for long word problems
     const questionTextEl = document.getElementById('combat-question-text');
@@ -864,6 +1059,9 @@ class CombatSession {
       questionTextEl.style.fontSize = '3.5rem';
     }
     questionTextEl.innerText = this.currentQuestion.text;
+    if (this.currentQuestion.isLightning) {
+      this.showAttackBanner('Reto relampago', 'Acierta rapido para cargar energia', 'player');
+    }
 
     // Render Answer buttons
     const answersDiv = document.getElementById('combat-answers');
@@ -880,6 +1078,7 @@ class CombatSession {
     // Update combo lights UI
     this.updateComboDots();
     this.questionStartedAt = Date.now();
+    this.persistTowerBattleState();
   }
 
   handleAnswer(selectedAnswer) {
@@ -887,16 +1086,27 @@ class CombatSession {
     this.actionLocked = true;
     const action = this.selectedAction || 'attack';
     const answerMs = Date.now() - (this.questionStartedAt || Date.now());
-    const isFastAnswer = answerMs <= Math.max(4500, 8500 - (this.difficulty * 420));
+    const fastWindow = this.currentQuestion?.isLightning
+      ? (this.currentQuestion.lightningWindowMs || 3200)
+      : Math.max(4500, 8500 - (this.difficulty * 420));
+    const isFastAnswer = answerMs <= fastWindow;
     const isCorrect = selectedAnswer === this.currentQuestion.answer;
     const outcome = this.resolveTurnOutcome(action, isCorrect, isFastAnswer);
 
     if (isCorrect) {
       sounds.playCorrect();
       this.correctStreak++;
+      this.bestCombo = Math.max(this.bestCombo, this.correctStreak);
       if (isFastAnswer) this.fastAnswerStreak += 1;
+      if (isFastAnswer) this.fastCorrect += 1;
+      else this.assistedCorrect += 1;
       this.sessionCorrect += 1;
       this.state.pedagogy.math.correctAnswers += 1;
+      if (this.currentQuestion?.isLightning && isFastAnswer && this.playerCombatant) {
+        this.playerCombatant.charge = Math.min(3, this.playerCombatant.charge + 1);
+        this.lightningDamageBonus = 5;
+        this.showAttackBanner('Relampago X', '+1 Energia X y golpe reforzado');
+      }
       ProgressService.recordAnswer(this.state, this.currentQuestion, true);
       this.recordCurriculumAnswer(true);
       const todayStats = this.app.getTodayStats();
@@ -919,7 +1129,12 @@ class CombatSession {
       todayStats.incorrect += 1;
     }
 
+    if (this.currentQuestion) {
+      if (this.currentQuestion.curriculumId) this.usedTowerQuestionIds.add(this.currentQuestion.curriculumId);
+      this.usedTowerQuestionSignatures.add(this.questionSignature(this.currentQuestion));
+    }
     this.applyTurnOutcome(outcome, isCorrect);
+    this.persistTowerBattleState();
     this.app.saveState();
   }
 
@@ -959,11 +1174,15 @@ class CombatSession {
     const rivalIntent = this.rivalIntent?.type || 'attack';
     const gaugeReady = (this.playerCombatant?.charge || 0) >= 3;
     const specialTriggered = isCorrect && (this.correctStreak + 1 >= 3 || gaugeReady);
-    const playerDamage = specialTriggered
+    let playerDamage = specialTriggered
       ? this.calculateSpecialDamage(normalizedAction)
       : isCorrect
         ? this.calculatePlayerDamage(normalizedAction)
         : 0;
+    if (playerDamage > 0 && this.lightningDamageBonus > 0) {
+      playerDamage += this.lightningDamageBonus;
+      this.lightningDamageBonus = 0;
+    }
     let rivalDamage = 0;
     let chargeDelta = 0;
     let bannerTitle = '';
@@ -1072,16 +1291,96 @@ class CombatSession {
     const delay = outcome.specialTriggered || outcome.rivalDamage > 0 ? 980 : 720;
     setTimeout(() => {
       if (this.rivalHP <= 0) {
-        this.endCombat(true);
+        this.completeRound();
       } else if (this.playerHP <= 0) {
-        this.endCombat(false);
+        this.repeatCurrentRound('El rival gana esta ronda');
       } else if (outcome.showExplanation) {
         this.showPedagogicalExplanation();
       } else {
         this.currentQuestionIdx++;
+        this.persistTowerBattleState();
+        this.app.saveState();
         this.nextQuestion();
       }
     }, delay);
+  }
+
+  completeRound() {
+    const round = this.getCurrentRound();
+    const attempt = this.roundAttempts[this.currentRoundIndex] || 1;
+    if (attempt === 1) this.roundsWonFirstTry += 1;
+    else this.roundsRepeated += 1;
+
+    if (!round || round.isFinal || this.currentRoundIndex >= this.rounds.length - 1) {
+      this.clearTowerBattleState();
+      this.endCombat(true);
+      return;
+    }
+
+    this.state.player.coins += 3;
+    this.state.player.xp += 6;
+    this.currentRoundIndex += 1;
+    this.roundAttempts[this.currentRoundIndex] = this.roundAttempts[this.currentRoundIndex] || 1;
+    const nextRound = this.getCurrentRound();
+    this.currentQuestionIdx = nextRound.start;
+    this.lastSpinUsed = false;
+    this.rivalHP = 0;
+    this.configureActiveRoundOpponent();
+    this.initCombatants();
+    document.getElementById('rival-top').innerHTML = renderAssetImage(this.rivalBey.image, this.rivalBey.nombre, 'asset-image battle-bey rival');
+    this.decorateTopSprites();
+    this.updateHpBars();
+    this.showAttackBanner('Ronda superada', `+3 monedas · +6 XP · siguiente rival`, 'player');
+    this.app.showNotice(`Ronda ${this.currentRoundIndex} ganada. Entra ${this.rivalCharacter.nombre}.`, 'Eliminatoria X');
+    this.persistTowerBattleState();
+    this.app.saveState();
+    setTimeout(() => this.nextQuestion(), 700);
+  }
+
+  repeatCurrentRound(reason = 'Ronda perdida') {
+    const round = this.getCurrentRound();
+    this.roundAttempts[this.currentRoundIndex] = (this.roundAttempts[this.currentRoundIndex] || 1) + 1;
+    this.roundsRepeated += 1;
+    this.playerHP = this.playerMaxHP;
+    this.correctStreak = 0;
+    this.fastAnswerStreak = 0;
+    this.lastSpinUsed = false;
+    this.replaceRoundQuestions(round);
+    this.currentQuestionIdx = round.start;
+    this.configureActiveRoundOpponent();
+    this.initCombatants();
+    document.getElementById('rival-top').innerHTML = renderAssetImage(this.rivalBey.image, this.rivalBey.nombre, 'asset-image battle-bey rival');
+    this.decorateTopSprites();
+    this.updateHpBars();
+    this.showAttackBanner('Reintento de ronda', reason, 'rival');
+    this.persistTowerBattleState();
+    this.app.saveState();
+    setTimeout(() => this.nextQuestion(), 700);
+  }
+
+  replaceRoundQuestions(round) {
+    if (!round || !this.floorData || typeof LearningEngine.selectQuestionsForTowerFloor !== 'function') return;
+    const needed = Math.max(1, round.end - round.start);
+    const candidates = LearningEngine.selectQuestionsForTowerFloor(this.state, this.floorData, this.questionCount + 24)
+      .map(question => this.adaptCurriculumQuestion(question, 'curriculum-tower'))
+      .filter(question => {
+        const id = question.curriculumId || question.id;
+        const signature = this.questionSignature(question);
+        return !this.usedTowerQuestionIds.has(id) && !this.usedTowerQuestionSignatures.has(signature);
+      });
+    const replacement = candidates.slice(0, needed);
+    if (replacement.length < needed) return;
+    replacement.forEach((question, index) => {
+      question.isLightning = false;
+      question.lightningWindowMs = null;
+      this.questionsList[round.start + index] = question;
+    });
+    if (!round.isFinal && needed > 0) {
+      const lightningIndex = round.start + Math.min(needed - 1, Math.max(0, Math.floor(needed / 2)));
+      this.questionsList[lightningIndex].isLightning = true;
+      this.questionsList[lightningIndex].lightningWindowMs = Math.max(2600, 4800 - (this.difficulty * 260));
+      round.lightningIndex = lightningIndex;
+    }
   }
 
   applyLastSpinIfNeeded() {
@@ -1200,7 +1499,8 @@ class CombatSession {
     LearningEngine.recordAnswer(this.state, {
       id: this.currentQuestion.curriculumId,
       subject: this.currentQuestion.subject,
-      skill: this.currentQuestion.skill
+      skill: this.currentQuestion.skill,
+      isGuidedIntro: this.currentQuestion.isGuidedIntro === true
     }, isCorrect);
     this.curriculumAnswerLog.push({
       id: this.currentQuestion.curriculumId,
@@ -1213,9 +1513,11 @@ class CombatSession {
   resumeCombatAfterError() {
     this.startPhysicsSimulation();
     if (this.playerHP <= 0) {
-      this.endCombat(false);
+      this.repeatCurrentRound('Repite solo esta ronda');
     } else {
       this.currentQuestionIdx++;
+      this.persistTowerBattleState();
+      this.app.saveState();
       this.nextQuestion();
     }
   }
@@ -1321,6 +1623,7 @@ class CombatSession {
     this.stopPhysicsSimulation();
     
     if (playerWon) {
+      this.clearTowerBattleState();
       // Record game history session
       const ped = this.state.pedagogy.math;
       const totalSessionAnswers = this.sessionCorrect + this.sessionIncorrect;
@@ -1394,12 +1697,14 @@ class CombatSession {
         sessionKey: completion.key,
         rewardAlreadyClaimed: !!completion.session.rewardClaimedAt,
         bossSummary,
-        towerFloor: this.towerFloor
+        towerFloor: this.towerFloor,
+        matchSummary: this.buildMatchSummary()
       });
       if (characterProgress) {
         this.app.showNotice(`Tu avatar sube a nivel ${characterProgress.level}. Sus cualidades cuentan en combate.`, "Avatar mejorado");
       }
     } else {
+      this.clearTowerBattleState();
       if (typeof recordCharacterBattleResult === 'function') {
         recordCharacterBattleResult(this.state, this.state.player.characterAvatarId, false, 10);
         this.app.saveState();
@@ -1408,6 +1713,19 @@ class CombatSession {
       this.app.showNotice("Tu peonza se ha quedado sin energia. Hagamos un repaso antes de volver a luchar.", "Combate terminado");
       this.app.showScreen('map');
     }
+  }
+
+  buildMatchSummary() {
+    return {
+      roundsWonFirstTry: this.roundsWonFirstTry,
+      roundsRepeated: this.roundsRepeated,
+      bestCombo: this.bestCombo,
+      fastCorrect: this.fastCorrect,
+      assistedCorrect: this.assistedCorrect,
+      totalRounds: this.rounds.length,
+      correct: this.sessionCorrect,
+      incorrect: this.sessionIncorrect
+    };
   }
 
   getTowerBattleReward(sessionAccuracy) {

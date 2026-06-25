@@ -1674,6 +1674,164 @@ function appendMeasureTimeMoneyFractionsExpansion() {
   ));
 }
 
+function appendTablesGeometryExpansion() {
+  let counter = 0;
+  const nextId = () => `math-tg-curated-${String(++counter).padStart(2, '0')}`;
+
+  // ===== TABLAS Y PROPIEDADES (28 preguntas) - skill: math_multiply_fast, dif 1-3 =====
+
+  // 8 preguntas de automatizacion pura: tabla x tabla, distractores = tablas adyacentes (parte 1)
+  [
+    [6, 7], [7, 8], [8, 9], [9, 6], [7, 6], [8, 7], [9, 8], [6, 9]
+  ].forEach(([a, b], index) => {
+    const answer = a * b;
+    QUESTION_BANK.push(makeChoiceQuestion(
+      nextId(), 'math', 'math_multiply_fast', index < 4 ? 2 : 3,
+      `${a} x ${b} = ?`,
+      answer,
+      [a * (b - 1), a * (b + 1)],
+      `${a} x ${b} se puede pensar como ${b} grupos de ${a}, y el resultado es ${answer}.`
+    ));
+  });
+
+  // 6 preguntas de propiedad conmutativa
+  [
+    [4, 9, 36], [3, 8, 24], [5, 7, 35], [6, 9, 54], [7, 4, 28], [8, 5, 40]
+  ].forEach(([a, b, product], index) => {
+    QUESTION_BANK.push(makeChoiceQuestion(
+      nextId(), 'math', 'math_multiply_fast', index < 3 ? 2 : 3,
+      `Si ${a} x ${b} = ${product}, cuanto es ${b} x ${a}?`,
+      product,
+      [product + a, product - b],
+      `Multiplicar en cualquier orden da el mismo resultado: ${a} x ${b} es igual que ${b} x ${a} = ${product}.`
+    ));
+  });
+
+  // 3 preguntas mas de automatizacion pura (parte 2): tabla x tabla, distractores adyacentes
+  [
+    [5, 8], [6, 7], [9, 4]
+  ].forEach(([a, b], index) => {
+    const answer = a * b;
+    QUESTION_BANK.push(makeChoiceQuestion(
+      nextId(), 'math', 'math_multiply_fast', index < 1 ? 2 : 3,
+      `${a} x ${b} = ?`,
+      answer,
+      [a * (b - 1), a * (b + 1)],
+      `${a} x ${b} se puede pensar como ${b} grupos de ${a}, y el resultado es ${answer}.`
+    ));
+  });
+
+  // 3 preguntas mas de factor desconocido (parte 2): pensamiento algebraico basico
+  [
+    [7, 56, 8], [6, 48, 8], [9, 63, 7]
+  ].forEach(([a, product, missing], index) => {
+    QUESTION_BANK.push(makeChoiceQuestion(
+      nextId(), 'math', 'math_multiply_fast', index < 1 ? 2 : 3,
+      `${a} x ? = ${product}. Que numero falta?`,
+      missing,
+      [missing + 1, missing - 1],
+      `Hay que buscar el numero que multiplicado por ${a} da ${product}. Ese numero es ${missing}, porque ${a} x ${missing} = ${product}.`
+    ));
+  });
+
+  // 4 preguntas de multiplicacion por 10 y 100: patron de ceros
+  [
+    [7, 10, 70], [9, 10, 90], [5, 100, 500], [8, 100, 800]
+  ].forEach(([a, b, product], index) => {
+    QUESTION_BANK.push(makeChoiceQuestion(
+      nextId(), 'math', 'math_multiply_fast', index < 2 ? 1 : 2,
+      `${a} x ${b} = ?`,
+      product,
+      [a * (b === 10 ? 1 : 10), product / 10],
+      b === 10
+        ? `Multiplicar por 10 anade un cero al numero: ${a} x 10 = ${product}.`
+        : `Multiplicar por 100 anade dos ceros al numero: ${a} x 100 = ${product}.`
+    ));
+  });
+
+  // 4 preguntas de factor desconocido (parte 1): pensamiento algebraico basico
+  [
+    [3, 24, 8], [4, 28, 7], [5, 45, 9], [6, 42, 7]
+  ].forEach(([a, product, missing], index) => {
+    QUESTION_BANK.push(makeChoiceQuestion(
+      nextId(), 'math', 'math_multiply_fast', index < 2 ? 2 : 3,
+      `${a} x ? = ${product}. Que numero falta?`,
+      missing,
+      [missing + 1, missing - 1],
+      `Hay que buscar el numero que multiplicado por ${a} da ${product}. Ese numero es ${missing}, porque ${a} x ${missing} = ${product}.`
+    ));
+  });
+
+  // ===== GEOMETRIA (22 preguntas) - skill: math_geometry_data, dif 1-3 =====
+
+  // 4 preguntas de tipos de lineas
+  [
+    ['Una linea que no tiene curvas y sigue siempre la misma direccion, como se llama?', 'Linea recta', ['Linea curva', 'Linea quebrada'], 'Una linea recta no cambia de direccion en ningun punto.', 1],
+    ['Una linea que cambia de direccion suavemente, sin esquinas, como se llama?', 'Linea curva', ['Linea recta', 'Linea paralela'], 'Una linea curva cambia de direccion de forma continua, sin angulos.', 1],
+    ['Dos lineas rectas que nunca se cruzan y mantienen siempre la misma distancia, como se llaman?', 'Lineas paralelas', ['Lineas secantes', 'Lineas curvas'], 'Las lineas paralelas nunca se tocan ni se cruzan, van siempre separadas igual.', 2],
+    ['Dos lineas rectas que se cruzan en un punto, como se llaman?', 'Lineas secantes', ['Lineas paralelas', 'Lineas curvas'], 'Las lineas secantes se cortan en un unico punto de cruce.', 2]
+  ].forEach(([prompt, answer, wrong, explanation, difficulty]) => {
+    QUESTION_BANK.push(makeChoiceQuestion(
+      nextId(), 'math', 'math_geometry_data', difficulty,
+      prompt, answer, wrong, explanation
+    ));
+  });
+
+  // 4 preguntas de angulos
+  [
+    ['Un angulo mide exactamente 90 grados. Que tipo de angulo es?', 'Angulo recto', ['Angulo agudo', 'Angulo obtuso'], 'Un angulo de exactamente 90 grados se llama angulo recto.', 2],
+    ['Un angulo mide menos de 90 grados. Que tipo de angulo es?', 'Angulo agudo', ['Angulo recto', 'Angulo obtuso'], 'Un angulo menor que 90 grados se llama angulo agudo.', 2],
+    ['Un angulo mide mas de 90 grados. Que tipo de angulo es?', 'Angulo obtuso', ['Angulo recto', 'Angulo agudo'], 'Un angulo mayor que 90 grados se llama angulo obtuso.', 2],
+    ['La esquina de una hoja de papel forma un angulo de 90 grados. Que tipo de angulo es?', 'Angulo recto', ['Angulo agudo', 'Angulo obtuso'], 'Las esquinas de una hoja forman angulos rectos, de 90 grados exactos.', 1]
+  ].forEach(([prompt, answer, wrong, explanation, difficulty]) => {
+    QUESTION_BANK.push(makeChoiceQuestion(
+      nextId(), 'math', 'math_geometry_data', difficulty,
+      prompt, answer, wrong, explanation
+    ));
+  });
+
+  // 4 preguntas de poligonos: numero de lados
+  [
+    ['Cuantos lados tiene un triangulo?', '3', ['4', '5'], 'El triangulo es el poligono con menos lados posibles: 3.', 1],
+    ['Cuantos lados tiene un cuadrilatero?', '4', ['3', '5'], 'Un cuadrilatero, como el cuadrado o el rectangulo, tiene 4 lados.', 1],
+    ['Cuantos lados tiene un pentagono?', '5', ['4', '6'], 'El pentagono tiene 5 lados, como indica el prefijo "penta".', 2],
+    ['Cuantos lados tiene un hexagono?', '6', ['5', '7'], 'El hexagono tiene 6 lados, como indica el prefijo "hexa".', 2]
+  ].forEach(([prompt, answer, wrong, explanation, difficulty]) => {
+    QUESTION_BANK.push(makeChoiceQuestion(
+      nextId(), 'math', 'math_geometry_data', difficulty,
+      prompt, answer, wrong, explanation
+    ));
+  });
+
+  // 4 preguntas de cuerpos geometricos: caras, vertices, aristas
+  [
+    ['Un cubo tiene 6 caras iguales en forma de cuadrado. Que cuerpo geometrico es?', 'Cubo', ['Esfera', 'Cilindro'], 'El cubo tiene 6 caras cuadradas iguales, como un dado.', 2],
+    ['Un cuerpo geometrico es completamente redondo y no tiene caras planas ni vertices. Cual es?', 'Esfera', ['Cubo', 'Piramide'], 'La esfera, como una pelota, no tiene caras planas ni esquinas.', 2],
+    ['Un cuerpo geometrico tiene dos caras circulares iguales y una superficie curva entre ellas. Cual es?', 'Cilindro', ['Cubo', 'Esfera'], 'El cilindro tiene dos circulos iguales en sus extremos, como un bote de refresco.', 2],
+    ['Un cuerpo geometrico tiene una base y caras triangulares que se juntan en un punto llamado vertice. Cual es?', 'Piramide', ['Cubo', 'Cilindro'], 'La piramide tiene una base y caras triangulares que terminan en un vertice superior.', 3]
+  ].forEach(([prompt, answer, wrong, explanation, difficulty]) => {
+    QUESTION_BANK.push(makeChoiceQuestion(
+      nextId(), 'math', 'math_geometry_data', difficulty,
+      prompt, answer, wrong, explanation
+    ));
+  });
+
+  // 6 preguntas de perimetro y area basica: cuadrado y rectangulo
+  [
+    ['Un cuadrado tiene cada lado de 5 cm. Cual es su perimetro?', '20 cm', ['25 cm', '15 cm'], 'El perimetro del cuadrado es la suma de sus 4 lados: 5 + 5 + 5 + 5 = 20 cm.', 2],
+    ['Un rectangulo mide 6 cm de largo y 3 cm de ancho. Cual es su perimetro?', '18 cm', ['9 cm', '24 cm'], 'El perimetro suma los 4 lados: 6 + 3 + 6 + 3 = 18 cm.', 2],
+    ['Un cuadrado tiene cada lado de 4 cm. Cual es su area?', '16 cm cuadrados', ['8 cm cuadrados', '20 cm cuadrados'], 'El area del cuadrado es lado x lado: 4 x 4 = 16 cm cuadrados.', 3],
+    ['Un rectangulo mide 5 cm de largo y 2 cm de ancho. Cual es su area?', '10 cm cuadrados', ['7 cm cuadrados', '14 cm cuadrados'], 'El area del rectangulo es largo x ancho: 5 x 2 = 10 cm cuadrados.', 3],
+    ['Un cuadrado tiene cada lado de 7 cm. Cual es su perimetro?', '28 cm', ['21 cm', '14 cm'], 'El perimetro del cuadrado es la suma de sus 4 lados: 7 + 7 + 7 + 7 = 28 cm.', 2],
+    ['Un rectangulo mide 8 cm de largo y 3 cm de ancho. Cual es su area?', '24 cm cuadrados', ['11 cm cuadrados', '22 cm cuadrados'], 'El area del rectangulo es largo x ancho: 8 x 3 = 24 cm cuadrados.', 3]
+  ].forEach(([prompt, answer, wrong, explanation, difficulty]) => {
+    QUESTION_BANK.push(makeChoiceQuestion(
+      nextId(), 'math', 'math_geometry_data', difficulty,
+      prompt, answer, wrong, explanation
+    ));
+  });
+}
+
 function appendScienceArtsMovementExpansion() {
   [
     ['Que necesitan las plantas para vivir?', 'agua, luz y aire', ['solo agua, sin luz', 'solo tierra, sin riego'], 'Las plantas necesitan agua, luz y aire.'],
@@ -2776,6 +2934,7 @@ appendWordProblemsExpansion();
 appendLanguageExpansion();
 appendEnglishExpansion();
 appendMeasureTimeMoneyFractionsExpansion();
+appendTablesGeometryExpansion();
 appendScienceArtsMovementExpansion();
 appendLivingThingsDepthExpansion();
 appendBalancedWeakSkillExpansion();

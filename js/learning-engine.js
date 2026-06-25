@@ -5,6 +5,7 @@
 class LearningEngine {
   static VERSION = 1;
   static REVIEW_STEPS_DAYS = [0, 1, 3, 7];
+  static GUIDED_ATTEMPTS_THRESHOLD = 2;
 
   static todayKey() {
     const now = new Date();
@@ -60,6 +61,7 @@ class LearningEngine {
       attempts: 0,
       correct: 0,
       incorrect: 0,
+      guidedIntros: 0,
       mastery: 0,
       status: 'new',
       streak: 0,
@@ -166,6 +168,7 @@ class LearningEngine {
     base.attempts = Math.max(0, parseInt(raw.attempts, 10) || 0);
     base.correct = Math.max(0, parseInt(raw.correct, 10) || 0);
     base.incorrect = Math.max(0, parseInt(raw.incorrect, 10) || 0);
+    base.guidedIntros = Math.max(0, Math.min(this.GUIDED_ATTEMPTS_THRESHOLD, parseInt(raw.guidedIntros, 10) || 0));
     base.streak = Math.max(0, parseInt(raw.streak, 10) || 0);
     base.mastery = this.calculateMastery(base, skill);
     base.status = raw.status || this.statusForMastery(base.mastery, skill);
@@ -446,14 +449,29 @@ class LearningEngine {
     const adaptiveFresh = this.filterQuestionsForDifficulty(fresh, profile, targetDifficulty, true);
     const adaptiveFallback = this.filterQuestionsForDifficulty(fallback, profile, targetDifficulty, true);
 
-    const questions = this.selectLeastRepeatedQuestions(
+    let questions = this.selectLeastRepeatedQuestions(
       [...dueReview, ...adaptiveFresh, ...adaptiveFallback],
       profile,
       count,
       mission.key,
       dueReviewItems.map(item => item.questionId)
     );
-    return questions.map(q => this.resolveDynamicQuestion(q, state));
+    if (this.isGuidedIntroEligible(mission.skill, skillProgress)) {
+      const guidedNeeded = Math.max(0, this.GUIDED_ATTEMPTS_THRESHOLD - (skillProgress.guidedIntros || 0));
+      const selectedTargetCount = questions.filter(question => question.skill === mission.skill.id).length;
+      if (selectedTargetCount < guidedNeeded) {
+        const selectedIds = new Set(questions.map(question => question.id));
+        const guidedQuestions = this.selectLeastRepeatedQuestions(
+          adaptiveFresh.filter(question => !selectedIds.has(question.id)),
+          profile,
+          guidedNeeded - selectedTargetCount,
+          `${mission.key}-guided-intro`
+        );
+        questions = this.uniqueQuestions([...guidedQuestions, ...questions]).slice(0, Math.max(0, count));
+      }
+    }
+    const resolvedQuestions = questions.map(q => this.resolveDynamicQuestion(q, state));
+    return this.applyGuidedIntroFlag(resolvedQuestions, profile, mission.skill);
   }
 
   static selectQuestionsForWeeklyBoss(state, week, count = 10) {
@@ -519,7 +537,7 @@ class LearningEngine {
     }
     let targetDifficulty = baseDifficulty;
     if (avgAccuracy >= 0.85 && baseDifficulty < 5) targetDifficulty += 1;
-    if (avgAccuracy < 0.6 && baseDifficulty > 1) targetDifficulty -= 1;
+    if (avgAccuracy < 0.6 && baseDifficulty > 1 && baseDifficulty < 5) targetDifficulty -= 1;
 
     // Reparte las preguntas en una rampa de dificultad ascendente y gradual:
     // empieza un poco por debajo del nivel de la planta y termina un poco
@@ -528,7 +546,11 @@ class LearningEngine {
 
     const usedIds = new Set(dueReviewItems.map(item => item.questionId));
     const usedSignatures = new Set();
-    const dueReviewInRamp = dueReview.filter(question => question && usedIds.has(question.id));
+    const dueReviewInRamp = dueReview.filter(question => {
+      if (!question || !usedIds.has(question.id)) return false;
+      if (baseDifficulty >= 5 && (parseInt(question.difficulty, 10) || 1) < 5) return false;
+      return true;
+    });
     const selected = [...dueReviewInRamp];
     usedIds.clear();
     selected.forEach(q => {
@@ -566,7 +588,41 @@ class LearningEngine {
     const orderedSelected = [...reviewPart, ...rampPart];
 
     const questions = orderedSelected.slice(0, Math.max(0, count));
-    return questions.map(q => this.resolveDynamicQuestion(q, state));
+    const resolvedQuestions = questions.map(q => this.resolveDynamicQuestion(q, state));
+    return this.applyGuidedIntroFlag(resolvedQuestions, profile);
+  }
+
+  static isGuidedIntroEligible(skill, progress) {
+    return !!skill
+      && ['3-inicio', 'puente'].includes(skill.gradeBand)
+      && (progress?.attempts || 0) === 0
+      && (progress?.guidedIntros || 0) < this.GUIDED_ATTEMPTS_THRESHOLD;
+  }
+
+  static applyGuidedIntroFlag(questions, profile, skill = null) {
+    const guidedSlotsBySkill = {};
+    return questions.map(question => {
+      if (!question || !question.skill) return question;
+      if (skill && question.skill !== skill.id) return question;
+      const targetSkill = skill && skill.id === question.skill ? skill : CurriculumData.getSkill(question.skill);
+      const progress = profile.skills[question.skill] || this.createSkillProgress(targetSkill || { id: question.skill });
+      if (!this.isGuidedIntroEligible(targetSkill, progress)) return question;
+
+      const usedSlots = guidedSlotsBySkill[question.skill] || 0;
+      const remainingSlots = Math.max(0, this.GUIDED_ATTEMPTS_THRESHOLD - (progress.guidedIntros || 0) - usedSlots);
+      if (remainingSlots <= 0) return question;
+
+      guidedSlotsBySkill[question.skill] = usedSlots + 1;
+      return {
+        ...question,
+        isGuidedIntro: true,
+        guidedIntro: {
+          explanation: question.explanation || '',
+          skillId: question.skill,
+          gradeBand: targetSkill.gradeBand
+        }
+      };
+    });
   }
 
   // Genera una rampa de dificultad de longitud `count` que sube de forma
@@ -574,7 +630,7 @@ class LearningEngine {
   // y termina un escalon por encima, repartiendo varios incrementos a lo
   // largo de toda la batalla en vez de saltar de golpe.
   static buildTowerDifficultyRamp(targetDifficulty, count) {
-    const minDifficulty = Math.max(1, targetDifficulty - 1);
+    const minDifficulty = targetDifficulty >= 5 ? 5 : Math.max(1, targetDifficulty - 1);
     const maxDifficulty = Math.min(5, targetDifficulty + 1);
     const span = Math.max(0, maxDifficulty - minDifficulty);
     const steps = Math.max(1, count);
@@ -858,6 +914,19 @@ class LearningEngine {
 
     const skill = CurriculumData.getSkill(question.skill);
     const progress = profile.skills[question.skill];
+    if (question.isGuidedIntro === true) {
+      progress.guidedIntros = Math.min(this.GUIDED_ATTEMPTS_THRESHOLD, (progress.guidedIntros || 0) + 1);
+      this.recordQuestionHistory(profile, question, isCorrect);
+      return {
+        ok: true,
+        guidedIntro: true,
+        skillId: question.skill,
+        mastery: progress.mastery,
+        status: progress.status,
+        dueReviews: this.getDueReviewItems(state).length
+      };
+    }
+
     progress.attempts += 1;
     progress.lastPracticedAt = this.todayKey();
     if (isCorrect) {
