@@ -6059,6 +6059,14 @@ button,
   filter: blur(0.5px) drop-shadow(0 0 10px rgba(255, 0, 85, 0.66));
 }
 
+.motion-trail.xtreme-trail {
+  width: clamp(120px, 18vw, 240px);
+  height: clamp(16px, 3vw, 32px);
+  background: linear-gradient(90deg, transparent, var(--cyan), var(--yellow) 54%, #fff);
+  filter: blur(0.2px) drop-shadow(0 0 18px rgba(255, 234, 0, 0.88));
+  animation: xtreme-trail-fade 520ms ease-out forwards;
+}
+
 .impact-particle {
   position: absolute;
   width: var(--particle-size, 9px);
@@ -6081,6 +6089,23 @@ button,
   transform: translate(-50%, -50%) scale(0.12);
   opacity: 0;
   animation: shockwave-expand 560ms ease-out forwards;
+}
+
+.shockwave.finish-over,
+.shockwave.finish-burst {
+  border-width: 4px;
+  box-shadow: 0 0 30px var(--shock-color, var(--yellow)), inset 0 0 22px rgba(255, 255, 255, 0.22);
+}
+
+.shockwave.finish-xtreme {
+  width: clamp(110px, 22vw, 240px);
+  height: clamp(110px, 22vw, 240px);
+  border-width: 5px;
+  box-shadow:
+    0 0 36px var(--shock-color, var(--yellow)),
+    0 0 54px rgba(255, 0, 85, 0.38),
+    inset 0 0 28px rgba(255, 255, 255, 0.28);
+  animation: xtreme-shockwave-expand 680ms ease-out forwards;
 }
 
 .damage-pop {
@@ -6109,6 +6134,18 @@ button,
   color: var(--yellow);
   border-color: rgba(255, 0, 85, 0.65);
   box-shadow: 0 0 18px rgba(255, 0, 85, 0.34);
+}
+
+.damage-pop.critical {
+  transform: translate(-50%, -50%) scale(0.95);
+}
+
+.damage-pop.super {
+  color: #fff;
+  background: linear-gradient(135deg, rgba(255, 0, 85, 0.88), rgba(255, 234, 0, 0.28)), rgba(5, 9, 21, 0.9);
+  border-color: rgba(255, 234, 0, 0.82);
+  box-shadow: 0 0 26px rgba(255, 234, 0, 0.44), 0 0 34px rgba(255, 0, 85, 0.3);
+  animation: damage-pop-super-rise 900ms cubic-bezier(0.18, 1.35, 0.28, 1) forwards;
 }
 
 .damage-pop.player {
@@ -6162,6 +6199,80 @@ button,
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.42), 0 0 24px rgba(255, 0, 85, 0.3);
 }
 
+.attack-banner.finish-spin {
+  border-color: rgba(0, 240, 255, 0.64);
+  background: linear-gradient(90deg, rgba(0, 240, 255, 0.16), rgba(5, 9, 21, 0.92) 24% 76%, rgba(0, 255, 102, 0.12));
+}
+
+.attack-banner.finish-over,
+.attack-banner.finish-burst {
+  border-color: rgba(255, 234, 0, 0.78);
+  background: linear-gradient(90deg, rgba(255, 234, 0, 0.18), rgba(5, 9, 21, 0.92) 18% 74%, rgba(255, 0, 85, 0.2));
+}
+
+.attack-banner.finish-xtreme,
+.attack-banner.xtreme-dash {
+  border-color: rgba(255, 234, 0, 0.92);
+  background:
+    linear-gradient(100deg, rgba(0, 240, 255, 0.22), rgba(255, 234, 0, 0.24) 42%, rgba(255, 0, 85, 0.22)),
+    rgba(5, 9, 21, 0.94);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.46), 0 0 32px rgba(255, 234, 0, 0.42), 0 0 28px rgba(0, 240, 255, 0.28);
+}
+
+.attack-banner.xtreme-risk,
+.attack-banner.round-retry {
+  border-color: rgba(255, 0, 85, 0.82);
+  background: linear-gradient(90deg, rgba(255, 0, 85, 0.26), rgba(5, 9, 21, 0.94) 24% 78%, rgba(255, 234, 0, 0.1));
+}
+
+.attack-banner.round-cleared {
+  border-color: rgba(0, 255, 102, 0.72);
+  background: linear-gradient(90deg, rgba(0, 255, 102, 0.18), rgba(5, 9, 21, 0.94) 24% 78%, rgba(0, 240, 255, 0.16));
+}
+
+.screen-flash-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 24;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 88% 38%, rgba(255, 255, 255, 0.86), rgba(255, 234, 0, 0.42) 16%, transparent 38%),
+    linear-gradient(120deg, transparent 0 40%, rgba(0, 240, 255, 0.3) 48%, rgba(255, 0, 85, 0.22) 56%, transparent 66% 100%);
+  mix-blend-mode: screen;
+}
+
+.screen-flash-layer.active.xtreme {
+  animation: xtreme-screen-flash 620ms ease-out both;
+}
+
+.battlefield-arena.stadium-beginner {
+  --stadium-accent: var(--cyan);
+  --stadium-accent-2: var(--yellow);
+}
+
+.battlefield-arena.stadium-advanced {
+  --stadium-accent: var(--pink);
+  --stadium-accent-2: var(--cyan);
+}
+
+.battlefield-arena.stadium-xtreme {
+  --stadium-accent: var(--yellow);
+  --stadium-accent-2: var(--pink);
+}
+
+.battlefield-arena[class*="stadium-"] .arena-energy-layer {
+  background:
+    linear-gradient(90deg, transparent 0 45%, color-mix(in srgb, var(--stadium-accent) 22%, transparent) 47% 53%, transparent 55%),
+    linear-gradient(0deg, transparent 0 45%, color-mix(in srgb, var(--stadium-accent-2) 18%, transparent) 47% 53%, transparent 55%),
+    radial-gradient(circle at 50% 50%, transparent 0 45%, color-mix(in srgb, var(--stadium-accent) 22%, transparent) 48%, transparent 52%);
+}
+
+.battlefield-arena.stadium-xtreme .arena-energy-layer::after {
+  border-color: color-mix(in srgb, var(--stadium-accent) 46%, transparent);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--stadium-accent) 36%, transparent);
+}
+
 .rival-intent-badge {
   position: absolute;
   right: clamp(10px, 3vw, 24px);
@@ -6191,9 +6302,12 @@ button,
 
 .combat-action-btn {
   position: relative;
+  /* flex-direction:column apila .combat-action-title y .combat-action-copy en lineas separadas */
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 3px;
   min-height: 52px;
   padding: 11px 12px;
   border: 1px solid rgba(120, 247, 255, 0.36);
@@ -6209,7 +6323,9 @@ button,
   text-transform: uppercase;
   cursor: pointer;
   overflow: hidden;
-  overflow-wrap: anywhere;
+  /* break-word: solo rompe palabras largas, no letra por letra como "anywhere" */
+  overflow-wrap: break-word;
+  word-break: normal;
   transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
 }
 
@@ -6260,13 +6376,30 @@ button,
 .combat-action-readout {
   padding: 9px 11px;
   border-radius: 8px;
-  color: #dff8ff;
-  background: rgba(0, 240, 255, 0.08);
-  border: 1px solid rgba(120, 247, 255, 0.22);
-  font-size: clamp(0.82rem, 2vw, 0.96rem);
+  /* color base más claro y borde más marcado para que sea legible antes de elegir */
+  color: #f0fbff;
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(120, 247, 255, 0.38);
+  font-size: clamp(0.85rem, 2vw, 1rem);
   font-weight: 800;
-  line-height: 1.25;
+  line-height: 1.3;
   text-wrap: balance;
+  transition: background 200ms ease, border-color 200ms ease, color 200ms ease;
+}
+
+/* Readout resaltado cuando la accion elegida coincide con la recomendada */
+.combat-action-readout.readout-match {
+  color: #fff6a5;
+  background: rgba(255, 234, 0, 0.13);
+  border-color: rgba(255, 234, 0, 0.52);
+  box-shadow: 0 0 10px rgba(255, 234, 0, 0.14);
+}
+
+/* Readout en tono de alerta cuando la accion elegida es la opuesta a la recomendada */
+.combat-action-readout.readout-risk {
+  color: #ffb3c6;
+  background: rgba(255, 0, 85, 0.1);
+  border-color: rgba(255, 0, 85, 0.38);
 }
 
 .x-gauge-panel {
@@ -6314,6 +6447,23 @@ button,
 
 .x-gauge-fill.ready {
   animation: x-gauge-ready 720ms ease-in-out infinite alternate;
+}
+
+.x-gauge-panel.dash-ready {
+  border-color: color-mix(in srgb, var(--yellow) 62%, var(--cyan));
+  box-shadow:
+    inset 0 0 18px rgba(255, 234, 0, 0.1),
+    0 0 18px rgba(0, 240, 255, 0.22);
+}
+
+.x-gauge-panel.dash-ready .x-gauge-fill {
+  background: linear-gradient(90deg, var(--cyan), var(--yellow) 45%, var(--pink));
+  animation: x-dash-ready 620ms ease-in-out infinite alternate;
+}
+
+.combat-action-btn.dash-ready:not(.active) {
+  border-color: rgba(255, 234, 0, 0.72);
+  box-shadow: 0 0 18px rgba(255, 234, 0, 0.2), inset 0 0 14px rgba(0, 240, 255, 0.1);
 }
 
 .damage-pop:empty {
@@ -6399,6 +6549,65 @@ button,
   background: radial-gradient(circle, rgba(255, 234, 0, 0.4), rgba(255, 0, 85, 0.14) 48%, transparent 72%);
 }
 
+.top-sprite[data-bey-type="ataque"] {
+  --top-type-color: var(--pink);
+  --top-type-color-2: var(--yellow);
+}
+
+.top-sprite[data-bey-type="defensa"] {
+  --top-type-color: var(--cyan);
+  --top-type-color-2: #dff8ff;
+}
+
+.top-sprite[data-bey-type="estamina"] {
+  --top-type-color: #00ff66;
+  --top-type-color-2: var(--cyan);
+}
+
+.top-sprite[data-bey-type="balance"] {
+  --top-type-color: var(--yellow);
+  --top-type-color-2: var(--cyan);
+}
+
+.top-sprite[data-bey-type] {
+  filter:
+    drop-shadow(0 14px 12px rgba(0, 0, 0, 0.54))
+    drop-shadow(0 0 14px color-mix(in srgb, var(--top-type-color, var(--cyan)) 56%, transparent));
+}
+
+.top-sprite[data-bey-type]::before {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--top-type-color, var(--cyan)) 28%, transparent), transparent 62%),
+    conic-gradient(from 45deg, transparent 0 22%, color-mix(in srgb, var(--top-type-color-2, var(--yellow)) 26%, transparent) 28% 36%, transparent 44% 100%);
+  opacity: 0.82;
+  animation: top-type-aura 880ms ease-in-out infinite alternate;
+  z-index: -1;
+}
+
+.top-sprite.boosting[data-bey-type]::before {
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--yellow) 34%, transparent), color-mix(in srgb, var(--top-type-color, var(--cyan)) 18%, transparent) 45%, transparent 72%),
+    conic-gradient(from 10deg, transparent 0 18%, color-mix(in srgb, var(--top-type-color-2, var(--yellow)) 34%, transparent) 24% 38%, transparent 46% 100%);
+}
+
+.top-sprite.special-ready[data-bey-type]::before {
+  background:
+    radial-gradient(circle, rgba(255, 234, 0, 0.42), color-mix(in srgb, var(--top-type-color, var(--pink)) 18%, transparent) 50%, transparent 74%),
+    conic-gradient(from -20deg, transparent 0 16%, rgba(255, 0, 85, 0.28) 24% 34%, transparent 46% 100%);
+}
+
+.top-sprite.deck-switching {
+  animation: deck-switch-out 420ms cubic-bezier(0.55, 0, 1, 0.45) both;
+}
+
+.top-sprite.deck-entering {
+  animation: deck-switch-in 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 .top-sprite.damaged {
   filter: drop-shadow(0 12px 10px rgba(0, 0, 0, 0.58)) drop-shadow(0 0 14px rgba(255, 0, 85, 0.72)) saturate(0.88);
   animation: top-damaged-shake 160ms linear 3;
@@ -6445,7 +6654,6 @@ button,
 .question-text,
 .question-meta,
 .btn-answer,
-.combat-action-btn,
 .attack-banner,
 .rival-intent-badge {
   overflow-wrap: anywhere;
@@ -6490,6 +6698,51 @@ button,
 @keyframes x-gauge-ready {
   from { filter: brightness(1); box-shadow: 0 0 12px rgba(255, 234, 0, 0.38); }
   to { filter: brightness(1.35); box-shadow: 0 0 24px rgba(255, 234, 0, 0.72), 0 0 18px rgba(255, 0, 85, 0.34); }
+}
+
+@keyframes x-dash-ready {
+  from { filter: brightness(1) drop-shadow(0 0 5px rgba(0, 240, 255, 0.5)); }
+  to { filter: brightness(1.28) drop-shadow(0 0 14px rgba(255, 234, 0, 0.9)); }
+}
+
+@keyframes top-type-aura {
+  from { opacity: 0.56; transform: scale(0.96) rotate(0deg); }
+  to { opacity: 0.9; transform: scale(1.05) rotate(12deg); }
+}
+
+@keyframes deck-switch-out {
+  from { opacity: 1; transform: translate3d(0, 0, 0) scale(1) rotate(0); filter: blur(0); }
+  to { opacity: 0; transform: translate3d(-22%, 10%, 0) scale(0.72) rotate(-28deg); filter: blur(5px); }
+}
+
+@keyframes deck-switch-in {
+  0% { opacity: 0; transform: translate3d(24%, -8%, 0) scale(0.64) rotate(36deg); filter: blur(6px); }
+  70% { opacity: 1; transform: translate3d(-2%, 1%, 0) scale(1.08) rotate(-6deg); filter: blur(0); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1) rotate(0); filter: blur(0); }
+}
+
+@keyframes xtreme-trail-fade {
+  0% { opacity: 0; transform: translate(-50%, -50%) scaleX(0.35) rotate(-8deg); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scaleX(1.15) rotate(-8deg); }
+}
+
+@keyframes xtreme-shockwave-expand {
+  from { opacity: 0.95; transform: translate(-50%, -50%) scale(0.12) rotate(0); }
+  to { opacity: 0; transform: translate(-50%, -50%) scale(1.35) rotate(18deg); }
+}
+
+@keyframes damage-pop-super-rise {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.68) rotate(-4deg); }
+  18% { opacity: 1; transform: translate(-50%, -58%) scale(1.25) rotate(3deg); }
+  100% { opacity: 0; transform: translate(-50%, -150%) scale(0.96) rotate(0); }
+}
+
+@keyframes xtreme-screen-flash {
+  0%, 100% { opacity: 0; }
+  12% { opacity: 0.92; }
+  34% { opacity: 0.28; }
+  52% { opacity: 0.58; }
 }
 
 @keyframes attack-banner-slam {
@@ -6673,11 +6926,16 @@ button,
   .top-sprite.aura::before,
   .top-sprite.boosting::before,
   .top-sprite.special-ready::before,
+  .top-sprite[data-bey-type]::before,
   .top-sprite.boosting,
   .top-sprite.damaged,
+  .top-sprite.deck-switching,
+  .top-sprite.deck-entering,
   .motion-trail,
+  .motion-trail.xtreme-trail,
   .impact-particle,
   .shockwave,
+  .screen-flash-layer.active,
   .damage-pop,
   .attack-banner {
     animation-duration: 1ms;
@@ -6787,6 +7045,42 @@ button,
     width: clamp(118px, 18vw, 168px);
     height: clamp(118px, 18vw, 168px);
     z-index: 8;
+  }
+
+  #screen-combat .top-sprite[data-bey-type]::before {
+    inset: -13%;
+  }
+
+  #screen-combat .motion-trail.xtreme-trail {
+    width: clamp(120px, 22vw, 220px);
+    height: clamp(15px, 3.2vw, 28px);
+  }
+
+  #screen-combat .attack-banner-layer {
+    padding:
+      max(10px, env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      10px
+      max(10px, env(safe-area-inset-left));
+  }
+
+  #screen-combat .attack-banner {
+    max-width: min(92vw, 640px);
+    padding: 9px 14px;
+    font-size: clamp(1rem, 2.2vw, 1.38rem);
+  }
+
+  #screen-combat .shockwave.finish-xtreme {
+    width: clamp(120px, 28vw, 230px);
+    height: clamp(120px, 28vw, 230px);
+  }
+
+  #screen-combat .screen-flash-layer {
+    inset:
+      max(0px, env(safe-area-inset-top))
+      max(0px, env(safe-area-inset-right))
+      max(0px, env(safe-area-inset-bottom))
+      max(0px, env(safe-area-inset-left));
   }
 }
 
@@ -7035,6 +7329,9 @@ button,
   }
 
   #screen-combat .combat-action-btn {
+    /* flex-direction:column explicito en este breakpoint para no depender de herencia */
+    flex-direction: column;
+    gap: 2px;
     min-height: 52px;
     padding: 8px 5px;
     font-size: 0.78rem;
@@ -7058,6 +7355,33 @@ button,
   #screen-combat .top-sprite {
     width: clamp(100px, 12vw, 150px);
     height: clamp(100px, 12vw, 150px);
+  }
+
+  #screen-combat .top-sprite[data-bey-type]::before {
+    inset: -14%;
+  }
+
+  #screen-combat .motion-trail.xtreme-trail {
+    width: clamp(112px, 15vw, 190px);
+    height: clamp(14px, 2.4vw, 26px);
+  }
+
+  #screen-combat .attack-banner {
+    max-width: min(88%, 620px);
+    padding: 8px 14px;
+    font-size: clamp(0.95rem, 2.6vh, 1.42rem);
+  }
+
+  #screen-combat .screen-flash-layer {
+    inset:
+      max(0px, env(safe-area-inset-top))
+      max(0px, env(safe-area-inset-right))
+      max(0px, env(safe-area-inset-bottom))
+      max(0px, env(safe-area-inset-left));
+  }
+
+  #screen-combat .x-gauge-panel.dash-ready {
+    box-shadow: inset 0 0 14px rgba(255, 234, 0, 0.08), 0 0 13px rgba(0, 240, 255, 0.18);
   }
 
   #screen-workshop {
@@ -7208,6 +7532,15 @@ button,
 
   #screen-combat .combo-streak-container {
     min-height: 28px;
+  }
+
+  #screen-combat .attack-banner {
+    padding: 7px 12px;
+    font-size: clamp(0.86rem, 2.3vh, 1.14rem);
+  }
+
+  #screen-combat .motion-trail.xtreme-trail {
+    width: clamp(96px, 13vw, 160px);
   }
 }
 
