@@ -2416,6 +2416,11 @@ class App {
         <div><span>Rondas perfectas</span><strong>${summary.roundsWonFirstTry || 0}/${summary.totalRounds || 1}</strong></div>
         <div><span>Rondas repetidas</span><strong>${summary.roundsRepeated || 0}</strong></div>
         <div><span>Mejor combo</span><strong>${summary.bestCombo || 0}</strong></div>
+        <div><span>Puntos Finish</span><strong>${summary.finishPoints || 0}</strong></div>
+        <div><span>Xtreme</span><strong>${summary.finishStats?.xtreme || 0}</strong></div>
+        <div><span>Dash X</span><strong>${summary.xtremeDashUses || 0}</strong></div>
+        <div><span>Riesgo X</span><strong>${summary.xtremeDashRisks || 0}</strong></div>
+        <div><span>Cambios deck</span><strong>${summary.deckSwitches || 0}</strong></div>
         <div><span>Sin pista</span><strong>${summary.fastCorrect || 0}</strong></div>
         <div><span>Con calma</span><strong>${summary.assistedCorrect || 0}</strong></div>
       </div>
