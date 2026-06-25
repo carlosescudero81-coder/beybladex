@@ -1460,6 +1460,13 @@ class App {
   // -------------------- TOYSHOP SCREEN (TALLER) --------------------
   renderWorkshop() {
     this.renderTopPreview();
+    const equipCustomBtn = document.getElementById('btn-equip-custom-bey');
+    if (equipCustomBtn) {
+      const isEquipped = this.state.player.equippedBeyId === 'custom_x_bey';
+      equipCustomBtn.innerText = isEquipped ? 'Mi Peonza X equipada' : 'Usar esta peonza en batalla';
+      equipCustomBtn.classList.toggle('equipped', isEquipped);
+      equipCustomBtn.onclick = () => this.equipCustomWorkshopBey();
+    }
     // Buscar tab activa SOLO en el taller (excluir avatar-customizer-tabs)
     const tallerTabs = document.querySelectorAll('.workshop-tab:not(#avatar-customizer-tabs .workshop-tab)');
     const activeTab = [...tallerTabs].find(t => t.classList.contains('active'));
@@ -1494,6 +1501,15 @@ class App {
     document.getElementById('stat-bar-attack').style.width = `${Math.min(100, attack)}%`;
     document.getElementById('stat-bar-defense').style.width = `${Math.min(100, defense)}%`;
     document.getElementById('stat-bar-stamina').style.width = `${Math.min(100, stamina)}%`;
+  }
+
+  equipCustomWorkshopBey() {
+    sounds.playClick();
+    this.state.player.equippedBeyId = 'custom_x_bey';
+    this.saveState();
+    this.renderHeader();
+    this.renderWorkshop();
+    this.showNotice('Mi Peonza X equipada. La proxima batalla usara tu montaje del taller.', 'Peonza del taller lista');
   }
 
   renderWorkshopItems(partType) {
@@ -1548,6 +1564,9 @@ class App {
           this.state.player.activeCombo[partType] = part.id;
           this.saveState();
           this.renderWorkshop();
+          if (this.state.player.equippedBeyId === 'custom_x_bey') {
+            this.showNotice('Mi Peonza X actualizada para la proxima batalla.', 'Montaje actualizado');
+          }
         };
       }
       container.appendChild(itemCard);
@@ -1727,7 +1746,9 @@ class App {
         sounds.playClick();
         const wasEquipped = this.state.player.equippedBeyId === bey.id;
         this.state.player.equippedBeyId = bey.id;
-        this.state.inventory.beys = Array.from(new Set([...(this.state.inventory.beys || []), bey.id]));
+        if (!bey.isCustom) {
+          this.state.inventory.beys = Array.from(new Set([...(this.state.inventory.beys || []), bey.id]));
+        }
         this.saveState();
         this.renderHeader();
         if (this.currentScreen === 'map') this.renderMap();
@@ -1744,7 +1765,8 @@ class App {
   }
 
   renderOwnedBeySelector(container) {
-    const ownedBeys = BEYBLADE_X_BEYS.filter(bey => isBeyUnlocked(this.state, bey));
+    const customBey = buildCustomBeyFromCombo(this.state);
+    const ownedBeys = [customBey, ...BEYBLADE_X_BEYS.filter(bey => isBeyUnlocked(this.state, bey))];
     const equipped = getEquippedBey(this.state);
     const panel = document.createElement('section');
     panel.className = 'owned-bey-selector';
@@ -1766,11 +1788,15 @@ class App {
     container.appendChild(panel);
     panel.querySelectorAll('[data-owned-bey]').forEach(button => {
       button.onclick = () => {
-        const bey = getBeyById(button.dataset.ownedBey);
+        const bey = button.dataset.ownedBey === 'custom_x_bey'
+          ? buildCustomBeyFromCombo(this.state)
+          : getBeyById(button.dataset.ownedBey);
         if (!bey || !isBeyUnlocked(this.state, bey)) return;
         sounds.playClick();
         this.state.player.equippedBeyId = bey.id;
-        this.state.inventory.beys = Array.from(new Set([...(this.state.inventory.beys || []), bey.id]));
+        if (!bey.isCustom) {
+          this.state.inventory.beys = Array.from(new Set([...(this.state.inventory.beys || []), bey.id]));
+        }
         this.saveState();
         this.renderHeader();
         this.renderCards();
