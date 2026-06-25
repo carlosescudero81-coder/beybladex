@@ -5,6 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Beyblade X Academy: Torneo del Conocimiento</title>
   <link rel="stylesheet" href="index.css">
+  <style>
+    /* ── FIX: tower screen no debe recortar su contenido ── */
+    #screen-map {
+      overflow-y: auto !important;
+      height: auto !important;
+      min-height: 0 !important;
+    }
+    .tower-screen {
+      overflow: visible !important;
+      height: auto !important;
+    }
+    .tower-command-card {
+      overflow: visible !important;
+      height: auto !important;
+      min-height: unset !important;
+    }
+    /* El contenedor principal de pantallas también debe poder crecer */
+    #screen-container {
+      overflow-y: auto !important;
+      height: auto !important;
+    }
+    /* FIX: la barra de navegación del mapa ocupa todo el ancho de la grid */
+    #map-nav-bar {
+      grid-column: 1 / -1 !important;
+    }
+  </style>
 </head>
 <body>
 
@@ -344,6 +370,7 @@
               </div>
 
               <div class="attack-banner-layer" id="attack-banner-layer" data-attack-banner aria-live="polite"></div>
+              <div class="screen-flash-layer" id="screen-flash-layer" aria-hidden="true"></div>
 
               <div class="rival-intent-badge" id="rival-intent-badge" data-rival-intent>
                 <span class="intent-kicker">Rival</span>

@@ -1718,14 +1718,20 @@ class App {
     return card;
   }
 
-  renderCharacterCard(character) {
+  renderCharacterCard(character, { selectable = false } = {}) {
     const favorite = this.isAlbumFavorite('character', character.id);
+    const isEquipped = (this.state?.player?.characterAvatarId || 'jaxonCross') === character.id;
     const card = document.createElement('article');
-    card.className = 'character-card';
+    card.className = `character-card ${isEquipped && selectable ? 'equipped' : ''}`;
     card.style.setProperty('--character-color', character.colorPrincipal || '#00f0ff');
+    const equipBadge = selectable ? `<span class="collection-lock-badge">${isEquipped ? 'Tu compañero' : 'Disponible'}</span>` : '';
+    const actionBtn = selectable
+      ? `<button class="btn-action collection-equip character-equip" type="button">${isEquipped ? 'Compañero actual' : 'Elegir compañero'}</button>`
+      : `<button class="btn-action collection-info" type="button">Ficha rival</button>`;
     card.innerHTML = `
       <div class="collection-card-media character-media">
         ${renderAssetImage(character.image, character.nombre, 'asset-image character-asset')}
+        ${equipBadge}
       </div>
       <div class="collection-card-copy">
         <h3>${character.nombre}</h3>
@@ -1733,15 +1739,30 @@ class App {
         <p>${character.rol}. Le ganas practicando ${character.materiaRecomendada}.</p>
         <div class="bey-tag-row"><span>Usa: ${character.beyAsociado}</span></div>
         <div class="collection-card-actions">
-          <button class="btn-action collection-info" type="button">Ficha rival</button>
-          <button class="collection-icon-btn ${favorite ? 'active' : ''}" type="button" data-favorite-character="${character.id}" title="Favorito"></button>
+          ${actionBtn}
+          <button class="collection-icon-btn ${favorite ? 'active' : ''}" type="button" data-favorite-character="${character.id}" title="Favorito"></button>
         </div>
       </div>
     `;
-    card.querySelector('.collection-info').onclick = () => this.showNotice(`${character.nombre}\n\nEquipo: ${character.equipo}\nRol: ${character.rol}\nBey: ${character.beyAsociado}\nPara vencerle, practica: ${character.materiaRecomendada}.`, 'Ficha rival');
+    if (selectable) {
+      const equipBtn = card.querySelector('.character-equip');
+      if (equipBtn && !isEquipped) {
+        equipBtn.onclick = () => {
+          sounds.playClick();
+          this.state.player.characterAvatarId = character.id;
+          this.state.player.avatar = character.id;
+          this.saveState();
+          this.renderHeader();
+          this.renderCards();
+        };
+      }
+    } else {
+      card.querySelector('.collection-info').onclick = () => this.showNotice(`${character.nombre}\n\nEquipo: ${character.equipo}\nRol: ${character.rol}\nBey: ${character.beyAsociado}\nPara vencerle, practica: ${character.materiaRecomendada}.`, 'Ficha rival');
+    }
     card.querySelector('[data-favorite-character]').onclick = () => this.toggleAlbumFavorite('character', character.id);
     return card;
   }
+
 
   renderStadiumCard(stadium) {
     const favorite = this.isAlbumFavorite('stadium', stadium.id);
@@ -1836,9 +1857,9 @@ class App {
     };
 
     if (this.albumTab === 'team') {
-      addSubtitle('Mi equipo actual');
+      addSubtitle('Mi equipo actual (toca Elegir compañero para cambiar de personaje)');
       container.appendChild(this.renderBeyCard(getEquippedBey(this.state)));
-      container.appendChild(this.renderCharacterCard(this.getSelectedCharacterAvatar()));
+      container.appendChild(this.renderCharacterCard(this.getSelectedCharacterAvatar(), { selectable: true }));
       const currentStadium = getFloorStadium(getCurrentTowerFloor(this.state));
       container.appendChild(this.renderStadiumCard(currentStadium));
       addSubtitle('Misiones para conseguir cromos');
@@ -1856,7 +1877,7 @@ class App {
 
     if (this.albumTab === 'rivals') {
       addSubtitle('Rivales y entrenadores');
-      BEYBLADE_X_CHARACTERS.forEach(character => container.appendChild(this.renderCharacterCard(character)));
+      BEYBLADE_X_CHARACTERS.forEach(character => container.appendChild(this.renderCharacterCard(character, { selectable: true })));
       return;
     }
 
