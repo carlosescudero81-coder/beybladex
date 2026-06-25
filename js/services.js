@@ -504,6 +504,20 @@ class ProgressService {
             return acc;
           }, {})
         : {},
+      playerDeck: Array.isArray(rawBattle.playerDeck) ? rawBattle.playerDeck.filter(Boolean).slice(0, 3) : [],
+      activeDeckIndex: Math.max(0, Math.min(2, parseInt(rawBattle.activeDeckIndex, 10) || 0)),
+      deckSwitches: Math.max(0, parseInt(rawBattle.deckSwitches, 10) || 0),
+      finishPoints: Math.max(0, parseInt(rawBattle.finishPoints, 10) || 0),
+      finishStats: rawBattle.finishStats && typeof rawBattle.finishStats === 'object' && !Array.isArray(rawBattle.finishStats)
+        ? {
+            spin: Math.max(0, parseInt(rawBattle.finishStats.spin, 10) || 0),
+            over: Math.max(0, parseInt(rawBattle.finishStats.over, 10) || 0),
+            burst: Math.max(0, parseInt(rawBattle.finishStats.burst, 10) || 0),
+            xtreme: Math.max(0, parseInt(rawBattle.finishStats.xtreme, 10) || 0)
+        }
+        : { spin: 0, over: 0, burst: 0, xtreme: 0 },
+      xtremeDashUses: Math.max(0, parseInt(rawBattle.xtremeDashUses, 10) || 0),
+      xtremeDashRisks: Math.max(0, parseInt(rawBattle.xtremeDashRisks, 10) || 0),
       questionBank: Array.isArray(rawBattle.questionBank) ? rawBattle.questionBank.filter(item => item && typeof item === 'object').slice(0, 80) : [],
       rounds: Array.isArray(rawBattle.rounds) ? rawBattle.rounds.filter(item => item && typeof item === 'object').slice(0, 12) : [],
       savedAt: typeof rawBattle.savedAt === 'string' ? rawBattle.savedAt : StorageService.todayKey()

@@ -68,6 +68,13 @@ class CombatSession {
     this.roundsRepeated = 0;
     this.lightningDamageBonus = 0;
     this.resumedTowerBattle = false;
+    this.playerDeck = [];
+    this.activeDeckIndex = 0;
+    this.deckSwitches = 0;
+    this.finishPoints = 0;
+    this.finishStats = { spin: 0, over: 0, burst: 0, xtreme: 0 };
+    this.xtremeDashUses = 0;
+    this.xtremeDashRisks = 0;
   }
 
   start() {
@@ -99,6 +106,7 @@ class CombatSession {
     const playerBey = getEquippedBey(this.state);
     const stadium = getFloorStadium(towerFloor);
     this.playerBey = playerBey;
+    this.playerDeck = this.buildPlayerDeck(playerBey);
     this.playerCharacter = playerCharacter;
     this.playerCharacterStats = typeof getEffectiveCharacterStats === 'function'
       ? getEffectiveCharacterStats(playerCharacter, this.state, true)
@@ -114,11 +122,11 @@ class CombatSession {
     const rivalBeyName = document.getElementById('combat-rival-bey-name');
     if (floorLabel) floorLabel.innerText = this.getRoundLabelText();
     if (stadiumName) stadiumName.innerText = stadium.nombre;
-    if (playerBeyName) playerBeyName.innerText = `Tu Bey: ${playerBey.nombre}`;
+    if (playerBeyName) playerBeyName.innerText = `Tu Bey: ${this.playerBey.nombre}`;
     if (rivalBeyName) rivalBeyName.innerText = `Rival: ${this.rivalBey.nombre}`;
     const playerTopLabel = document.querySelector('.top-label-player');
     const rivalTopLabel = document.querySelector('.top-label-rival');
-    if (playerTopLabel) playerTopLabel.innerText = playerBey.nombre;
+    if (playerTopLabel) playerTopLabel.innerText = this.playerBey.nombre;
     if (rivalTopLabel) rivalTopLabel.innerText = this.rivalBey.nombre;
     const stadiumImg = document.querySelector('.battle-stadium-img');
     if (stadiumImg) {
@@ -132,7 +140,7 @@ class CombatSession {
     this.setRivalIntent(this.chooseRivalIntent());
 
     // Render Custom Tops in Combat
-    document.getElementById('player-top').innerHTML = renderAssetImage(playerBey.image, playerBey.nombre, 'asset-image battle-bey player');
+    document.getElementById('player-top').innerHTML = renderAssetImage(this.playerBey.image, this.playerBey.nombre, 'asset-image battle-bey player');
     
     document.getElementById('rival-top').innerHTML = renderAssetImage(this.rivalBey.image, this.rivalBey.nombre, 'asset-image battle-bey rival');
     this.decorateTopSprites();
@@ -148,7 +156,7 @@ class CombatSession {
     this.playBattleIntro({
       playerCharacter,
       rivalCharacter: this.rivalCharacter,
-      playerBey,
+      playerBey: this.playerBey,
       rivalBey: this.rivalBey,
       stadium,
       floorData,
@@ -205,6 +213,7 @@ class CombatSession {
         start,
         end,
         isFinal,
+        stage: isFinal ? 'topCut' : 'swiss',
         rivalId: isFinal ? this.floorData?.rivalId : rival?.id,
         rivalName: isFinal ? this.floorData?.rivalName : rival?.nombre,
         beyId: bey?.id || this.floorData?.rivalBeyId,
@@ -229,6 +238,78 @@ class CombatSession {
     return available[index % Math.max(1, available.length)] || getBeyById(this.floorData?.rivalBeyId);
   }
 
+  buildPlayerDeck(equippedBey) {
+    const ownedIds = Array.isArray(this.state?.inventory?.beys) ? this.state.inventory.beys : [];
+    const ownedBeys = ownedIds.map(id => getBeyById(id)).filter(Boolean);
+    const deck = [];
+    const add = bey => {
+      if (bey && !deck.some(item => item.id === bey.id)) deck.push(bey);
+    };
+    add(equippedBey);
+    ['ataque', 'defensa', 'estamina', 'balance'].forEach(type => {
+      add(ownedBeys.find(bey => bey.tipo === type));
+    });
+    ownedBeys.forEach(add);
+    while (deck.length < 3 && BEYBLADE_X_BEYS[deck.length]) add(BEYBLADE_X_BEYS[deck.length]);
+    return deck.slice(0, 3);
+  }
+
+  getBeyType(bey) {
+    const type = (bey?.tipo || 'balance').toLowerCase();
+    if (type === 'ataque' || type === 'attack') return 'ataque';
+    if (type === 'defensa' || type === 'defense') return 'defensa';
+    if (type === 'estamina' || type === 'stamina') return 'estamina';
+    return 'balance';
+  }
+
+  calculateTypeMatchupModifier(attackerBey, defenderBey) {
+    const attacker = this.getBeyType(attackerBey);
+    const defender = this.getBeyType(defenderBey);
+    if (attacker === 'balance' || defender === 'balance' || attacker === defender) return 0;
+    const wins = {
+      ataque: 'estamina',
+      estamina: 'defensa',
+      defensa: 'ataque'
+    };
+    return wins[attacker] === defender ? 4 : -3;
+  }
+
+  getSkillTypeAffinity(question = this.currentQuestion) {
+    const skillText = `${question?.skill || ''} ${question?.subject || ''}`.toLowerCase();
+    if (skillText.includes('multiply') || skillText.includes('tables') || skillText.includes('calculo') || skillText.includes('math_multiply')) return 'ataque';
+    if (skillText.includes('read') || skillText.includes('literal') || skillText.includes('inference') || skillText.includes('vocabulary') || skillText.includes('english')) return 'estamina';
+    if (skillText.includes('review') || skillText.includes('add_sub') || skillText.includes('number') || skillText.includes('science')) return 'defensa';
+    return 'balance';
+  }
+
+  getSkillAffinityBonus(attackerBey, question = this.currentQuestion) {
+    const type = this.getBeyType(attackerBey);
+    const affinity = this.getSkillTypeAffinity(question);
+    if (type === 'balance') return 1;
+    return type === affinity ? 3 : 0;
+  }
+
+  selectDeckBeyForRound(round, preferCounter = false) {
+    if (!this.playerDeck || this.playerDeck.length === 0) this.playerDeck = this.buildPlayerDeck(getEquippedBey(this.state));
+    if (!preferCounter) {
+      const index = Math.max(0, Math.min(this.playerDeck.length - 1, this.activeDeckIndex % this.playerDeck.length));
+      return this.playerDeck[index];
+    }
+    const rivalBey = getBeyById(round?.beyId || this.floorData?.rivalBeyId);
+    let bestIndex = 0;
+    let bestScore = -Infinity;
+    this.playerDeck.forEach((bey, index) => {
+      const score = this.calculateTypeMatchupModifier(bey, rivalBey) + this.getSkillAffinityBonus(bey);
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = index;
+      }
+    });
+    this.activeDeckIndex = bestIndex;
+    this.deckSwitches += 1;
+    return this.playerDeck[bestIndex];
+  }
+
   getCurrentRound() {
     return this.rounds[Math.max(0, Math.min(this.rounds.length - 1, this.currentRoundIndex))] || this.rounds[0];
   }
@@ -239,12 +320,16 @@ class CombatSession {
       || BEYBLADE_X_CHARACTERS.find(character => character.id === this.floorData?.rivalId)
       || getFloorRival(this.towerFloor);
     const rivalBey = getBeyById(round?.beyId || this.floorData?.rivalBeyId);
+    if (this.isTowerBattle) {
+      this.playerBey = this.selectDeckBeyForRound(round, false);
+    }
     this.rivalCharacter = rival;
     this.rivalBey = rivalBey;
     this.rivalCharacterStats = typeof getEffectiveCharacterStats === 'function'
       ? getEffectiveCharacterStats(rival, this.state, false)
       : { attack: 55, defense: 55, stamina: 55, speed: 55, focus: 55, level: 1 };
     const baseHp = this.getRivalMaxHP();
+    this.playerMaxHP = this.getPlayerMaxHP();
     this.rivalMaxHP = Math.max(38, Math.round(baseHp * (round?.hpScale || 1)));
     this.rivalHP = savedBattle ? Math.min(this.rivalMaxHP, Math.max(1, Number(savedBattle.rivalHP) || this.rivalMaxHP)) : this.rivalMaxHP;
     this.playerHP = savedBattle ? Math.min(this.playerMaxHP, Math.max(1, Number(savedBattle.playerHP) || this.playerMaxHP)) : this.playerMaxHP;
@@ -252,9 +337,13 @@ class CombatSession {
     const rivalImg = document.getElementById('combat-rival-img');
     const rivalName = document.getElementById('combat-rival-name');
     const rivalBeyName = document.getElementById('combat-rival-bey-name');
+    const playerBeyName = document.getElementById('combat-player-bey-name');
+    const playerTopLabel = document.querySelector('.top-label-player');
     const rivalTopLabel = document.querySelector('.top-label-rival');
     if (rivalImg) rivalImg.src = rival.image;
     if (rivalName) rivalName.innerText = this.isBoss || round?.isFinal ? (round?.rivalName || rival.nombre) : `Rival ${round.index + 1}: ${round?.rivalName || rival.nombre}`;
+    if (playerBeyName) playerBeyName.innerText = `Tu Bey: ${this.playerBey.nombre}`;
+    if (playerTopLabel) playerTopLabel.innerText = this.playerBey.nombre;
     if (rivalBeyName) rivalBeyName.innerText = `Rival: ${rivalBey.nombre}`;
     if (rivalTopLabel) rivalTopLabel.innerText = rivalBey.nombre;
     const floorLabel = document.getElementById('combat-floor-label');
@@ -275,6 +364,20 @@ class CombatSession {
     this.roundsWonFirstTry = Math.max(0, parseInt(savedBattle.roundsWonFirstTry, 10) || 0);
     this.roundsRepeated = Math.max(0, parseInt(savedBattle.roundsRepeated, 10) || 0);
     this.roundAttempts = savedBattle.roundAttempts || {};
+    this.playerDeck = Array.isArray(savedBattle.playerDeck) && savedBattle.playerDeck.length > 0
+      ? savedBattle.playerDeck.map(id => getBeyById(id)).filter(Boolean)
+      : this.playerDeck;
+    this.activeDeckIndex = Math.max(0, parseInt(savedBattle.activeDeckIndex, 10) || 0);
+    this.deckSwitches = Math.max(0, parseInt(savedBattle.deckSwitches, 10) || 0);
+    this.finishPoints = Math.max(0, parseInt(savedBattle.finishPoints, 10) || 0);
+    this.finishStats = {
+      spin: Math.max(0, parseInt(savedBattle.finishStats?.spin, 10) || 0),
+      over: Math.max(0, parseInt(savedBattle.finishStats?.over, 10) || 0),
+      burst: Math.max(0, parseInt(savedBattle.finishStats?.burst, 10) || 0),
+      xtreme: Math.max(0, parseInt(savedBattle.finishStats?.xtreme, 10) || 0)
+    };
+    this.xtremeDashUses = Math.max(0, parseInt(savedBattle.xtremeDashUses, 10) || 0);
+    this.xtremeDashRisks = Math.max(0, parseInt(savedBattle.xtremeDashRisks, 10) || 0);
     this.usedTowerQuestionIds = new Set(savedBattle.usedQuestionIds || []);
     this.usedTowerQuestionSignatures = new Set(savedBattle.usedQuestionSignatures || []);
     if (Array.isArray(savedBattle.questionBank) && savedBattle.questionBank.length > 0) {
@@ -286,7 +389,8 @@ class CombatSession {
 
   getRoundLabelText() {
     const round = this.getCurrentRound();
-    const roundText = this.rounds.length > 1 ? `Ronda ${this.currentRoundIndex + 1}/${this.rounds.length}` : 'Duelo';
+    const stage = round?.stage === 'topCut' ? 'Top Cut' : 'Swiss';
+    const roundText = this.rounds.length > 1 ? `${stage} ${this.currentRoundIndex + 1}/${this.rounds.length}` : 'Duelo';
     return `X Tower Planta ${this.towerFloor} · ${roundText} · ${this.floorData?.secondaryObjective || 'Gana el duelo'}`;
   }
 
@@ -315,6 +419,13 @@ class CombatSession {
       roundsWonFirstTry: this.roundsWonFirstTry,
       roundsRepeated: this.roundsRepeated,
       roundAttempts: this.roundAttempts,
+      playerDeck: this.playerDeck.map(bey => bey.id),
+      activeDeckIndex: this.activeDeckIndex,
+      deckSwitches: this.deckSwitches,
+      finishPoints: this.finishPoints,
+      finishStats: this.finishStats,
+      xtremeDashUses: this.xtremeDashUses,
+      xtremeDashRisks: this.xtremeDashRisks,
       questionBank: this.questionsList.map(question => ({ ...question, options: Array.isArray(question.options) ? [...question.options] : [] })),
       rounds: this.rounds,
       savedAt: StorageService.todayKey()
@@ -1148,7 +1259,9 @@ class CombatSession {
     const actionBonus = action === 'attack' ? 7 : action === 'charge' ? -2 : 0;
     const rivalGuard = this.rivalIntent?.type === 'defense' ? -4 : 0;
     const fastBonus = this.fastAnswerStreak > 0 && this.fastAnswerStreak % 2 === 0 ? 2 : 0;
-    return Math.max(7, 12 + statBonus + actionBonus + rivalGuard + fastBonus);
+    const typeBonus = this.calculateTypeMatchupModifier(this.playerBey, this.rivalBey);
+    const skillBonus = this.getSkillAffinityBonus(this.playerBey);
+    return Math.max(7, 12 + statBonus + actionBonus + rivalGuard + fastBonus + typeBonus + skillBonus);
   }
 
   calculateSpecialDamage(action) {
@@ -1166,7 +1279,44 @@ class CombatSession {
     const playerGuardStat = this.playerCharacterStats?.defense || 55;
     const intentBonus = this.rivalIntent?.type === 'attack' ? 6 : this.rivalIntent?.type === 'charge' ? 3 : 0;
     const playerGuard = playerAction === 'defense' ? -8 : playerAction === 'attack' ? 3 : 0;
-    return Math.max(6, Math.round(14 + (attack - defense) / 14 + (rivalPower - playerGuardStat) / 18 + intentBonus + playerGuard + this.getDifficultyDamageBonus()));
+    const typeBonus = this.calculateTypeMatchupModifier(this.rivalBey, this.playerBey);
+    return Math.max(6, Math.round(14 + (attack - defense) / 14 + (rivalPower - playerGuardStat) / 18 + intentBonus + playerGuard + this.getDifficultyDamageBonus() + typeBonus));
+  }
+
+  classifyFinish(isCorrect, isFastAnswer, specialTriggered, action) {
+    if (!isCorrect) return null;
+    const difficulty = parseInt(this.currentQuestion?.difficulty, 10) || 1;
+    if (isFastAnswer && (this.currentQuestion?.isLightning || difficulty >= 4) && (action === 'attack' || action === 'charge')) {
+      return { type: 'xtreme', label: 'Xtreme Finish', points: 3, damageMultiplier: 1.35 };
+    }
+    if (specialTriggered || this.correctStreak + 1 >= 3) {
+      return { type: 'burst', label: 'Burst Finish', points: 2, damageMultiplier: 1.22 };
+    }
+    if (isFastAnswer && (this.correctStreak + 1 >= 2 || difficulty >= 3)) {
+      return { type: 'over', label: 'Over Finish', points: 2, damageMultiplier: 1.15 };
+    }
+    return { type: 'spin', label: 'Spin Finish', points: 1, damageMultiplier: 1 };
+  }
+
+  getStadiumXtremeModifier() {
+    const stadiumId = `${this.floorData?.stadiumId || ''}`.toLowerCase();
+    const stadiumName = `${this.floorData?.stadiumName || ''}`.toLowerCase();
+    if (stadiumId.includes('advanced') || stadiumName.includes('xtreme') || this.towerFloor >= 21) return 1.18;
+    if (stadiumId.includes('final') || this.towerFloor >= 41) return 1.25;
+    return 1;
+  }
+
+  shouldTriggerXtremeDash(action, isCorrect, isFastAnswer) {
+    if (action !== 'attack' || !isCorrect || !isFastAnswer) return false;
+    const speed = this.playerBey?.velocidad || 70;
+    const difficulty = parseInt(this.currentQuestion?.difficulty, 10) || 1;
+    return speed >= 78 || this.currentQuestion?.isLightning || difficulty >= 4;
+  }
+
+  shouldApplyXtremeRisk(action, isCorrect) {
+    if (action !== 'attack' || isCorrect) return false;
+    const difficulty = parseInt(this.currentQuestion?.difficulty, 10) || 1;
+    return this.currentQuestion?.isLightning || difficulty >= 3 || (this.playerBey?.velocidad || 70) >= 86;
   }
 
   resolveTurnOutcome(action, isCorrect, isFastAnswer) {
@@ -1179,10 +1329,6 @@ class CombatSession {
       : isCorrect
         ? this.calculatePlayerDamage(normalizedAction)
         : 0;
-    if (playerDamage > 0 && this.lightningDamageBonus > 0) {
-      playerDamage += this.lightningDamageBonus;
-      this.lightningDamageBonus = 0;
-    }
     let rivalDamage = 0;
     let chargeDelta = 0;
     let bannerTitle = '';
@@ -1190,6 +1336,25 @@ class CombatSession {
     let playerAttackAction = specialTriggered ? 'special' : normalizedAction;
     let rivalAttackAction = rivalIntent === 'charge' ? 'special' : 'counter';
     let showExplanation = !isCorrect;
+    const xtremeDash = this.shouldTriggerXtremeDash(normalizedAction, isCorrect, isFastAnswer);
+    if (xtremeDash && playerDamage > 0) {
+      const multiplier = 1.2 * this.getStadiumXtremeModifier();
+      playerDamage = Math.round(playerDamage * multiplier) + 4;
+      chargeDelta = Math.max(chargeDelta, 1);
+      bannerTitle = 'Xtreme Dash';
+      bannerSubtitle = 'Carril X activado';
+      playerAttackAction = 'special';
+    }
+    if (playerDamage > 0 && this.lightningDamageBonus > 0) {
+      playerDamage += this.lightningDamageBonus;
+      this.lightningDamageBonus = 0;
+    }
+    const finish = this.classifyFinish(isCorrect, isFastAnswer, specialTriggered, normalizedAction);
+    if (finish && playerDamage > 0) {
+      playerDamage = Math.round(playerDamage * finish.damageMultiplier);
+      bannerTitle = bannerTitle || finish.label;
+      bannerSubtitle = bannerSubtitle || `${finish.points} punto${finish.points === 1 ? '' : 's'} de finish`;
+    }
 
     if (isCorrect) {
       if (specialTriggered) {
@@ -1244,6 +1409,11 @@ class CombatSession {
         bannerTitle = 'Carga rota';
         bannerSubtitle = 'Pierdes energia X';
       }
+      if (this.shouldApplyXtremeRisk(normalizedAction, isCorrect)) {
+        rivalDamage = Math.round(rivalDamage * 1.25) + 3;
+        bannerTitle = 'Salida del carril X';
+        bannerSubtitle = 'Riesgo de ataque fallido';
+      }
     }
 
     return {
@@ -1257,7 +1427,10 @@ class CombatSession {
       bannerSubtitle,
       playerAttackAction,
       rivalAttackAction,
-      showExplanation
+      showExplanation,
+      finish,
+      xtremeDash,
+      xtremeRisk: this.shouldApplyXtremeRisk(normalizedAction, isCorrect)
     };
   }
 
@@ -1273,6 +1446,14 @@ class CombatSession {
       this.correctStreak = 0;
       this.app.showNotice(`¡Combo de conocimiento!\nAtaque critico: "${outcome.bannerTitle}".`, "Ataque especial");
     }
+    if (outcome.finish) {
+      this.finishPoints += outcome.finish.points;
+      this.finishStats[outcome.finish.type] = (this.finishStats[outcome.finish.type] || 0) + 1;
+      this.playFinishFeedback(outcome.finish);
+      this.triggerFinishVisual(outcome.finish, 'player');
+    }
+    if (outcome.xtremeDash) this.xtremeDashUses += 1;
+    if (outcome.xtremeRisk) this.xtremeDashRisks += 1;
 
     this.rivalHP = Math.max(0, this.rivalHP - outcome.playerDamage);
     this.playerHP = Math.max(0, this.playerHP - outcome.rivalDamage);
@@ -1319,6 +1500,10 @@ class CombatSession {
 
     this.state.player.coins += 3;
     this.state.player.xp += 6;
+    if (this.playerDeck.length > 1) {
+      this.activeDeckIndex = (this.activeDeckIndex + 1) % this.playerDeck.length;
+      this.deckSwitches += 1;
+    }
     this.currentRoundIndex += 1;
     this.roundAttempts[this.currentRoundIndex] = this.roundAttempts[this.currentRoundIndex] || 1;
     const nextRound = this.getCurrentRound();
@@ -1341,6 +1526,7 @@ class CombatSession {
     const round = this.getCurrentRound();
     this.roundAttempts[this.currentRoundIndex] = (this.roundAttempts[this.currentRoundIndex] || 1) + 1;
     this.roundsRepeated += 1;
+    this.selectDeckBeyForRound(round, true);
     this.playerHP = this.playerMaxHP;
     this.correctStreak = 0;
     this.fastAnswerStreak = 0;
@@ -1392,13 +1578,50 @@ class CombatSession {
     this.spawnShockwave(this.playerCombatant?.x || 35, this.playerCombatant?.y || 55, '#00ff66', true);
   }
 
+  getImpactForceMultiplier(attackerId, action = 'dash') {
+    const bey = attackerId === 'player' ? this.playerBey : this.rivalBey;
+    const type = this.getBeyType(bey);
+    let multiplier = 1;
+    if (action === 'special') multiplier += 0.28;
+    if (action === 'attack' || action === 'counter') multiplier += 0.08;
+    if (type === 'ataque') multiplier += 0.14;
+    if (type === 'defensa') multiplier += 0.06;
+    if (type === 'estamina') multiplier -= 0.04;
+    if (type === 'balance') multiplier += 0.03;
+    return Math.max(0.75, multiplier);
+  }
+
+  // Cada Finish cae en una zona distinta del estadio para reforzar la lectura de Beyblade X.
+  triggerFinishVisual(finish, attackerId = 'player') {
+    if (!finish) return;
+    const zones = {
+      spin: { x: 50, y: 50, color: '#33f5ff', special: false },
+      over: { x: attackerId === 'player' ? 82 : 18, y: 46, color: '#ffb000', special: true },
+      burst: { x: attackerId === 'player' ? 76 : 24, y: 62, color: '#ff4fd8', special: true },
+      xtreme: { x: attackerId === 'player' ? 90 : 10, y: 38, color: '#fff35a', special: true }
+    };
+    const zone = zones[finish.type] || zones.spin;
+    this.spawnShockwave(zone.x, zone.y, zone.color, zone.special);
+    this.spawnParticles(zone.x, zone.y, zone.color, finish.type === 'xtreme' ? 22 : 14);
+  }
+
+  playFinishFeedback(finish) {
+    if (!finish || typeof sounds === 'undefined') return;
+    if (finish.type === 'xtreme' || finish.type === 'burst') {
+      sounds.playSpecial();
+    } else {
+      sounds.playCorrect();
+    }
+  }
+
   performAttackSequence(attackerId, action = 'dash', damage = 0) {
     const attacker = attackerId === 'player' ? this.playerCombatant : this.rivalCombatant;
     const defender = attackerId === 'player' ? this.rivalCombatant : this.playerCombatant;
     if (!attacker || !defender) return;
 
     const isSpecial = action === 'special';
-    const force = isSpecial ? 42 : action === 'attack' || action === 'counter' ? 32 : action === 'charge' ? 18 : 24;
+    const forceBase = isSpecial ? 42 : action === 'attack' || action === 'counter' ? 32 : action === 'charge' ? 18 : 24;
+    const force = forceBase * this.getImpactForceMultiplier(attackerId, action);
     const dx = defender.x - attacker.x;
     const dy = defender.y - attacker.y;
     const dist = Math.hypot(dx, dy) || 1;
@@ -1724,7 +1947,12 @@ class CombatSession {
       assistedCorrect: this.assistedCorrect,
       totalRounds: this.rounds.length,
       correct: this.sessionCorrect,
-      incorrect: this.sessionIncorrect
+      incorrect: this.sessionIncorrect,
+      finishPoints: this.finishPoints,
+      finishStats: this.finishStats,
+      xtremeDashUses: this.xtremeDashUses,
+      xtremeDashRisks: this.xtremeDashRisks,
+      deckSwitches: this.deckSwitches
     };
   }
 
