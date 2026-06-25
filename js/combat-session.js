@@ -1568,39 +1568,172 @@ class CombatSession {
       return;
     }
 
-    this.state.player.coins += 3;
-    this.state.player.xp += 6;
-    if (this.playerDeck.length > 1) {
-      const playerTop = document.getElementById('player-top');
-      if (playerTop) {
-        playerTop.classList.remove('deck-entering');
-        playerTop.classList.add('deck-switching');
+    // ANIMACION 1: rival derrotado
+    this.playRoundWinAnimation().then(() => {
+      this.state.player.coins += 3;
+      this.state.player.xp += 6;
+      if (this.playerDeck.length > 1) {
+        const playerTop = document.getElementById('player-top');
+        if (playerTop) {
+          playerTop.classList.remove('deck-entering');
+          playerTop.classList.add('deck-switching');
+        }
+        this.activeDeckIndex = (this.activeDeckIndex + 1) % this.playerDeck.length;
+        this.deckSwitches += 1;
       }
-      this.activeDeckIndex = (this.activeDeckIndex + 1) % this.playerDeck.length;
-      this.deckSwitches += 1;
-    }
-    this.currentRoundIndex += 1;
-    this.roundAttempts[this.currentRoundIndex] = this.roundAttempts[this.currentRoundIndex] || 1;
-    const nextRound = this.getCurrentRound();
-    this.currentQuestionIdx = nextRound.start;
-    this.lastSpinUsed = false;
-    this.rivalHP = 0;
-    this.configureActiveRoundOpponent();
-    this.initCombatants();
-    document.getElementById('rival-top').innerHTML = renderAssetImage(this.rivalBey.image, this.rivalBey.nombre, 'asset-image battle-bey rival');
-    this.decorateTopSprites();
-    const playerTop = document.getElementById('player-top');
-    if (playerTop) {
-      playerTop.classList.remove('deck-switching');
-      playerTop.classList.add('deck-entering');
-      setTimeout(() => playerTop.classList.remove('deck-entering'), 720);
-    }
-    this.updateHpBars();
-    this.showAttackBanner('Ronda superada', `+3 monedas · +6 XP · siguiente rival`, 'player', 'round-cleared');
-    this.app.showNotice(`Ronda ${this.currentRoundIndex} ganada. Entra ${this.rivalCharacter.nombre}.`, 'Eliminatoria X');
-    this.persistTowerBattleState();
-    this.app.saveState();
-    setTimeout(() => this.nextQuestion(), 700);
+      this.currentRoundIndex += 1;
+      this.roundAttempts[this.currentRoundIndex] = this.roundAttempts[this.currentRoundIndex] || 1;
+      const nextRound = this.getCurrentRound();
+      this.currentQuestionIdx = nextRound.start;
+      this.lastSpinUsed = false;
+      this.rivalHP = 0;
+      this.configureActiveRoundOpponent();
+      this.initCombatants();
+      document.getElementById('rival-top').innerHTML = renderAssetImage(this.rivalBey.image, this.rivalBey.nombre, 'asset-image battle-bey rival');
+      this.decorateTopSprites();
+      const playerTop2 = document.getElementById('player-top');
+      if (playerTop2) {
+        playerTop2.classList.remove('deck-switching');
+        playerTop2.classList.add('deck-entering');
+        setTimeout(() => playerTop2.classList.remove('deck-entering'), 720);
+      }
+      this.updateHpBars();
+      this.showAttackBanner('Ronda superada', `+3 monedas · +6 XP · siguiente rival`, 'player', 'round-cleared');
+      this.persistTowerBattleState();
+      this.app.saveState();
+
+      // ANIMACION 2: inicio del siguiente reto
+      this.playRoundStartAnimation(this.rivalCharacter?.nombre || 'Nuevo rival').then(() => {
+        this.nextQuestion();
+      });
+    });
+  }
+
+  // Animacion 1: peonza rival sale disparada + texto RIVAL DERROTADO
+  playRoundWinAnimation() {
+    return new Promise(resolve => {
+      if (typeof sounds !== 'undefined' && sounds.playClash) sounds.playClash();
+
+      const rivalTop = document.getElementById('rival-top');
+      if (rivalTop) {
+        rivalTop.style.transition = 'transform 0.7s cubic-bezier(0.4,0,1,1), opacity 0.7s ease';
+        rivalTop.style.transform = 'translate(120px, -140px) rotate(720deg) scale(0.1)';
+        rivalTop.style.opacity = '0';
+      }
+
+      if (!document.getElementById('rw-keyframes')) {
+        const style = document.createElement('style');
+        style.id = 'rw-keyframes';
+        style.textContent = `
+          @keyframes rwFadeIn  { from{opacity:0} to{opacity:1} }
+          @keyframes rwFadeOut { from{opacity:1} to{opacity:0} }
+          @keyframes rwPulse   { 0%{transform:scale(0.6);opacity:0} 60%{opacity:1} 100%{transform:scale(2.2);opacity:0} }
+          @keyframes rwBounce  { from{transform:scale(0.3);opacity:0} to{transform:scale(1);opacity:1} }
+          @keyframes rsNum     { 0%{transform:scale(0.4);opacity:0} 20%{transform:scale(1.25);opacity:1} 70%{transform:scale(1);opacity:1} 100%{transform:scale(1.6);opacity:0} }
+          @keyframes rsGo      { 0%{transform:scale(0.5);opacity:0} 30%{transform:scale(1.15);opacity:1} 80%{transform:scale(1);opacity:1} 100%{transform:scale(0.9);opacity:0} }
+          @keyframes rsBeyIn   { from{transform:translateX(-60px) scale(0.7);opacity:0} to{transform:translateX(0) scale(1);opacity:1} }
+          @keyframes rsBeyInR  { from{transform:translateX(60px) scale(0.7);opacity:0} to{transform:translateX(0) scale(1);opacity:1} }
+        `;
+        document.head.appendChild(style);
+      }
+
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.72);animation:rwFadeIn 0.18s ease forwards;pointer-events:none;gap:0.5rem;';
+
+      const burst = document.createElement('div');
+      burst.style.cssText = 'position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(255,234,0,0.2) 0%,transparent 70%);animation:rwPulse 0.7s ease-out forwards;';
+
+      const emoji = document.createElement('div');
+      emoji.style.cssText = 'font-size:clamp(3rem,10vw,5.5rem);animation:rwBounce 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both;';
+      emoji.textContent = '\u26A1';
+
+      const title = document.createElement('div');
+      title.style.cssText = 'font-size:clamp(1.8rem,6vw,3.2rem);font-weight:900;letter-spacing:0.06em;color:#ffea00;text-shadow:0 0 24px #ffea00,0 2px 0 #000;animation:rwBounce 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.2s both;text-align:center;padding:0 1rem;';
+      title.textContent = '\u00a1RIVAL DERROTADO!';
+
+      const sub = document.createElement('div');
+      sub.style.cssText = 'font-size:clamp(0.9rem,3vw,1.2rem);color:#fff;margin-top:0.4rem;opacity:0.85;animation:rwBounce 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.32s both;text-align:center;';
+      sub.textContent = '+3 monedas  \u00b7  +6 XP  \u00b7  siguiente rival';
+
+      overlay.appendChild(burst);
+      overlay.appendChild(emoji);
+      overlay.appendChild(title);
+      overlay.appendChild(sub);
+      document.body.appendChild(overlay);
+
+      setTimeout(() => {
+        overlay.style.animation = 'rwFadeOut 0.3s ease forwards';
+        setTimeout(() => {
+          overlay.remove();
+          if (rivalTop) {
+            rivalTop.style.transition = '';
+            rivalTop.style.transform = '';
+            rivalTop.style.opacity = '';
+          }
+          resolve();
+        }, 320);
+      }, 1600);
+    });
+  }
+
+  // Animacion 2: cuenta atras 3-2-1-YA con rival entrante
+  playRoundStartAnimation(rivalName) {
+    return new Promise(resolve => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,5,18,0.85);pointer-events:none;gap:0.8rem;';
+
+      const rivalLabel = document.createElement('div');
+      rivalLabel.style.cssText = 'font-size:clamp(0.85rem,2.5vw,1.1rem);color:#ff0055;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;opacity:0;animation:rwFadeIn 0.3s 0.1s ease forwards;text-align:center;';
+      rivalLabel.textContent = 'Entra ' + rivalName;
+
+      const beysRow = document.createElement('div');
+      beysRow.style.cssText = 'display:flex;align-items:center;gap:2rem;opacity:0;animation:rwFadeIn 0.3s 0.15s ease forwards;';
+      const pLeft = document.createElement('div');
+      pLeft.style.cssText = 'font-size:clamp(2rem,7vw,3.5rem);animation:rsBeyIn 0.4s 0.15s cubic-bezier(0.34,1.3,0.64,1) both;filter:drop-shadow(0 0 12px #00f0ff);';
+      pLeft.textContent = '\uD83C\uDF00';
+      const vsLabel = document.createElement('div');
+      vsLabel.style.cssText = 'font-size:clamp(1.1rem,3.5vw,1.8rem);font-weight:900;color:#fff;opacity:0.6;';
+      vsLabel.textContent = 'VS';
+      const pRight = document.createElement('div');
+      pRight.style.cssText = 'font-size:clamp(2rem,7vw,3.5rem);animation:rsBeyInR 0.4s 0.2s cubic-bezier(0.34,1.3,0.64,1) both;filter:drop-shadow(0 0 12px #ff0055);';
+      pRight.textContent = '\uD83C\uDF00';
+      beysRow.appendChild(pLeft);
+      beysRow.appendChild(vsLabel);
+      beysRow.appendChild(pRight);
+
+      const counter = document.createElement('div');
+      counter.style.cssText = 'font-size:clamp(4rem,18vw,9rem);font-weight:900;line-height:1;color:#00f0ff;text-shadow:0 0 32px #00f0ff,0 0 8px #fff;min-height:1.1em;text-align:center;';
+
+      overlay.appendChild(rivalLabel);
+      overlay.appendChild(beysRow);
+      overlay.appendChild(counter);
+      document.body.appendChild(overlay);
+
+      const steps = [
+        { text: '3', color: '#00f0ff', shadow: '#00f0ff', delay: 370 },
+        { text: '2', color: '#ff9900', shadow: '#ff9900', delay: 370 },
+        { text: '1', color: '#ff0055', shadow: '#ff0055', delay: 370 },
+        { text: '\u00a1YA!', color: '#ffea00', shadow: '#ffea00', delay: 540 }
+      ];
+
+      let i = 0;
+      const showStep = () => {
+        if (i >= steps.length) {
+          overlay.style.animation = 'rwFadeOut 0.25s ease forwards';
+          setTimeout(() => { overlay.remove(); resolve(); }, 270);
+          return;
+        }
+        const step = steps[i++];
+        counter.style.color = step.color;
+        counter.style.textShadow = '0 0 32px ' + step.shadow + ',0 0 8px #fff';
+        counter.style.animation = 'none';
+        void counter.offsetWidth;
+        counter.textContent = step.text;
+        counter.style.animation = step.text.includes('YA') ? 'rsGo 0.5s ease both' : 'rsNum 0.38s ease both';
+        setTimeout(showStep, step.delay);
+      };
+      setTimeout(showStep, 300);
+    });
   }
 
   repeatCurrentRound(reason = 'Ronda perdida') {
