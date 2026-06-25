@@ -988,6 +988,56 @@ function recordCharacterBattleResult(state, characterId, won, rewardXp = 0) {
   return progress;
 }
 
+function getCompanionBond(state, characterId) {
+  if (!state.player.companionBonds || typeof state.player.companionBonds !== 'object') {
+    state.player.companionBonds = {};
+  }
+  const safeId = characterId || state.player.companionCharacterId || state.player.characterAvatarId || 'jaxonCross';
+  if (!state.player.companionBonds[safeId]) {
+    state.player.companionBonds[safeId] = { wins: 0, bondLevel: 0, totalSessions: 0 };
+  }
+  const bond = state.player.companionBonds[safeId];
+  bond.wins = Math.max(0, parseInt(bond.wins, 10) || 0);
+  bond.totalSessions = Math.max(0, parseInt(bond.totalSessions, 10) || 0);
+  bond.bondLevel = Math.max(0, Math.min(10, parseInt(bond.bondLevel, 10) || Math.floor(bond.wins / 2) + Math.floor(bond.totalSessions / 4)));
+  return bond;
+}
+
+function recordCompanionBattleResult(state, characterId, won) {
+  const bond = getCompanionBond(state, characterId);
+  bond.totalSessions += 1;
+  if (won) bond.wins += 1;
+  bond.bondLevel = Math.max(0, Math.min(10, Math.floor(bond.wins / 2) + Math.floor(bond.totalSessions / 4)));
+  return bond;
+}
+
+function getCompanionPassive(character, state = null) {
+  const stats = getCharacterBaseStats(character);
+  const bond = state ? getCompanionBond(state, character?.id) : { bondLevel: 0 };
+  const entries = [
+    ['attack', stats.attack || 55],
+    ['defense', stats.defense || 55],
+    ['stamina', stats.stamina || 55],
+    ['speed', stats.speed || 55],
+    ['focus', stats.focus || 55]
+  ].sort((a, b) => b[1] - a[1]);
+  const top = entries[0]?.[0] || 'focus';
+  const bondBonus = Math.min(5, Math.floor((bond.bondLevel || 0) / 2));
+  const passiveMap = {
+    attack: { type: 'strike', label: 'Golpe de compañero', description: 'El primer acierto pega mas fuerte.', value: 7 + bondBonus },
+    defense: { type: 'guard', label: 'Guardia aliada', description: 'Reduce el primer golpe serio del rival.', value: 0.34 + (bondBonus * 0.02) },
+    stamina: { type: 'charge', label: 'Arranque X', description: 'Empiezas con Energia X extra.', value: 1 },
+    speed: { type: 'dash', label: 'Carril de apoyo', description: 'El primer acierto rapido gana daño y carga.', value: 5 + bondBonus },
+    focus: { type: 'focus', label: 'Calma de equipo', description: 'El primer fallo duele menos.', value: 0.28 + (bondBonus * 0.02) }
+  };
+  return {
+    ...(passiveMap[top] || passiveMap.focus),
+    stat: top,
+    bondLevel: bond.bondLevel || 0,
+    characterName: character?.nombre || 'Compañero'
+  };
+}
+
 const BEY_TYPES = [
   { id: "ataque", name: "Ataque", description: "Golpea fuerte y rapido.", example: "Sword Dran", color: "#f97316" },
   { id: "defensa", name: "Defensa", description: "Aguanta mejor los impactos.", example: "Helm Knight", color: "#38bdf8" },

@@ -42,6 +42,10 @@ class CombatSession {
     this.playerBey = null;
     this.rivalBey = null;
     this.playerCharacter = null;
+    this.companionCharacter = null;
+    this.companionPassive = null;
+    this.companionStartMessage = '';
+    this.companionPassiveUsed = {};
     this.rivalCharacter = null;
     this.playerCharacterStats = null;
     this.rivalCharacterStats = null;
@@ -98,17 +102,24 @@ class CombatSession {
     this.roundsWonFirstTry = 0;
     this.roundsRepeated = 0;
     this.lightningDamageBonus = 0;
+    this.companionPassiveUsed = {};
+    this.companionStartMessage = '';
 
     // Reset HUD
     const weekData = WEEKS.find(w => w.week === this.weekNum) || WEEKS[0];
     const towerFloor = this.towerFloor;
     const floorData = this.floorData || getTowerFloorData(towerFloor);
     const playerCharacter = BEYBLADE_X_CHARACTERS.find(character => character.id === this.state.player.characterAvatarId) || BEYBLADE_X_CHARACTERS[0];
+    const companionCharacter = BEYBLADE_X_CHARACTERS.find(character => character.id === (this.state.player.companionCharacterId || this.state.player.characterAvatarId)) || playerCharacter;
     const playerBey = getEquippedBey(this.state);
     const stadium = getFloorStadium(towerFloor);
     this.playerBey = playerBey;
     this.playerDeck = this.buildPlayerDeck(playerBey);
     this.playerCharacter = playerCharacter;
+    this.companionCharacter = companionCharacter;
+    this.companionPassive = typeof getCompanionPassive === 'function'
+      ? getCompanionPassive(companionCharacter, this.state)
+      : null;
     this.playerCharacterStats = typeof getEffectiveCharacterStats === 'function'
       ? getEffectiveCharacterStats(playerCharacter, this.state, true)
       : { attack: 55, defense: 55, stamina: 55, speed: 55, focus: 55, level: 1 };
@@ -138,6 +149,7 @@ class CombatSession {
 
     this.updateHpBars();
     this.initCombatants();
+    this.applyCompanionStartPassive();
     this.initCombatControls();
     this.setRivalIntent(this.chooseRivalIntent());
 
@@ -293,6 +305,57 @@ class CombatSession {
     return type === affinity ? 3 : 0;
   }
 
+  applyCompanionStartPassive() {
+    if (!this.companionPassive || this.companionPassive.type !== 'charge' || this.companionPassiveUsed.charge || !this.playerCombatant) return null;
+    this.playerCombatant.charge = Math.min(3, (this.playerCombatant.charge || 0) + 1);
+    this.companionPassiveUsed.charge = true;
+    this.companionStartMessage = `${this.companionPassive.characterName}: ${this.companionPassive.label}`;
+    return `${this.companionPassive.characterName}: ${this.companionPassive.label}`;
+  }
+
+  applyCompanionPlayerDamageBonus(damage, isCorrect, isFastAnswer) {
+    if (!this.companionPassive || !isCorrect || damage <= 0) return { damage, message: '' };
+    const passive = this.companionPassive;
+    if (passive.type === 'strike' && !this.companionPassiveUsed.strike) {
+      this.companionPassiveUsed.strike = true;
+      return {
+        damage: damage + Math.round(passive.value || 7),
+        message: `${passive.characterName}: ${passive.label}`
+      };
+    }
+    if (passive.type === 'dash' && isFastAnswer && !this.companionPassiveUsed.dash) {
+      this.companionPassiveUsed.dash = true;
+      if (this.playerCombatant) this.playerCombatant.charge = Math.min(3, (this.playerCombatant.charge || 0) + 1);
+      return {
+        damage: damage + Math.round(passive.value || 5),
+        message: `${passive.characterName}: ${passive.label}`
+      };
+    }
+    return { damage, message: '' };
+  }
+
+  applyCompanionRivalDamageReduction(damage, context = 'hit') {
+    if (!this.companionPassive || damage <= 0) return { damage, message: '' };
+    const passive = this.companionPassive;
+    if (passive.type === 'guard' && !this.companionPassiveUsed.guard) {
+      this.companionPassiveUsed.guard = true;
+      const reduction = Math.max(0.2, Math.min(0.48, passive.value || 0.34));
+      return {
+        damage: Math.max(1, Math.round(damage * (1 - reduction))),
+        message: `${passive.characterName}: ${passive.label}`
+      };
+    }
+    if (passive.type === 'focus' && context === 'mistake' && !this.companionPassiveUsed.focus) {
+      this.companionPassiveUsed.focus = true;
+      const reduction = Math.max(0.18, Math.min(0.44, passive.value || 0.28));
+      return {
+        damage: Math.max(1, Math.round(damage * (1 - reduction))),
+        message: `${passive.characterName}: ${passive.label}`
+      };
+    }
+    return { damage, message: '' };
+  }
+
   selectDeckBeyForRound(round, preferCounter = false) {
     if (!this.playerDeck || this.playerDeck.length === 0) this.playerDeck = this.buildPlayerDeck(getEquippedBey(this.state));
     if (!preferCounter) {
@@ -395,6 +458,9 @@ class CombatSession {
     this.roundsWonFirstTry = Math.max(0, parseInt(savedBattle.roundsWonFirstTry, 10) || 0);
     this.roundsRepeated = Math.max(0, parseInt(savedBattle.roundsRepeated, 10) || 0);
     this.roundAttempts = savedBattle.roundAttempts || {};
+    this.companionPassiveUsed = savedBattle.companionPassiveUsed && typeof savedBattle.companionPassiveUsed === 'object'
+      ? { ...savedBattle.companionPassiveUsed }
+      : {};
     this.playerDeck = Array.isArray(savedBattle.playerDeck) && savedBattle.playerDeck.length > 0
       ? savedBattle.playerDeck.map(id => id === 'custom_x_bey' ? buildCustomBeyFromCombo(this.state) : getBeyById(id)).filter(Boolean)
       : this.playerDeck;
@@ -454,6 +520,7 @@ class CombatSession {
       roundsWonFirstTry: this.roundsWonFirstTry,
       roundsRepeated: this.roundsRepeated,
       roundAttempts: this.roundAttempts,
+      companionPassiveUsed: this.companionPassiveUsed,
       playerDeck: this.playerDeck.map(bey => bey.id),
       activeDeckIndex: this.activeDeckIndex,
       deckSwitches: this.deckSwitches,
@@ -1006,6 +1073,10 @@ class CombatSession {
             this.performAttackSequence('player', 'dash');
             this.app.showNotice("¡Xtreme Dash cargado!", "Lanzamiento");
           }
+          if (this.companionStartMessage) {
+            this.showAttackBanner('Apoyo inicial', this.companionStartMessage, 'player', 'round-cleared');
+            this.companionStartMessage = '';
+          }
           this.startPhysicsSimulation();
           this.nextQuestion();
         } else {
@@ -1014,6 +1085,10 @@ class CombatSession {
           this.playerHP -= 10;
           this.updateHpBars();
           this.app.showNotice("Tu Bey se tambalea, pero puedes remontar.", "Lanzamiento");
+          if (this.companionStartMessage) {
+            this.showAttackBanner('Apoyo inicial', this.companionStartMessage, 'player', 'round-cleared');
+            this.companionStartMessage = '';
+          }
           this.startPhysicsSimulation();
           this.nextQuestion();
         }
@@ -1613,6 +1688,12 @@ class CombatSession {
       bannerTitle = bannerTitle || finish.label;
       bannerSubtitle = bannerSubtitle || `${finish.points} punto${finish.points === 1 ? '' : 's'} de finish`;
     }
+    const companionAttack = this.applyCompanionPlayerDamageBonus(playerDamage, isCorrect, isFastAnswer);
+    playerDamage = companionAttack.damage;
+    if (companionAttack.message) {
+      bannerTitle = bannerTitle || 'Apoyo de compañero';
+      bannerSubtitle = bannerSubtitle ? `${bannerSubtitle} · ${companionAttack.message}` : companionAttack.message;
+    }
 
     if (isCorrect) {
       if (specialTriggered) {
@@ -1689,6 +1770,11 @@ class CombatSession {
         bannerTitle = 'Salida del carril X';
         bannerSubtitle = 'Riesgo de ataque fallido';
       }
+      const companionDefense = this.applyCompanionRivalDamageReduction(rivalDamage, 'mistake');
+      rivalDamage = companionDefense.damage;
+      if (companionDefense.message) {
+        bannerSubtitle = bannerSubtitle ? `${bannerSubtitle} · ${companionDefense.message}` : companionDefense.message;
+      }
     }
 
     return {
@@ -1755,7 +1841,9 @@ class CombatSession {
         if (settled) return;
         settled = true;
         const timing = timedOut ? { quality: 'miss', reduction: 0 } : this.getBlockTimingResult(startedAt, durationMs);
-        const damage = Math.max(0, Math.round(fullDamage * (1 - timing.reduction)));
+        let damage = Math.max(0, Math.round(fullDamage * (1 - timing.reduction)));
+        const companionBlock = this.applyCompanionRivalDamageReduction(damage, 'block');
+        damage = companionBlock.damage;
         overlay.classList.remove('active');
         overlay.setAttribute('aria-hidden', 'true');
         button.onclick = null;
@@ -1767,7 +1855,9 @@ class CombatSession {
           this.updateHpBars();
           this.showAttackBanner(
             timing.quality === 'perfect' ? '¡Bloqueo perfecto!' : timing.quality === 'partial' ? 'Bloqueo parcial' : 'Golpe rival',
-            timing.quality === 'miss' ? `-${damage} HP` : `Reducido a -${damage} HP`,
+            companionBlock.message
+              ? `${timing.quality === 'miss' ? `-${damage} HP` : `Reducido a -${damage} HP`} · ${companionBlock.message}`
+              : timing.quality === 'miss' ? `-${damage} HP` : `Reducido a -${damage} HP`,
             timing.quality === 'miss' ? 'rival' : 'player',
             timing.quality === 'miss' ? 'xtreme-risk' : 'round-cleared'
           );
@@ -2417,6 +2507,9 @@ class CombatSession {
       const characterProgress = typeof recordCharacterBattleResult === 'function'
         ? recordCharacterBattleResult(this.state, this.state.player.characterAvatarId, true, towerReward.xp)
         : null;
+      const companionBond = typeof recordCompanionBattleResult === 'function'
+        ? recordCompanionBattleResult(this.state, this.state.player.companionCharacterId || this.state.player.characterAvatarId, true)
+        : null;
       const characterStatsAfter = typeof getEffectiveCharacterStats === 'function'
         ? getEffectiveCharacterStats(this.playerCharacter, this.state, true)
         : null;
@@ -2484,7 +2577,8 @@ class CombatSession {
         bossSummary,
         towerFloor: this.towerFloor,
         matchSummary: this.buildMatchSummary(),
-        characterGrowth: this.buildCharacterGrowthSummary(characterStatsBefore, characterStatsAfter, characterProgress)
+        characterGrowth: this.buildCharacterGrowthSummary(characterStatsBefore, characterStatsAfter, characterProgress),
+        companionBond
       });
       if (characterProgress) {
         this.showCharacterGrowthAnimation(characterStatsBefore, characterStatsAfter, characterProgress);
@@ -2493,6 +2587,9 @@ class CombatSession {
       this.clearTowerBattleState();
       if (typeof recordCharacterBattleResult === 'function') {
         recordCharacterBattleResult(this.state, this.state.player.characterAvatarId, false, 10);
+        if (typeof recordCompanionBattleResult === 'function') {
+          recordCompanionBattleResult(this.state, this.state.player.companionCharacterId || this.state.player.characterAvatarId, false);
+        }
         this.app.saveState();
       }
       sounds.playIncorrect();

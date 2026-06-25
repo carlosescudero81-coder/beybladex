@@ -4,6 +4,7 @@ const INITIAL_STATE = {
   player: {
     avatar: 'trainer_leo',
     characterAvatarId: 'jaxonCross',
+    companionCharacterId: 'jaxonCross',
     name: 'Carlitos',
     coins: 20,
     xp: 0,
@@ -176,6 +177,9 @@ class StorageService {
       state.player.characterAvatarId = typeof raw.player.characterAvatarId === 'string' && raw.player.characterAvatarId.trim()
         ? raw.player.characterAvatarId.trim()
         : INITIAL_STATE.player.characterAvatarId;
+      state.player.companionCharacterId = typeof raw.player.companionCharacterId === 'string' && raw.player.companionCharacterId.trim()
+        ? raw.player.companionCharacterId.trim()
+        : state.player.characterAvatarId;
       state.player.characterProgress = raw.player.characterProgress && typeof raw.player.characterProgress === 'object' && !Array.isArray(raw.player.characterProgress)
         ? raw.player.characterProgress
         : {};
@@ -225,6 +229,9 @@ class StorageService {
     state.player.characterAvatarId = typeof state.player.characterAvatarId === 'string' && state.player.characterAvatarId.trim()
       ? state.player.characterAvatarId.trim()
       : INITIAL_STATE.player.characterAvatarId;
+    state.player.companionCharacterId = typeof state.player.companionCharacterId === 'string' && state.player.companionCharacterId.trim()
+      ? state.player.companionCharacterId.trim()
+      : state.player.characterAvatarId;
     state.player.coins = Math.max(0, parseInt(state.player.coins, 10) || 0);
     state.player.xp = Math.max(0, parseInt(state.player.xp, 10) || 0);
     state.player.currentWeek = Math.min(12, Math.max(1, parseInt(state.player.currentWeek, 10) || 1));
@@ -274,6 +281,18 @@ class StorageService {
     if (!state.inventory.ring.includes('ring_wood')) state.inventory.ring.unshift('ring_wood');
     if (!state.inventory.driver.includes('driver_wood')) state.inventory.driver.unshift('driver_wood');
     if (!state.inventory.color.includes('col_cyan')) state.inventory.color.unshift('col_cyan');
+    if (typeof BEYBLADE_X_CHARACTERS !== 'undefined') {
+      const validCharacterIds = new Set(BEYBLADE_X_CHARACTERS.map(character => character.id));
+      const fallbackCharacterId = validCharacterIds.has(INITIAL_STATE.player.characterAvatarId)
+        ? INITIAL_STATE.player.characterAvatarId
+        : BEYBLADE_X_CHARACTERS[0]?.id || INITIAL_STATE.player.characterAvatarId;
+      if (!validCharacterIds.has(state.player.characterAvatarId)) {
+        state.player.characterAvatarId = fallbackCharacterId;
+      }
+      if (!validCharacterIds.has(state.player.companionCharacterId)) {
+        state.player.companionCharacterId = state.player.characterAvatarId;
+      }
+    }
 
     math.timeSpentSeconds = Math.max(0, parseInt(math.timeSpentSeconds, 10) || 0);
     math.correctAnswers = Math.max(0, parseInt(math.correctAnswers, 10) || 0);
