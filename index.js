@@ -2013,6 +2013,7 @@ class App {
   exitCombatToMap() {
     if (this.combatSession && typeof this.combatSession.dispose === 'function') {
       this.combatSession.dispose();
+      this.saveState();
     }
     this.combatSession = null;
     this.showScreen('map');
@@ -2356,6 +2357,7 @@ class App {
     this.rewardSessionKey = stats?.sessionKey || null;
     this.rewardAlreadyClaimed = stats?.rewardAlreadyClaimed || false;
     this.rewardBossSummary = stats?.bossSummary || (isBoss ? LearningEngine.getWeeklyBossSummary(this.state, weekNum) : null);
+    this.rewardMatchSummary = stats?.matchSummary || null;
     this.rewardTowerFloor = Math.max(1, Math.min(50, parseInt(stats?.towerFloor || this.currentTowerFloor || getCurrentTowerFloor(this.state), 10) || 1));
 
     const isPostBossReview = weekNum === 'post-boss-review';
@@ -2389,6 +2391,11 @@ class App {
   renderRewardBossSummary() {
     const container = document.getElementById('reward-boss-summary');
     if (!container) return;
+    if (this.rewardMatchSummary) {
+      container.innerHTML = this.renderMatchSummaryMarkup(this.rewardMatchSummary);
+      container.style.display = 'block';
+      return;
+    }
     if (!this.rewardIsBoss || !this.rewardBossSummary) {
       container.style.display = 'none';
       container.innerHTML = '';
@@ -2396,6 +2403,23 @@ class App {
     }
     container.innerHTML = this.renderBossSummaryMarkup(this.rewardBossSummary);
     container.style.display = 'block';
+  }
+
+  renderMatchSummaryMarkup(summary) {
+    if (!summary) return '';
+    return `
+      <div class="boss-summary-head">
+        <strong>Marcador de planta</strong>
+        <span class="boss-summary-score">${summary.correct || 0}-${summary.incorrect || 0}</span>
+      </div>
+      <div class="boss-summary-grid">
+        <div><span>Rondas perfectas</span><strong>${summary.roundsWonFirstTry || 0}/${summary.totalRounds || 1}</strong></div>
+        <div><span>Rondas repetidas</span><strong>${summary.roundsRepeated || 0}</strong></div>
+        <div><span>Mejor combo</span><strong>${summary.bestCombo || 0}</strong></div>
+        <div><span>Sin pista</span><strong>${summary.fastCorrect || 0}</strong></div>
+        <div><span>Con calma</span><strong>${summary.assistedCorrect || 0}</strong></div>
+      </div>
+    `;
   }
 
   renderBossSummaryMarkup(summary) {
