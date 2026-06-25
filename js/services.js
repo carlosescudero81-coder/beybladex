@@ -24,7 +24,10 @@ const INITIAL_STATE = {
       hat: 'ninguno',
       glasses: 'ningunas'
     },
-    characterProgress: {}
+    characterProgress: {},
+    companionBonds: {},
+    dailyStreak: 0,
+    lastGreetingDate: ''
   },
   inventory: {
     beys: ['blackshell', 'cobaltdragon', 'dranbuster1', 'dranbuster2'],
@@ -47,7 +50,8 @@ const INITIAL_STATE = {
       dailyNewFloors: {}
     },
     pendingReward: null,
-    activeTowerBattle: null
+    activeTowerBattle: null,
+    companionMissions: {}
   },
   pedagogy: {
     learning: null,
@@ -175,6 +179,10 @@ class StorageService {
       state.player.characterProgress = raw.player.characterProgress && typeof raw.player.characterProgress === 'object' && !Array.isArray(raw.player.characterProgress)
         ? raw.player.characterProgress
         : {};
+      state.player.companionBonds = raw.player.companionBonds && typeof raw.player.companionBonds === 'object' && !Array.isArray(raw.player.companionBonds)
+        ? raw.player.companionBonds
+        : {};
+      state.player.lastGreetingDate = typeof raw.player.lastGreetingDate === 'string' ? raw.player.lastGreetingDate : '';
     }
 
     if (raw.inventory && typeof raw.inventory === 'object') {
@@ -224,6 +232,7 @@ class StorageService {
     state.player.characterProgress = state.player.characterProgress && typeof state.player.characterProgress === 'object' && !Array.isArray(state.player.characterProgress)
       ? state.player.characterProgress
       : {};
+    state.player.dailyStreak = Math.max(0, parseInt(state.player.dailyStreak, 10) || 0);
     Object.keys(state.player.characterProgress).forEach(characterId => {
       const progress = state.player.characterProgress[characterId] || {};
       state.player.characterProgress[characterId] = {
@@ -231,6 +240,14 @@ class StorageService {
         losses: Math.max(0, parseInt(progress.losses, 10) || 0),
         xp: Math.max(0, parseInt(progress.xp, 10) || 0),
         level: Math.max(1, Math.min(30, parseInt(progress.level, 10) || 1))
+      };
+    });
+    Object.keys(state.player.companionBonds).forEach(characterId => {
+      const bond = state.player.companionBonds[characterId] || {};
+      state.player.companionBonds[characterId] = {
+        wins: Math.max(0, parseInt(bond.wins, 10) || 0),
+        bondLevel: Math.max(0, parseInt(bond.bondLevel, 10) || 0),
+        totalSessions: Math.max(0, parseInt(bond.totalSessions, 10) || 0)
       };
     });
     Object.keys(state.inventory).forEach(key => {
@@ -432,7 +449,10 @@ class ProgressService {
         : null,
       activeTowerBattle: progress && progress.activeTowerBattle && typeof progress.activeTowerBattle === 'object' && !Array.isArray(progress.activeTowerBattle)
         ? progress.activeTowerBattle
-        : null
+        : null,
+      companionMissions: progress && progress.companionMissions && typeof progress.companionMissions === 'object' && !Array.isArray(progress.companionMissions)
+        ? progress.companionMissions
+        : {}
     };
 
     Object.keys(normalized.sessions).forEach(key => {
@@ -460,6 +480,14 @@ class ProgressService {
 
     normalized.tower = this.normalizeTowerProgress(normalized.tower, player);
     this.bootstrapLegacyProgress(normalized, player);
+
+    Object.keys(normalized.companionMissions).forEach(missionId => {
+      const mission = normalized.companionMissions[missionId] || {};
+      normalized.companionMissions[missionId] = {
+        completed: !!mission.completed,
+        completedAt: typeof mission.completedAt === 'string' ? mission.completedAt : ''
+      };
+    });
     if (normalized.pendingReward) {
       const key = normalized.pendingReward.key;
       const session = key ? normalized.sessions[key] : null;
