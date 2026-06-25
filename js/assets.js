@@ -1407,7 +1407,7 @@ function buildWorkshopParts(type, files) {
       name: `${prefix} X-${String(number).padStart(2, '0')}`,
       rarity: rarityByIndex[Math.min(rarityByIndex.length - 1, Math.floor(index / Math.max(1, files.length / rarityByIndex.length)))],
       stat,
-      image: `imagenes_limpias/Taller/${folder}/${file}`,
+      image: `imagenes_limpias/Taller/${folder}/${encodeURIComponent(file)}`,
       svg: ''
     };
   });
