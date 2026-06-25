@@ -498,6 +498,54 @@
   text-transform: uppercase;
 }
 
+.companion-passive-box {
+  display: grid;
+  gap: 3px;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--character-color, var(--cyan)) 48%, transparent);
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--character-color, var(--cyan)) 22%, transparent), transparent 48%),
+    rgba(255, 255, 255, 0.055);
+}
+
+.companion-passive-box strong {
+  color: white;
+  font-size: 0.92rem;
+  font-weight: 950;
+}
+
+.companion-passive-box span,
+.companion-passive-box em {
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.78rem;
+  line-height: 1.28;
+}
+
+.companion-passive-box em {
+  color: var(--yellow);
+  font-style: normal;
+  font-weight: 900;
+}
+
+.companion-stat-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 8px 0 10px;
+}
+
+.companion-stat-row span {
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(2, 6, 23, 0.55);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
 .parent-theme-note {
   width: min(1120px, 94vw);
   margin: 0 auto 16px;

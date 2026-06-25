@@ -407,6 +407,11 @@ class App {
     return BEYBLADE_X_CHARACTERS.find(character => character.id === selectedId) || BEYBLADE_X_CHARACTERS[0];
   }
 
+  getSelectedCompanionCharacter() {
+    const selectedId = this.state?.player?.companionCharacterId || this.state?.player?.characterAvatarId || 'jaxonCross';
+    return BEYBLADE_X_CHARACTERS.find(character => character.id === selectedId) || this.getSelectedCharacterAvatar();
+  }
+
   renderCharacterAvatar(character, className = 'asset-image header-character-avatar') {
     const selected = character || this.getSelectedCharacterAvatar();
     return renderAssetImage(selected.image, selected.nombre, className);
@@ -1635,6 +1640,7 @@ class App {
     const stats = this.getAlbumStats();
     const equipped = getEquippedBey(this.state);
     const selectedCharacter = this.getSelectedCharacterAvatar();
+    const companion = this.getSelectedCompanionCharacter();
     const currentFloor = getCurrentTowerFloor(this.state);
     const nextBey = this.getNextBeyToUnlock();
     const progress = Math.round((stats.unlockedBeys / stats.totalBeys) * 100);
@@ -1653,6 +1659,7 @@ class App {
       </div>
       <div class="album-team-strip">
         <div>${this.renderCharacterAvatar(selectedCharacter, 'asset-image album-team-avatar')}<span>Blader: ${selectedCharacter.nombre}</span></div>
+        <div>${renderAssetImage(companion.image, companion.nombre, 'asset-image album-team-avatar')}<span>Compañero: ${companion.nombre}</span></div>
         <div>${renderAssetImage(equipped.image, equipped.nombre, 'asset-image album-team-bey')}<span>Bey: ${equipped.nombre}</span></div>
         <div><strong>Planta ${currentFloor}</strong><span>${nextBey ? `Proximo Bey: ${nextBey.nombre}` : 'Coleccion Bey completa'}</span></div>
       </div>
@@ -1807,7 +1814,10 @@ class App {
 
   renderCharacterCard(character, { selectable = false } = {}) {
     const favorite = this.isAlbumFavorite('character', character.id);
-    const isEquipped = (this.state?.player?.characterAvatarId || 'jaxonCross') === character.id;
+    const isEquipped = (this.state?.player?.companionCharacterId || this.state?.player?.characterAvatarId || 'jaxonCross') === character.id;
+    const bond = typeof getCompanionBond === 'function' ? getCompanionBond(this.state, character.id) : { bondLevel: 0, wins: 0 };
+    const passive = typeof getCompanionPassive === 'function' ? getCompanionPassive(character, this.state) : null;
+    const stats = typeof getCharacterBaseStats === 'function' ? getCharacterBaseStats(character) : character.stats || {};
     const card = document.createElement('article');
     card.className = `character-card ${isEquipped && selectable ? 'equipped' : ''}`;
     card.style.setProperty('--character-color', character.colorPrincipal || '#00f0ff');
@@ -1825,6 +1835,17 @@ class App {
         <div class="bey-tag-row"><span>${character.equipo}</span><span>${character.dificultad}</span></div>
         <p>${character.rol}. Le ganas practicando ${character.materiaRecomendada}.</p>
         <div class="bey-tag-row"><span>Usa: ${character.beyAsociado}</span></div>
+        <div class="companion-passive-box">
+          <strong>${passive ? passive.label : 'Apoyo de equipo'}</strong>
+          <span>${passive ? passive.description : 'Ayuda en combate.'}</span>
+          <em>Vinculo ${bond.bondLevel || 0} · ${bond.wins || 0} victorias juntos</em>
+        </div>
+        <div class="companion-stat-row">
+          <span>Ataque ${stats.attack || 0}</span>
+          <span>Defensa ${stats.defense || 0}</span>
+          <span>Giro ${stats.stamina || 0}</span>
+          <span>Foco ${stats.focus || 0}</span>
+        </div>
         <div class="collection-card-actions">
           ${actionBtn}
           <button class="collection-icon-btn ${favorite ? 'active' : ''}" type="button" data-favorite-character="${character.id}" title="Favorito"></button>
@@ -1836,11 +1857,12 @@ class App {
       if (equipBtn && !isEquipped) {
         equipBtn.onclick = () => {
           sounds.playClick();
-          this.state.player.characterAvatarId = character.id;
-          this.state.player.avatar = character.id;
+          this.state.player.companionCharacterId = character.id;
+          if (typeof getCompanionBond === 'function') getCompanionBond(this.state, character.id);
           this.saveState();
           this.renderHeader();
           this.renderCards();
+          this.showNotice(`${character.nombre} sera tu compañero en la proxima batalla.`, 'Compañero elegido');
         };
       }
     } else {
@@ -1947,7 +1969,7 @@ class App {
       addSubtitle('Mi equipo actual (toca Elegir compañero para cambiar de personaje)');
       container.appendChild(this.renderBeyCard(getEquippedBey(this.state)));
       this.renderOwnedBeySelector(container);
-      container.appendChild(this.renderCharacterCard(this.getSelectedCharacterAvatar(), { selectable: true }));
+      container.appendChild(this.renderCharacterCard(this.getSelectedCompanionCharacter(), { selectable: true }));
       const currentStadium = getFloorStadium(getCurrentTowerFloor(this.state));
       container.appendChild(this.renderStadiumCard(currentStadium));
       addSubtitle('Misiones para conseguir cromos');
