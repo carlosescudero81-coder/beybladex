@@ -702,12 +702,14 @@ class App {
       
       tab.onclick = (e) => {
         sounds.playClick();
+        const clicked = e.target.closest('.workshop-tab');
+        if (!clicked) return;
         document.querySelectorAll('.workshop-tab').forEach(t => {
           if (t.parentElement.id === 'avatar-customizer-tabs') return;
           t.classList.remove('active');
         });
-        e.target.classList.add('active');
-        this.renderWorkshopItems(e.target.dataset.part);
+        clicked.classList.add('active');
+        this.renderWorkshopItems(clicked.dataset.part);
       };
     });
   }
@@ -1453,9 +1455,17 @@ class App {
   // -------------------- TOYSHOP SCREEN (TALLER) --------------------
   renderWorkshop() {
     this.renderTopPreview();
-    // Default tab
-    const activeTab = document.querySelector('.workshop-tab.active');
-    this.renderWorkshopItems(activeTab ? activeTab.dataset.part : 'core');
+    // Buscar tab activa SOLO en el taller (excluir avatar-customizer-tabs)
+    const tallerTabs = document.querySelectorAll('.workshop-tab:not(#avatar-customizer-tabs .workshop-tab)');
+    const activeTab = [...tallerTabs].find(t => t.classList.contains('active'));
+    const firstTab = tallerTabs[0];
+    const partType = activeTab?.dataset.part || firstTab?.dataset.part || 'core';
+    if (!CUSTOM_PARTS[partType]) {
+      const fallback = Object.keys(CUSTOM_PARTS)[0];
+      this.renderWorkshopItems(fallback);
+      return;
+    }
+    this.renderWorkshopItems(partType);
   }
 
   renderTopPreview() {
@@ -1489,6 +1499,10 @@ class App {
     const activeCombo = this.state.player.activeCombo;
 
     const partsList = CUSTOM_PARTS[partType];
+    if (!partsList) {
+      console.warn(`renderWorkshopItems: partType desconocido "${partType}"`);
+      return;
+    }
 
     partsList.forEach(part => {
       const isUnlocked = unlockedIds.includes(part.id);
