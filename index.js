@@ -1117,7 +1117,7 @@ class App {
     const rivalsBtn = document.getElementById('btn-tower-rivals');
     if (rivalsBtn) rivalsBtn.onclick = () => this.showScreen('cards');
     const beysBtn = document.getElementById('btn-tower-beys');
-    if (beysBtn) beysBtn.onclick = () => this.showScreen('cards');
+    if (beysBtn) beysBtn.onclick = () => this.openBeySelection();
 
     this.getVisibleTowerFloors(currentFloor).forEach(floorData => {
       const towerGate = ProgressService.canStartTowerFloor(this.state, floorData.floor);
@@ -1147,6 +1147,11 @@ class App {
       if (!isLocked && action) action.onclick = () => this.openTowerFloor(floorData.floor);
       content.appendChild(node);
     });
+  }
+
+  openBeySelection() {
+    this.albumTab = 'beys';
+    this.showScreen('cards');
   }
 
   openTowerFloor(floorNumber) {
@@ -1720,16 +1725,58 @@ class App {
     if (equip && unlocked) {
       equip.onclick = () => {
         sounds.playClick();
+        const wasEquipped = this.state.player.equippedBeyId === bey.id;
         this.state.player.equippedBeyId = bey.id;
         this.state.inventory.beys = Array.from(new Set([...(this.state.inventory.beys || []), bey.id]));
         this.saveState();
         this.renderHeader();
+        if (this.currentScreen === 'map') this.renderMap();
         this.renderCards();
+        this.showNotice(
+          wasEquipped ? `${bey.nombre} ya estaba equipado.` : `${bey.nombre} equipado para la proxima batalla.`,
+          wasEquipped ? 'Bey actual' : 'Bey cambiado'
+        );
       };
     }
     card.querySelector('[data-favorite-bey]').onclick = () => this.toggleAlbumFavorite('bey', bey.id);
     card.querySelector('[data-compare-bey]').onclick = () => this.toggleAlbumCompare(bey.id);
     return card;
+  }
+
+  renderOwnedBeySelector(container) {
+    const ownedBeys = BEYBLADE_X_BEYS.filter(bey => isBeyUnlocked(this.state, bey));
+    const equipped = getEquippedBey(this.state);
+    const panel = document.createElement('section');
+    panel.className = 'owned-bey-selector';
+    panel.innerHTML = `
+      <div class="owned-bey-selector-head">
+        <span>Cambiar peonza</span>
+        <strong>${equipped.nombre}</strong>
+      </div>
+      <div class="owned-bey-selector-grid">
+        ${ownedBeys.map(bey => `
+          <button class="owned-bey-choice ${equipped.id === bey.id ? 'active' : ''}" type="button" data-owned-bey="${bey.id}">
+            ${renderAssetImage(bey.image, bey.nombre, 'asset-image owned-bey-choice-img')}
+            <span>${bey.nombre}</span>
+            <em>${equipped.id === bey.id ? 'Equipada' : 'Usar'}</em>
+          </button>
+        `).join('')}
+      </div>
+    `;
+    container.appendChild(panel);
+    panel.querySelectorAll('[data-owned-bey]').forEach(button => {
+      button.onclick = () => {
+        const bey = getBeyById(button.dataset.ownedBey);
+        if (!bey || !isBeyUnlocked(this.state, bey)) return;
+        sounds.playClick();
+        this.state.player.equippedBeyId = bey.id;
+        this.state.inventory.beys = Array.from(new Set([...(this.state.inventory.beys || []), bey.id]));
+        this.saveState();
+        this.renderHeader();
+        this.renderCards();
+        this.showNotice(`${bey.nombre} equipado para la proxima batalla.`, 'Bey cambiado');
+      };
+    });
   }
 
   renderCharacterCard(character, { selectable = false } = {}) {
@@ -1873,6 +1920,7 @@ class App {
     if (this.albumTab === 'team') {
       addSubtitle('Mi equipo actual (toca Elegir compañero para cambiar de personaje)');
       container.appendChild(this.renderBeyCard(getEquippedBey(this.state)));
+      this.renderOwnedBeySelector(container);
       container.appendChild(this.renderCharacterCard(this.getSelectedCharacterAvatar(), { selectable: true }));
       const currentStadium = getFloorStadium(getCurrentTowerFloor(this.state));
       container.appendChild(this.renderStadiumCard(currentStadium));
@@ -3003,4 +3051,3 @@ window.onload = () => {
   app.init();
 };
 window.app = app; // Bind globally for HTML access
-

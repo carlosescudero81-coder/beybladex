@@ -377,6 +377,19 @@
                 <strong class="intent-text">Preparando ataque</strong>
               </div>
 
+              <div class="rival-block-overlay" id="rival-block-overlay" aria-live="polite" aria-hidden="true">
+                <div class="rival-block-card">
+                  <span class="rival-block-kicker">Turno del rival</span>
+                  <strong id="rival-block-title">Bloquea el golpe</strong>
+                  <div class="rival-block-track" id="rival-block-track">
+                    <span class="rival-block-zone"></span>
+                    <span class="rival-block-marker" id="rival-block-marker"></span>
+                  </div>
+                  <button class="rival-block-btn" id="rival-block-btn" type="button">Bloquear</button>
+                  <small id="rival-block-hint">Pulsa cuando la luz pase por la zona amarilla</small>
+                </div>
+              </div>
+
               <div class="top-label top-label-player">Carlitos</div>
               <div class="top-label top-label-rival">Rival</div>
 
@@ -435,6 +448,12 @@
             <div class="x-gauge-track">
               <div class="x-gauge-fill" id="x-gauge-fill"></div>
             </div>
+          </div>
+
+          <div class="special-attack-card" id="special-attack-card" aria-live="polite">
+            <span class="special-attack-kicker">Ataque especial</span>
+            <strong id="special-attack-name">Combo X</strong>
+            <p id="special-attack-help">Consigue 3 aciertos seguidos o llena Energia X.</p>
           </div>
 
           <!-- Attack Multiplier Combo Dots -->
@@ -552,7 +571,7 @@
         <!-- Inventory customizer (Right) -->
         <div class="workshop-right">
           <div class="workshop-tabs">
-            <button class="workshop-tab active" data-part="core">NUCLEO</button>
+            <button class="workshop-tab active" data-part="core">N?CLEO</button>
             <button class="workshop-tab" data-part="ring">ANILLO</button>
             <button class="workshop-tab" data-part="driver">PUNTA</button>
             <button class="workshop-tab" data-part="color">ENERGÍA</button>
@@ -608,8 +627,8 @@
             </div>
             <div id="subject-question-list" class="language-question-list"></div>
             <div class="language-writing-box">
-              <label for="subject-evidence-input">Escribe lo que has aprendido</label>
-              <textarea id="subject-evidence-input" rows="3" placeholder="Escribe con tus palabras lo que has descubierto o aprendido."></textarea>
+              <label for="subject-evidence-input">Evidencia breve</label>
+              <textarea id="subject-evidence-input" rows="3" placeholder="Escribe una frase, ejemplo o conclusion."></textarea>
             </div>
             <button id="btn-subject-complete" class="btn-action" type="button">Completar mundo</button>
           </div>
