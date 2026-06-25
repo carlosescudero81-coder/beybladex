@@ -133,6 +133,7 @@ class CombatSession {
       stadiumImg.src = stadium.image;
       stadiumImg.alt = stadium.nombre;
     }
+    this.decorateStadiumVisual(stadium);
 
     this.updateHpBars();
     this.initCombatants();
@@ -603,6 +604,16 @@ class CombatSession {
     }
   }
 
+  decorateStadiumVisual(stadium = getFloorStadium(this.towerFloor)) {
+    const arena = document.getElementById('battle-field');
+    if (!arena) return;
+    const tier = this.towerFloor >= 21 ? 'xtreme' : this.towerFloor >= 11 ? 'advanced' : 'beginner';
+    arena.classList.remove('stadium-beginner', 'stadium-advanced', 'stadium-xtreme');
+    arena.classList.add(`stadium-${tier}`);
+    if (stadium?.colorPrincipal) this.setCssVar(arena, '--stadium-accent', stadium.colorPrincipal);
+    if (stadium?.colorSecundario) this.setCssVar(arena, '--stadium-accent-2', stadium.colorSecundario);
+  }
+
   setCssVar(element, name, value) {
     if (!element || !element.style) return;
     if (typeof element.style.setProperty === 'function') {
@@ -632,14 +643,31 @@ class CombatSession {
     });
     const label = document.getElementById('combat-action-readout');
     if (label) {
-      const advice = this.getActionAdvice();
+      const recommended = this.getRecommendedAction();
+      const isMatch = validAction === recommended;
+      const labels = { attack: 'Ataque', defense: 'Defensa', charge: 'Carga' };
+      // Textos base por accion seleccionada
       const text = {
-        attack: 'Ataque listo: si aciertas, embistes fuerte.',
-        defense: 'Defensa lista: si fallas, aguantas mejor.',
-        charge: 'Carga lista: si aciertas, sube tu especial.'
+        attack: 'Ataque: si aciertas, embistes fuerte.',
+        defense: 'Defensa: si fallas, aguantas el golpe.',
+        charge: 'Carga: si aciertas, sube tu especial.'
       };
+      // Consejo contextual con nombre de la accion recomendada
+      let advice = '';
+      if (this.rivalIntent) {
+        advice = isMatch
+          ? `\u2605 Buena eleccion contra "${this.rivalIntent.label}".`
+          : `Consejo: prueba ${labels[recommended]}.`;
+      } else {
+        advice = `Consejo: ${labels[recommended]}.`;
+      }
       label.innerText = `${text[validAction]} ${advice}`;
+      // Clases visuales: amarillo si coincide con recomendada, rojo suave si es la opuesta
+      const oppositeAction = recommended === 'attack' ? 'charge' : recommended === 'defense' ? 'attack' : 'defense';
+      label.classList.toggle('readout-match', isMatch);
+      label.classList.toggle('readout-risk', !isMatch && validAction === oppositeAction);
     }
+    this.updateXGauge();
   }
 
   setRivalIntent(intent) {
@@ -1256,7 +1284,9 @@ class CombatSession {
     const characterFocus = this.playerCharacterStats?.focus || 55;
     const rivalCharacterDefense = this.rivalCharacterStats?.defense || 55;
     const statBonus = Math.round((attack - defenderDefense) / 14) + Math.round((characterAttack + characterFocus - rivalCharacterDefense - 55) / 18);
-    const actionBonus = action === 'attack' ? 7 : action === 'charge' ? -2 : 0;
+    // Contraste ampliado: attack +12 (antes +7), charge -4 (antes -2), defense 0
+    // Diferencia visible entre accion correcta e incorrecta: ~16 pts brutos antes de multiplicadores
+    const actionBonus = action === 'attack' ? 12 : action === 'charge' ? -4 : 0;
     const rivalGuard = this.rivalIntent?.type === 'defense' ? -4 : 0;
     const fastBonus = this.fastAnswerStreak > 0 && this.fastAnswerStreak % 2 === 0 ? 2 : 0;
     const typeBonus = this.calculateTypeMatchupModifier(this.playerBey, this.rivalBey);
@@ -1324,11 +1354,28 @@ class CombatSession {
     const rivalIntent = this.rivalIntent?.type || 'attack';
     const gaugeReady = (this.playerCombatant?.charge || 0) >= 3;
     const specialTriggered = isCorrect && (this.correctStreak + 1 >= 3 || gaugeReady);
+
+    // Determina si la accion elegida es la recomendada (contrarrestar: defense>attack, charge>defense, attack>charge)
+    const recommended = this.getRecommendedAction();
+    const isRecommended = normalizedAction === recommended;
+    const oppositeAction = recommended === 'attack' ? 'charge' : recommended === 'defense' ? 'attack' : 'defense';
+
     let playerDamage = specialTriggered
       ? this.calculateSpecialDamage(normalizedAction)
       : isCorrect
         ? this.calculatePlayerDamage(normalizedAction)
         : 0;
+
+    // Bonus tactico visible: +5 pts si se elige la accion recomendada, -3 pts si se elige la directamente opuesta
+    // Contraste total aproximado con los cambios en calculatePlayerDamage: ~21 pts entre mejor y peor eleccion
+    if (isCorrect && !specialTriggered && playerDamage > 0) {
+      if (isRecommended) {
+        playerDamage += 5;
+      } else if (normalizedAction === oppositeAction) {
+        playerDamage = Math.max(7, playerDamage - 3);
+      }
+    }
+
     let rivalDamage = 0;
     let chargeDelta = 0;
     let bannerTitle = '';
@@ -1366,27 +1413,34 @@ class CombatSession {
         bannerTitle = 'Carga +1';
         bannerSubtitle = 'Energia X';
       } else if (normalizedAction === 'defense' && rivalIntent === 'attack') {
-        bannerTitle = 'Bloqueo perfecto';
-        bannerSubtitle = 'Sin daño rival';
+        // Banner explicito: la Defensa fue la accion recomendada y bloqueó el ataque
+        bannerTitle = '¡Defensa perfecta!';
+        bannerSubtitle = 'Tu eleccion bloqueo el ataque rival';
       } else if (normalizedAction === 'attack' && rivalIntent === 'charge') {
-        bannerTitle = 'Interrupcion X';
-        bannerSubtitle = 'Cortas la carga rival';
+        // Banner explicito: Ataque interrumpio la carga rival
+        bannerTitle = '¡Interrupcion X!';
+        bannerSubtitle = 'Elegiste bien: cortas la carga rival';
+      } else if (normalizedAction === 'charge' && rivalIntent === 'defense') {
+        bannerTitle = 'Carga lista';
+        bannerSubtitle = 'Buena eleccion: rival en guardia';
       }
 
       if (!specialTriggered) {
         if (rivalIntent === 'attack' && normalizedAction === 'attack') {
-          rivalDamage = Math.max(2, Math.round(this.calculateRivalDamage('defense') * 0.35));
-          bannerTitle = bannerTitle || 'Choque doble';
+          // Peor eleccion contra ataque: choque sin ventaja tactica, mas daño recibido
+          rivalDamage = Math.max(2, Math.round(this.calculateRivalDamage('defense') * 0.45));
+          bannerTitle = bannerTitle || 'Choque directo';
           bannerSubtitle = 'Pegas fuerte, pero recibes impacto';
         } else if (rivalIntent === 'attack' && normalizedAction === 'charge') {
-          rivalDamage = Math.max(4, Math.round(this.calculateRivalDamage('charge') * 0.55));
+          // Accion opuesta a la recomendada: daño recibido mayor
+          rivalDamage = Math.max(5, Math.round(this.calculateRivalDamage('charge') * 0.65));
           chargeDelta = Math.max(chargeDelta, 1);
           bannerTitle = bannerTitle || 'Carga arriesgada';
-          bannerSubtitle = 'Ganas energia, pero el rival roza';
+          bannerSubtitle = 'Ganas energia, pero el rival te golpea fuerte';
         } else if (rivalIntent === 'defense' && normalizedAction === 'attack') {
           rivalDamage = Math.max(1, Math.round(this.getDifficultyDamageBonus() + 2));
           bannerTitle = bannerTitle || 'Rebote de guardia';
-          bannerSubtitle = 'El rival estaba cubierto';
+          bannerSubtitle = 'El rival estaba cubierto, poco daño';
         }
       }
 
@@ -1394,17 +1448,27 @@ class CombatSession {
         bannerTitle = bannerTitle || 'Dash rapido';
         bannerSubtitle = 'Respuesta veloz';
       }
+
+      // Si la accion fue recomendada y no hay banner tactico mas especifico, confirmar la buena eleccion al jugador
+      if (isRecommended && !bannerTitle && !specialTriggered) {
+        bannerTitle = '¡Tactica correcta!';
+        bannerSubtitle = 'Tu eleccion marco la diferencia';
+      }
     } else {
       chargeDelta = normalizedAction === 'charge' ? -2 : -1;
       rivalDamage = this.calculateRivalDamage(normalizedAction);
       if (normalizedAction === 'defense') {
         rivalDamage = Math.max(3, Math.round(rivalDamage * 0.55));
-        bannerTitle = 'Defensa de emergencia';
-        bannerSubtitle = 'Fallaste, pero reduces daño';
+        bannerTitle = 'Defensa aguanta';
+        bannerSubtitle = isRecommended
+          ? 'Fallaste, pero la Defensa redujo el golpe'
+          : 'Fallaste y la accion no ayudo tanto';
       } else if (normalizedAction === 'attack') {
         rivalDamage = Math.round(rivalDamage * 1.15);
         bannerTitle = 'Contraataque rival';
-        bannerSubtitle = 'Ataque arriesgado fallido';
+        bannerSubtitle = isRecommended
+          ? 'Fallaste el ataque: el rival responde fuerte'
+          : 'Mala eleccion y fallo: golpe doble rival';
       } else {
         bannerTitle = 'Carga rota';
         bannerSubtitle = 'Pierdes energia X';
@@ -1430,7 +1494,9 @@ class CombatSession {
       showExplanation,
       finish,
       xtremeDash,
-      xtremeRisk: this.shouldApplyXtremeRisk(normalizedAction, isCorrect)
+      xtremeRisk: this.shouldApplyXtremeRisk(normalizedAction, isCorrect),
+      // Resultado tactico para colorear el readout tras el turno
+      tacticResult: isCorrect ? (isRecommended ? 'match' : 'neutral') : (normalizedAction === 'defense' ? 'saved' : 'risk')
     };
   }
 
@@ -1461,7 +1527,11 @@ class CombatSession {
     this.updateHpBars();
     this.updateXGauge();
 
-    if (outcome.bannerTitle) this.showAttackBanner(outcome.bannerTitle, outcome.bannerSubtitle, outcome.rivalDamage > 0 && !outcome.playerDamage ? 'rival' : 'player');
+    if (outcome.xtremeDash && this.playerCombatant) this.playerCombatant.xtremeTrailUntil = Date.now() + 820;
+    if (outcome.bannerTitle) {
+      const bannerVariant = outcome.xtremeDash ? 'xtreme-dash' : outcome.xtremeRisk ? 'xtreme-risk' : outcome.finish ? `finish-${outcome.finish.type}` : '';
+      this.showAttackBanner(outcome.bannerTitle, outcome.bannerSubtitle, outcome.rivalDamage > 0 && !outcome.playerDamage ? 'rival' : 'player', bannerVariant);
+    }
     if (outcome.playerDamage > 0) {
       this.performAttackSequence('player', outcome.playerAttackAction, outcome.playerDamage);
     }
@@ -1501,6 +1571,11 @@ class CombatSession {
     this.state.player.coins += 3;
     this.state.player.xp += 6;
     if (this.playerDeck.length > 1) {
+      const playerTop = document.getElementById('player-top');
+      if (playerTop) {
+        playerTop.classList.remove('deck-entering');
+        playerTop.classList.add('deck-switching');
+      }
       this.activeDeckIndex = (this.activeDeckIndex + 1) % this.playerDeck.length;
       this.deckSwitches += 1;
     }
@@ -1514,8 +1589,14 @@ class CombatSession {
     this.initCombatants();
     document.getElementById('rival-top').innerHTML = renderAssetImage(this.rivalBey.image, this.rivalBey.nombre, 'asset-image battle-bey rival');
     this.decorateTopSprites();
+    const playerTop = document.getElementById('player-top');
+    if (playerTop) {
+      playerTop.classList.remove('deck-switching');
+      playerTop.classList.add('deck-entering');
+      setTimeout(() => playerTop.classList.remove('deck-entering'), 720);
+    }
     this.updateHpBars();
-    this.showAttackBanner('Ronda superada', `+3 monedas · +6 XP · siguiente rival`, 'player');
+    this.showAttackBanner('Ronda superada', `+3 monedas · +6 XP · siguiente rival`, 'player', 'round-cleared');
     this.app.showNotice(`Ronda ${this.currentRoundIndex} ganada. Entra ${this.rivalCharacter.nombre}.`, 'Eliminatoria X');
     this.persistTowerBattleState();
     this.app.saveState();
@@ -1538,7 +1619,7 @@ class CombatSession {
     document.getElementById('rival-top').innerHTML = renderAssetImage(this.rivalBey.image, this.rivalBey.nombre, 'asset-image battle-bey rival');
     this.decorateTopSprites();
     this.updateHpBars();
-    this.showAttackBanner('Reintento de ronda', reason, 'rival');
+    this.showAttackBanner('Reintento de ronda', reason, 'rival', 'round-retry');
     this.persistTowerBattleState();
     this.app.saveState();
     setTimeout(() => this.nextQuestion(), 700);
@@ -1601,8 +1682,9 @@ class CombatSession {
       xtreme: { x: attackerId === 'player' ? 90 : 10, y: 38, color: '#fff35a', special: true }
     };
     const zone = zones[finish.type] || zones.spin;
-    this.spawnShockwave(zone.x, zone.y, zone.color, zone.special);
+    if (finish.type !== 'spin') this.spawnShockwave(zone.x, zone.y, zone.color, zone.special, `finish-${finish.type}`);
     this.spawnParticles(zone.x, zone.y, zone.color, finish.type === 'xtreme' ? 22 : 14);
+    if (finish.type === 'xtreme') this.triggerScreenFlash('xtreme');
   }
 
   playFinishFeedback(finish) {
@@ -1612,6 +1694,15 @@ class CombatSession {
     } else {
       sounds.playCorrect();
     }
+  }
+
+  triggerScreenFlash(variant = 'xtreme') {
+    const flash = document.getElementById('screen-flash-layer');
+    if (!flash) return;
+    flash.className = `screen-flash-layer ${variant}`;
+    void flash.offsetWidth;
+    flash.classList.add('active');
+    setTimeout(() => flash.classList.remove('active'), 620);
   }
 
   performAttackSequence(attackerId, action = 'dash', damage = 0) {
@@ -1648,10 +1739,11 @@ class CombatSession {
     }, isSpecial ? 850 : 520);
   }
 
-  showAttackBanner(title, subtitle = '', side = 'player') {
+  showAttackBanner(title, subtitle = '', side = 'player', variant = '') {
     const banner = document.getElementById('attack-banner-layer');
     if (!banner) return;
-    banner.innerHTML = `<div class="attack-banner ${side === 'rival' ? 'rival' : 'player'}"><strong>${title}</strong>${subtitle ? `<span>${subtitle}</span>` : ''}</div>`;
+    const variantClass = variant ? ` ${variant}` : '';
+    banner.innerHTML = `<div class="attack-banner ${side === 'rival' ? 'rival' : 'player'}${variantClass}"><strong>${title}</strong>${subtitle ? `<span>${subtitle}</span>` : ''}</div>`;
     banner.classList.remove('active');
     void banner.offsetWidth;
     banner.classList.add('active');
@@ -1667,7 +1759,8 @@ class CombatSession {
     combatant.lastTrailY = combatant.y;
 
     const trail = document.createElement('span');
-    trail.className = `motion-trail ${combatant.id}`;
+    const isXtreme = combatant.xtremeTrailUntil && Date.now() < combatant.xtremeTrailUntil;
+    trail.className = `motion-trail ${combatant.id}${isXtreme ? ' xtreme-trail' : ''}`;
     trail.style.left = `${combatant.x}%`;
     trail.style.top = `${combatant.y}%`;
     this.setCssVar(trail, '--trail-color', combatant.color);
@@ -1693,11 +1786,11 @@ class CombatSession {
     }
   }
 
-  spawnShockwave(x, y, color = '#ffffff', isSpecial = false) {
+  spawnShockwave(x, y, color = '#ffffff', isSpecial = false, extraClass = '') {
     const layer = document.getElementById('particle-layer') || document.getElementById('battle-field');
     if (!layer) return;
     const wave = document.createElement('span');
-    wave.className = `shockwave ${isSpecial ? 'special' : ''}`;
+    wave.className = `shockwave ${isSpecial ? 'special' : ''} ${extraClass}`.trim();
     wave.style.left = `${x}%`;
     wave.style.top = `${y}%`;
     this.setCssVar(wave, '--shock-color', color);
@@ -1709,7 +1802,8 @@ class CombatSession {
     const layer = document.getElementById('damage-layer');
     if (!layer) return;
     const pop = document.createElement('span');
-    pop.className = `damage-pop ${attackerId}`;
+    const powerClass = amount >= 38 ? ' super' : amount >= 26 ? ' critical' : '';
+    pop.className = `damage-pop ${attackerId}${powerClass}`;
     pop.style.left = `${x}%`;
     pop.style.top = `${Math.max(8, y - 6)}%`;
     pop.innerText = `-${amount}`;
@@ -1811,11 +1905,19 @@ class CombatSession {
       fill.style.width = `${(charge / 3) * 100}%`;
       fill.classList.toggle('ready', charge >= 3);
     }
+    const dashReady = this.selectedAction === 'attack'
+      && ((this.currentQuestion?.isLightning === true)
+        || (parseInt(this.currentQuestion?.difficulty, 10) || 1) >= 4
+        || (this.playerBey?.velocidad || 70) >= 78);
+    document.querySelectorAll('.x-gauge-panel').forEach(panel => panel.classList.toggle('dash-ready', dashReady));
     if (label) {
       label.innerText = charge >= 3 ? 'Especial listo' : `${charge}/3 para especial`;
     }
     document.querySelectorAll('[data-combat-action="charge"]').forEach(button => {
       button.classList.toggle('special-ready', charge >= 3);
+    });
+    document.querySelectorAll('[data-combat-action="attack"]').forEach(button => {
+      button.classList.toggle('dash-ready', dashReady);
     });
   }
 
