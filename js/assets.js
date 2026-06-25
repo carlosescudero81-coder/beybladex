@@ -1281,13 +1281,88 @@ function getBeyById(id) {
   return BEYBLADE_X_BEYS.find(bey => bey.id === id) || BEYBLADE_X_BEYS[0];
 }
 
+function getWorkshopPart(type, id) {
+  return CUSTOM_PARTS?.[type]?.find(part => part.id === id) || CUSTOM_PARTS?.[type]?.[0] || null;
+}
+
+function getCustomBeyType(stats) {
+  const attack = Number(stats.ataque) || 0;
+  const defense = Number(stats.defensa) || 0;
+  const stamina = Number(stats.estamina) || 0;
+  if (attack >= defense + 8 && attack >= stamina + 8) return 'ataque';
+  if (defense >= attack + 8 && defense >= stamina + 8) return 'defensa';
+  if (stamina >= attack + 8 && stamina >= defense + 8) return 'estamina';
+  return 'balance';
+}
+
+function getCustomBeyImage(color = '#00f0ff') {
+  const safeColor = String(color || '#00f0ff').replace(/[^#a-zA-Z0-9(),.%\s-]/g, '');
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+      <defs>
+        <radialGradient id="g" cx="50%" cy="42%" r="58%">
+          <stop offset="0%" stop-color="#ffffff"/>
+          <stop offset="44%" stop-color="${safeColor}"/>
+          <stop offset="100%" stop-color="#091326"/>
+        </radialGradient>
+      </defs>
+      <circle cx="60" cy="60" r="53" fill="rgba(255,255,255,0.1)" stroke="${safeColor}" stroke-width="5"/>
+      <path d="M60 9 L72 42 L107 44 L78 65 L87 101 L60 80 L33 101 L42 65 L13 44 L48 42 Z" fill="url(#g)" stroke="#ffffff" stroke-width="3"/>
+      <circle cx="60" cy="60" r="18" fill="#07111f" stroke="#ffffff" stroke-width="4"/>
+      <circle cx="60" cy="60" r="8" fill="${safeColor}"/>
+    </svg>
+  `;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+function buildCustomBeyFromCombo(state) {
+  const combo = state?.player?.activeCombo || {};
+  const core = getWorkshopPart('core', combo.core);
+  const ring = getWorkshopPart('ring', combo.ring);
+  const driver = getWorkshopPart('driver', combo.driver);
+  const color = getWorkshopPart('color', combo.color);
+  const attack = (core?.stat?.attack || 0) + (ring?.stat?.attack || 0) + (driver?.stat?.attack || 0) + 45;
+  const defense = (core?.stat?.defense || 0) + (ring?.stat?.defense || 0) + (driver?.stat?.defense || 0) + 45;
+  const stamina = (core?.stat?.stamina || 0) + (ring?.stat?.stamina || 0) + (driver?.stat?.stamina || 0) + 45;
+  const speed = Math.round(52 + ((driver?.stat?.attack || 0) * 0.7) + ((ring?.stat?.attack || 0) * 0.25) + ((core?.stat?.stamina || 0) * 0.12));
+  const stats = {
+    ataque: Math.max(42, Math.min(99, attack)),
+    defensa: Math.max(42, Math.min(99, defense)),
+    estamina: Math.max(42, Math.min(99, stamina)),
+    velocidad: Math.max(42, Math.min(99, speed))
+  };
+  return {
+    id: 'custom_x_bey',
+    nombre: 'Mi Peonza X',
+    tipo: getCustomBeyType(stats),
+    rareza: 'custom',
+    ...stats,
+    nivelRequerido: 1,
+    habilidad: 'Combo del Taller',
+    descripcion: `Creada con ${core?.name || 'nucleo'}, ${ring?.name || 'anillo'} y ${driver?.name || 'punta'}.`,
+    personajeAsociado: state?.player?.name || 'Carlos',
+    colorPrincipal: color?.code || '#00f0ff',
+    colorSecundario: '#ffea00',
+    image: getCustomBeyImage(color?.code),
+    isCustom: true,
+    combo: {
+      core: core?.id,
+      ring: ring?.id,
+      driver: driver?.id,
+      color: color?.id
+    }
+  };
+}
+
 function getEquippedBey(state) {
   const id = state?.player?.equippedBeyId || STARTER_BEY_IDS[0] || "swordDran";
+  if (id === 'custom_x_bey') return buildCustomBeyFromCombo(state);
   return getBeyById(id);
 }
 
 function isBeyUnlocked(state, bey) {
   if (!bey) return false;
+  if (bey.id === 'custom_x_bey' || bey.isCustom) return true;
   const unlocked = state?.inventory?.beys || [];
   return STARTER_BEY_IDS.includes(bey.id) || unlocked.includes(bey.id);
 }

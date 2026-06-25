@@ -255,17 +255,18 @@ class StorageService {
     });
     if (typeof BEYBLADE_X_BEYS !== 'undefined') {
       const validBeyIds = new Set(BEYBLADE_X_BEYS.map(bey => bey.id));
+      validBeyIds.add('custom_x_bey');
       const starterBeyIds = typeof STARTER_BEY_IDS !== 'undefined' && STARTER_BEY_IDS.length > 0
         ? STARTER_BEY_IDS
         : INITIAL_STATE.inventory.beys;
-      state.inventory.beys = state.inventory.beys.filter(id => validBeyIds.has(id));
+      state.inventory.beys = state.inventory.beys.filter(id => validBeyIds.has(id) && id !== 'custom_x_bey');
       starterBeyIds.forEach(id => {
         if (validBeyIds.has(id) && !state.inventory.beys.includes(id)) state.inventory.beys.push(id);
       });
       if (!validBeyIds.has(state.player.equippedBeyId)) {
         state.player.equippedBeyId = state.inventory.beys[0] || starterBeyIds[0] || INITIAL_STATE.player.equippedBeyId;
       }
-      if (validBeyIds.has(state.player.equippedBeyId) && !state.inventory.beys.includes(state.player.equippedBeyId)) {
+      if (state.player.equippedBeyId !== 'custom_x_bey' && validBeyIds.has(state.player.equippedBeyId) && !state.inventory.beys.includes(state.player.equippedBeyId)) {
         state.inventory.beys.push(state.player.equippedBeyId);
       }
     }

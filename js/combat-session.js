@@ -142,7 +142,9 @@ class CombatSession {
     this.setRivalIntent(this.chooseRivalIntent());
 
     // Render Custom Tops in Combat
-    document.getElementById('player-top').innerHTML = renderAssetImage(this.playerBey.image, this.playerBey.nombre, 'asset-image battle-bey player');
+    document.getElementById('player-top').innerHTML = this.playerBey?.isCustom && this.playerBey.combo
+      ? generateTopSVG(this.playerBey.combo.core, this.playerBey.combo.ring, this.playerBey.combo.driver, this.playerBey.combo.color)
+      : renderAssetImage(this.playerBey.image, this.playerBey.nombre, 'asset-image battle-bey player');
     
     document.getElementById('rival-top').innerHTML = renderAssetImage(this.rivalBey.image, this.rivalBey.nombre, 'asset-image battle-bey rival');
     this.decorateTopSprites();
@@ -394,7 +396,7 @@ class CombatSession {
     this.roundsRepeated = Math.max(0, parseInt(savedBattle.roundsRepeated, 10) || 0);
     this.roundAttempts = savedBattle.roundAttempts || {};
     this.playerDeck = Array.isArray(savedBattle.playerDeck) && savedBattle.playerDeck.length > 0
-      ? savedBattle.playerDeck.map(id => getBeyById(id)).filter(Boolean)
+      ? savedBattle.playerDeck.map(id => id === 'custom_x_bey' ? buildCustomBeyFromCombo(this.state) : getBeyById(id)).filter(Boolean)
       : this.playerDeck;
     this.activeDeckIndex = Math.max(0, parseInt(savedBattle.activeDeckIndex, 10) || 0);
     this.deckSwitches = Math.max(0, parseInt(savedBattle.deckSwitches, 10) || 0);
