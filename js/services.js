@@ -16,7 +16,8 @@ const INITIAL_STATE = {
       core: 'core_wood',
       ring: 'ring_wood',
       driver: 'driver_wood',
-      color: 'col_cyan'
+      color: 'col_cyan',
+      name: 'Mi Peonza X'
     },
     customAvatar: {
       expression: 'alegre',
@@ -170,6 +171,9 @@ class StorageService {
         ...INITIAL_STATE.player.activeCombo,
         ...(raw.player.activeCombo || {})
       };
+      state.player.activeCombo.name = typeof state.player.activeCombo.name === 'string' && state.player.activeCombo.name.trim()
+        ? state.player.activeCombo.name.trim().slice(0, 24)
+        : INITIAL_STATE.player.activeCombo.name;
       state.player.customAvatar = {
         ...INITIAL_STATE.player.customAvatar,
         ...(raw.player.customAvatar || {})

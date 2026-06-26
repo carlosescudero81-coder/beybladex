@@ -55,6 +55,8 @@ class CombatSession {
     this.rivalIntent = null;
     this.rivalPattern = null;
     this.actionLocked = false;
+    this.specialArmed = false;
+    this.xtremeDashArmed = false;
     this.lastSpinUsed = false;
     this.fastAnswerStreak = 0;
     this.questionStartedAt = 0;
@@ -94,6 +96,8 @@ class CombatSession {
     this.sessionIncorrect = 0;
     this.curriculumAnswerLog = [];
     this.selectedAction = 'attack';
+    this.specialArmed = false;
+    this.xtremeDashArmed = false;
     this.lastSpinUsed = false;
     this.fastAnswerStreak = 0;
     this.bestCombo = 0;
@@ -478,13 +482,24 @@ class CombatSession {
     this.usedTowerQuestionIds = new Set(savedBattle.usedQuestionIds || []);
     this.usedTowerQuestionSignatures = new Set(savedBattle.usedQuestionSignatures || []);
     if (Array.isArray(savedBattle.questionBank) && savedBattle.questionBank.length > 0) {
-      this.questionsList = savedBattle.questionBank.map(question => {
-        const restored = { ...question, options: Array.isArray(question.options) ? [...question.options] : [] };
-        restored.text = this.getChildFriendlyQuestionText({ ...restored, prompt: restored.text });
-        return restored;
-      });
-      this.questionCount = this.questionsList.length;
-      this.rounds = Array.isArray(savedBattle.rounds) && savedBattle.rounds.length > 0 ? savedBattle.rounds : this.rounds;
+      const restoredQuestions = savedBattle.questionBank
+        .filter(question => !LearningEngine.isQuestionAllowed || LearningEngine.isQuestionAllowed(question))
+        .map(question => {
+          const restored = { ...question, options: Array.isArray(question.options) ? [...question.options] : [] };
+          restored.text = this.getChildFriendlyQuestionText({ ...restored, prompt: restored.text });
+          return restored;
+        });
+      if (restoredQuestions.length > 0) {
+        this.questionsList = restoredQuestions;
+        this.questionCount = this.questionsList.length;
+        if (restoredQuestions.length === savedBattle.questionBank.length && Array.isArray(savedBattle.rounds) && savedBattle.rounds.length > 0) {
+          this.rounds = savedBattle.rounds;
+        } else {
+          this.buildTournamentRounds();
+          this.currentRoundIndex = Math.max(0, Math.min(this.rounds.length - 1, this.currentRoundIndex));
+          this.currentQuestionIdx = Math.max(this.getCurrentRound()?.start || 0, Math.min(this.getCurrentRound()?.end || this.questionCount, this.currentQuestionIdx));
+        }
+      }
     }
   }
 
@@ -728,7 +743,53 @@ class CombatSession {
     document.querySelectorAll('[data-combat-action]').forEach(button => {
       button.onclick = () => this.selectCombatAction(button.dataset.combatAction || 'attack');
     });
+    const specialBtn = document.getElementById('btn-special-attack');
+    if (specialBtn) specialBtn.onclick = () => this.armSpecialAttack();
+    const xtremeBtn = document.getElementById('btn-xtreme-dash');
+    if (xtremeBtn) xtremeBtn.onclick = () => this.armXtremeDash();
     this.selectCombatAction(this.selectedAction || 'attack', false);
+  }
+
+  canUseSpecialAttack() {
+    return (this.playerCombatant?.charge || 0) >= 3 || this.correctStreak >= 2;
+  }
+
+  canUseXtremeDash() {
+    const charge = this.playerCombatant?.charge || 0;
+    const speed = this.playerBey?.velocidad || 70;
+    const difficulty = parseInt(this.currentQuestion?.difficulty, 10) || 1;
+    return charge >= 2 || speed >= 82 || this.currentQuestion?.isLightning === true || difficulty >= 4;
+  }
+
+  armSpecialAttack() {
+    if (this.actionLocked || !this.canUseSpecialAttack()) return;
+    sounds.playSpecial();
+    this.specialArmed = !this.specialArmed;
+    if (this.specialArmed) this.xtremeDashArmed = false;
+    this.showAttackBanner(
+      this.specialArmed ? 'Especial preparado' : 'Especial reservado',
+      this.specialArmed ? 'Acierta para lanzarlo ahora' : 'No se gastara en esta pregunta',
+      'player',
+      this.specialArmed ? 'finish-burst' : ''
+    );
+    this.updateXGauge();
+  }
+
+  armXtremeDash() {
+    if (this.actionLocked || !this.canUseXtremeDash()) return;
+    sounds.playClick();
+    this.xtremeDashArmed = !this.xtremeDashArmed;
+    if (this.xtremeDashArmed) {
+      this.specialArmed = false;
+      this.selectCombatAction('attack', false);
+    }
+    this.showAttackBanner(
+      this.xtremeDashArmed ? 'Xtreme Dash preparado' : 'Dash reservado',
+      this.xtremeDashArmed ? 'Acierta rapido para enganchar el rail' : 'No entraras al carril X',
+      'player',
+      this.xtremeDashArmed ? 'xtreme-dash' : ''
+    );
+    this.updateXGauge();
   }
 
   selectCombatAction(action, playSound = true) {
@@ -1277,10 +1338,19 @@ class CombatSession {
   getChildFriendlyQuestionText(question) {
     const rawPrompt = String(question?.prompt || question?.text || '').trim();
     if (!rawPrompt) return rawPrompt;
+    const cleanedPrompt = this.cleanGeneratedQuestionPrefix(rawPrompt);
     if (question?.subject === 'english' || this.looksLikeEnglishPrompt(rawPrompt)) {
-      return this.rewriteEnglishPromptForChild(rawPrompt);
+      return this.rewriteEnglishPromptForChild(cleanedPrompt);
     }
-    return this.rewriteGeneralPromptForChild(rawPrompt, question);
+    return this.rewriteGeneralPromptForChild(cleanedPrompt, question);
+  }
+
+  cleanGeneratedQuestionPrefix(prompt) {
+    return String(prompt || '')
+      .replace(/^(?:Situacion|Situación)(?:\s+[^:]{3,70})?\s+\d+\s*:\s*/i, '')
+      .replace(/^(?:Reto de entrenamiento|Modo Torre X|Repaso rapido|Para ganar energia|Nueva variante|Duelo de precision)\s*:\s*/i, '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   looksLikeEnglishPrompt(prompt) {
@@ -1475,12 +1545,22 @@ class CombatSession {
     
     // Decrease question text size slightly for long word problems
     const questionTextEl = document.getElementById('combat-question-text');
-    if (this.currentQuestion.text.length > 25) {
-      questionTextEl.style.fontSize = '1.5rem';
-    } else {
-      questionTextEl.style.fontSize = '3.5rem';
+    if (questionTextEl) {
+      const length = String(this.currentQuestion.text || '').length;
+      questionTextEl.classList.toggle('is-long', length > 58);
+      questionTextEl.classList.toggle('is-very-long', length > 120);
+      questionTextEl.style.fontSize = '';
+      if (length > 120) {
+        questionTextEl.style.fontSize = 'clamp(1.02rem, 2.2vw, 1.28rem)';
+      } else if (length > 58) {
+        questionTextEl.style.fontSize = 'clamp(1.18rem, 2.8vw, 1.55rem)';
+      } else if (length > 25) {
+        questionTextEl.style.fontSize = 'clamp(1.45rem, 3.8vw, 2.1rem)';
+      } else {
+        questionTextEl.style.fontSize = 'clamp(2.3rem, 5vw, 3.5rem)';
+      }
+      questionTextEl.innerText = this.currentQuestion.text;
     }
-    questionTextEl.innerText = this.currentQuestion.text;
     if (this.currentQuestion.isLightning) {
       this.showAttackBanner('Reto relampago', 'Acierta rapido para cargar energia', 'player');
     }
@@ -1555,6 +1635,8 @@ class CombatSession {
       if (this.currentQuestion.curriculumId) this.usedTowerQuestionIds.add(this.currentQuestion.curriculumId);
       this.usedTowerQuestionSignatures.add(this.questionSignature(this.currentQuestion));
     }
+    this.specialArmed = false;
+    this.xtremeDashArmed = false;
     this.applyTurnOutcome(outcome, isCorrect);
     this.persistTowerBattleState();
     this.app.saveState();
@@ -1620,6 +1702,7 @@ class CombatSession {
   }
 
   shouldTriggerXtremeDash(action, isCorrect, isFastAnswer) {
+    if (this.xtremeDashArmed) return action === 'attack' && isCorrect && isFastAnswer;
     if (action !== 'attack' || !isCorrect || !isFastAnswer) return false;
     const speed = this.playerBey?.velocidad || 70;
     const difficulty = parseInt(this.currentQuestion?.difficulty, 10) || 1;
@@ -1627,6 +1710,7 @@ class CombatSession {
   }
 
   shouldApplyXtremeRisk(action, isCorrect) {
+    if (this.xtremeDashArmed && !isCorrect) return true;
     if (action !== 'attack' || isCorrect) return false;
     const difficulty = parseInt(this.currentQuestion?.difficulty, 10) || 1;
     return this.currentQuestion?.isLightning || difficulty >= 3 || (this.playerBey?.velocidad || 70) >= 86;
@@ -1636,7 +1720,7 @@ class CombatSession {
     const normalizedAction = ['attack', 'defense', 'charge'].includes(action) ? action : 'attack';
     const rivalIntent = this.rivalIntent?.type || 'attack';
     const gaugeReady = (this.playerCombatant?.charge || 0) >= 3;
-    const specialTriggered = isCorrect && (this.correctStreak + 1 >= 3 || gaugeReady);
+    const specialTriggered = isCorrect && this.specialArmed && (gaugeReady || this.correctStreak >= 2);
 
     // Determina si la accion elegida es la recomendada (contrarrestar: defense>attack, charge>defense, attack>charge)
     const recommended = this.getRecommendedAction();
@@ -1668,11 +1752,11 @@ class CombatSession {
     let showExplanation = !isCorrect;
     const xtremeDash = this.shouldTriggerXtremeDash(normalizedAction, isCorrect, isFastAnswer);
     if (xtremeDash && playerDamage > 0) {
-      const multiplier = 1.2 * this.getStadiumXtremeModifier();
+      const multiplier = (this.xtremeDashArmed ? 1.32 : 1.2) * this.getStadiumXtremeModifier();
       playerDamage = Math.round(playerDamage * multiplier) + 4;
-      chargeDelta = Math.max(chargeDelta, 1);
+      chargeDelta = this.xtremeDashArmed ? Math.min(chargeDelta, -2) : Math.max(chargeDelta, 1);
       bannerTitle = 'Xtreme Dash';
-      bannerSubtitle = 'Carril X activado';
+      bannerSubtitle = this.xtremeDashArmed ? 'Enganchas el rail y sales disparado' : 'Carril X activado';
       playerAttackAction = 'special';
     }
     if (playerDamage > 0 && this.lightningDamageBonus > 0) {
@@ -1698,7 +1782,7 @@ class CombatSession {
     if (isCorrect) {
       if (specialTriggered) {
         bannerTitle = this.playerBey?.habilidad || ATTACK_NAMES[Math.floor(Math.random() * ATTACK_NAMES.length)];
-        bannerSubtitle = 'Ataque especial';
+        bannerSubtitle = 'Ataque especial elegido';
         chargeDelta = -(this.playerCombatant?.charge || 0);
       } else if (normalizedAction === 'charge') {
         chargeDelta = 1;
@@ -1766,9 +1850,9 @@ class CombatSession {
         bannerSubtitle = 'Pierdes energia X';
       }
       if (this.shouldApplyXtremeRisk(normalizedAction, isCorrect)) {
-        rivalDamage = Math.round(rivalDamage * 1.25) + 3;
+        rivalDamage = Math.round(rivalDamage * (this.xtremeDashArmed ? 1.38 : 1.25)) + 3;
         bannerTitle = 'Salida del carril X';
-        bannerSubtitle = 'Riesgo de ataque fallido';
+        bannerSubtitle = this.xtremeDashArmed ? 'Fallaste el Dash: el rival te castiga' : 'Riesgo de ataque fallido';
       }
       const companionDefense = this.applyCompanionRivalDamageReduction(rivalDamage, 'mistake');
       rivalDamage = companionDefense.damage;
@@ -2432,6 +2516,8 @@ class CombatSession {
     const specialCard = document.getElementById('special-attack-card');
     const specialName = document.getElementById('special-attack-name');
     const specialHelp = document.getElementById('special-attack-help');
+    const specialBtn = document.getElementById('btn-special-attack');
+    const xtremeBtn = document.getElementById('btn-xtreme-dash');
     if (fill) {
       fill.style.width = `${(charge / 3) * 100}%`;
       fill.classList.toggle('ready', charge >= 3);
@@ -2445,17 +2531,39 @@ class CombatSession {
       label.innerText = charge >= 3 ? 'Especial listo' : `${charge}/3 para especial`;
     }
     if (specialCard) {
-      const streakReady = this.correctStreak >= 2;
-      const ready = charge >= 3 || streakReady;
+      const ready = this.canUseSpecialAttack();
+      const xtremeReady = this.canUseXtremeDash();
       const attackName = this.playerBey?.habilidad || 'Ataque X';
       specialCard.classList.toggle('ready', ready);
       specialCard.classList.toggle('charging', charge > 0 && !ready);
+      specialCard.classList.toggle('special-armed', this.specialArmed);
+      specialCard.classList.toggle('xtreme-armed', this.xtremeDashArmed);
       if (specialName) specialName.innerText = ready ? `${attackName} listo` : attackName;
       if (specialHelp) {
-        specialHelp.innerText = ready
-          ? 'Acierta la siguiente pregunta para lanzar el especial.'
-          : `Carga: ${charge}/3 · Combo: ${Math.min(3, this.correctStreak)}/3 aciertos.`;
+        if (this.specialArmed) {
+          specialHelp.innerText = 'Especial armado: acierta para gastarlo ahora.';
+        } else if (this.xtremeDashArmed) {
+          specialHelp.innerText = 'Dash armado: acierta rapido para entrar al rail.';
+        } else if (ready) {
+          specialHelp.innerText = 'Pulsa Usar especial cuando quieras gastarlo.';
+        } else if (xtremeReady) {
+          specialHelp.innerText = 'Puedes preparar Xtreme Dash para un ataque de riesgo.';
+        } else {
+          specialHelp.innerText = `Carga: ${charge}/3 · Combo: ${Math.min(3, this.correctStreak)}/3 aciertos.`;
+        }
       }
+    }
+    if (specialBtn) {
+      const ready = this.canUseSpecialAttack();
+      specialBtn.disabled = this.actionLocked || !ready;
+      specialBtn.classList.toggle('armed', this.specialArmed);
+      specialBtn.innerText = this.specialArmed ? 'Especial armado' : ready ? 'Usar especial' : 'Especial no listo';
+    }
+    if (xtremeBtn) {
+      const ready = this.canUseXtremeDash();
+      xtremeBtn.disabled = this.actionLocked || !ready;
+      xtremeBtn.classList.toggle('armed', this.xtremeDashArmed);
+      xtremeBtn.innerText = this.xtremeDashArmed ? 'Dash armado' : ready ? 'Xtreme Dash' : 'Dash no listo';
     }
     document.querySelectorAll('[data-combat-action="charge"]').forEach(button => {
       button.classList.toggle('special-ready', charge >= 3);

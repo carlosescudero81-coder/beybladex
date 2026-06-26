@@ -6,6 +6,7 @@ class LearningEngine {
   static VERSION = 1;
   static REVIEW_STEPS_DAYS = [0, 1, 3, 7];
   static GUIDED_ATTEMPTS_THRESHOLD = 2;
+  static BLOCKED_SKILL_IDS = new Set(['math_division_intro']);
 
   static todayKey() {
     const now = new Date();
@@ -250,8 +251,63 @@ class LearningEngine {
     return baseDifficulty;
   }
 
+  static isSkillAllowed(skillId) {
+    return !!skillId && !this.BLOCKED_SKILL_IDS.has(skillId);
+  }
+
+  static isQuestionAllowed(question) {
+    if (!question) return false;
+    if (!this.isSkillAllowed(question.skill)) return false;
+    if (question.subject === 'math' && question.mathType === 'div') return false;
+    if (question.subject === 'math') {
+      const text = `${question.prompt || ''} ${question.text || ''} ${question.explanation || ''}`
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+      const divisionLike = [
+        /\bdivision\b/,
+        /\bdividir\b/,
+        /\bdivide\b/,
+        /\bcociente\b/,
+        /\brepart(?:e|en|ir|ido|idos|idas|iendo)?\b.*\bentre\b/,
+        /\bentre\b.*\bgrupos?\b/,
+        /\bcuantas?\s+(?:van|recibe|tocan|hay)\s+en\s+cada\b/,
+        /\bcuantas?\s+veces\s+mas\b/,
+        /\bpartes?\s+iguales\b/
+      ].some(pattern => pattern.test(text));
+      if (divisionLike) return false;
+    }
+    return true;
+  }
+
+  static allowedQuestions(questions) {
+    return (questions || []).filter(question => this.isQuestionAllowed(question));
+  }
+
+  static getAllowedQuestionsBySkill(skillId) {
+    if (!this.isSkillAllowed(skillId)) return [];
+    return this.allowedQuestions(CurriculumData.getQuestionsBySkill(skillId));
+  }
+
+  static allowedQuestionBank() {
+    return this.allowedQuestions(CurriculumData.questionBank);
+  }
+
+  static normalizeMission(mission) {
+    if (!mission || !mission.skill || this.isSkillAllowed(mission.skill.id)) return mission;
+    const replacements = ['math_word_problems', 'math_measure_time_money', 'math_tables_groups', 'math_add_sub'];
+    const replacementSkillId = replacements.find(skillId => CurriculumData.getSkill(skillId));
+    if (!replacementSkillId) return mission;
+    return {
+      ...mission,
+      skill: CurriculumData.getSkill(replacementSkillId),
+      focus: 'Practicar problemas, medidas y tablas ya trabajadas, sin divisiones.'
+    };
+  }
+
   static resolveDynamicQuestion(rawQuestion, state) {
     if (!rawQuestion) return null;
+    if (!this.isQuestionAllowed(rawQuestion)) return null;
     const question = this.cloneQuestion(rawQuestion);
     const profile = this.getProfile(state);
     const parentInterests = profile.parentInterests || { names: [], beys: [], objects: [] };
@@ -386,7 +442,7 @@ class LearningEngine {
     const daily = weekData.dailyPlan[Math.max(0, Math.min(4, day - 1))];
     if (!daily) return null;
     const [subjectId, missionType, skillId] = daily;
-    return {
+    return this.normalizeMission({
       key: this.missionKey(weekData.week, day),
       week: weekData.week,
       day,
@@ -396,7 +452,7 @@ class LearningEngine {
       missionType: CurriculumData.missionTypes[missionType],
       skill: CurriculumData.getSkill(skillId),
       focus: weekData.focus
-    };
+    });
   }
 
   static getCurrentMission(state) {
@@ -415,13 +471,13 @@ class LearningEngine {
       const startDay = week === profile.currentWeek ? profile.currentDay : 1;
       for (let day = startDay; day <= 5; day += 1) {
         const mission = this.getMissionByPosition(week, day);
-        if (mission && mission.subject.id === subjectId) return mission;
+        if (mission && mission.subject.id === subjectId && this.isSkillAllowed(mission.skill?.id)) return mission;
       }
     }
     for (let week = 1; week <= CurriculumData.summerWeeks.length; week += 1) {
       for (let day = 1; day <= 5; day += 1) {
         const mission = this.getMissionByPosition(week, day);
-        if (mission && mission.subject.id === subjectId) return mission;
+        if (mission && mission.subject.id === subjectId && this.isSkillAllowed(mission.skill?.id)) return mission;
       }
     }
     return null;
@@ -435,13 +491,15 @@ class LearningEngine {
   static selectQuestionsForMission(state, mission = this.getCurrentMission(state), count = 5) {
     if (!mission || !mission.skill) return [];
     const profile = this.getProfile(state);
+    mission = this.normalizeMission(mission);
     const dueReviewItems = this.getDueReviewItems(state)
+      .filter(item => this.isSkillAllowed(item.skillId))
       .filter(item => item.skillId === mission.skill.id || mission.subject.id === 'math');
     const dueReview = dueReviewItems
       .map(item => CurriculumData.questionBank.find(question => question.id === item.questionId))
-      .filter(Boolean);
-    const fresh = CurriculumData.getQuestionsBySkill(mission.skill.id);
-    const fallback = CurriculumData.questionBank.filter(question => question.subject === mission.subject.id);
+      .filter(question => this.isQuestionAllowed(question));
+    const fresh = this.getAllowedQuestionsBySkill(mission.skill.id);
+    const fallback = this.allowedQuestionBank().filter(question => question.subject === mission.subject.id);
 
     const skillProgress = profile.skills[mission.skill.id];
     const baseDifficulty = mission.day <= 2 ? 1 : 2;
@@ -479,14 +537,15 @@ class LearningEngine {
     if (!weekData) return [];
     const profile = this.getProfile(state);
     const dueReviewItems = this.getDueReviewItems(state)
+      .filter(item => this.isSkillAllowed(item.skillId))
       .filter(item => weekData.skills.includes(item.skillId));
     const dueReview = dueReviewItems
       .map(item => CurriculumData.questionBank.find(question => question.id === item.questionId))
-      .filter(Boolean);
+      .filter(question => this.isQuestionAllowed(question));
     const skillQuestions = weekData.skills
-      .flatMap(skillId => CurriculumData.getQuestionsBySkill(skillId));
+      .flatMap(skillId => this.getAllowedQuestionsBySkill(skillId));
     const subjectQuestions = weekData.subjects
-      .flatMap(subjectId => CurriculumData.questionBank.filter(question => question.subject === subjectId));
+      .flatMap(subjectId => this.allowedQuestionBank().filter(question => question.subject === subjectId));
 
     const targetDifficulties = weekData.skills.map(skillId => this.adjustTargetDifficulty(profile.skills[skillId], 2));
     const avgDifficulty = Math.round(targetDifficulties.reduce((sum, d) => sum + d, 0) / targetDifficulties.length) || 2;
@@ -516,15 +575,15 @@ class LearningEngine {
     const subjectIds = !floorSubject || floorSubject === 'mixed' || floorSubject === 'diagnostic'
       ? weekData.subjects.map(subjectId => this.normalizeSubjectId(subjectId)).filter(Boolean)
       : [floorSubject];
-    const weekSkillIds = (weekData.skills || []).filter(skillId => subjectIds.includes(this.getSubjectIdForSkill(skillId)));
+    const weekSkillIds = (weekData.skills || []).filter(skillId => this.isSkillAllowed(skillId) && subjectIds.includes(this.getSubjectIdForSkill(skillId)));
     const subjectSkillIds = subjectIds.flatMap(subjectId => (CurriculumData.skills[subjectId] || []).map(skill => skill.id));
-    const skillIds = [...new Set([...weekSkillIds, ...subjectSkillIds])];
-    const dueReviewItems = this.getDueReviewItems(state).filter(item => skillIds.includes(item.skillId));
+    const skillIds = [...new Set([...weekSkillIds, ...subjectSkillIds])].filter(skillId => this.isSkillAllowed(skillId));
+    const dueReviewItems = this.getDueReviewItems(state).filter(item => this.isSkillAllowed(item.skillId) && skillIds.includes(item.skillId));
     const dueReview = dueReviewItems
       .map(item => CurriculumData.questionBank.find(question => question.id === item.questionId))
-      .filter(Boolean);
-    const skillQuestions = skillIds.flatMap(skillId => CurriculumData.getQuestionsBySkill(skillId));
-    const subjectQuestions = subjectIds.flatMap(subjectId => CurriculumData.questionBank.filter(question => question.subject === subjectId));
+      .filter(question => this.isQuestionAllowed(question));
+    const skillQuestions = skillIds.flatMap(skillId => this.getAllowedQuestionsBySkill(skillId));
+    const subjectQuestions = subjectIds.flatMap(subjectId => this.allowedQuestionBank().filter(question => question.subject === subjectId));
     const allCandidates = this.uniqueQuestions([...dueReview, ...skillQuestions, ...subjectQuestions]);
 
     const baseDifficulty = this.getTowerQuestionDifficulty(floorData);
@@ -828,14 +887,14 @@ class LearningEngine {
   static getSeenQuestionSignatures(profile) {
     const ids = new Set(Object.keys(profile.questionHistory || {}));
     const signatures = new Set();
-    CurriculumData.questionBank.forEach(question => {
+    this.allowedQuestionBank().forEach(question => {
       if (ids.has(question.id)) signatures.add(this.questionSignature(question));
     });
     return signatures;
   }
 
   static selectLeastRepeatedQuestions(questions, profile, count, contextKey = '', priorityQuestionIds = [], diversifyBy = null) {
-    const uniqueById = this.uniqueQuestions(questions);
+    const uniqueById = this.uniqueQuestions(this.allowedQuestions(questions));
     const unique = this.uniqueQuestionsBySignature(uniqueById);
     const priorityIds = new Set(priorityQuestionIds.filter(Boolean));
     const seenSignatures = this.getSeenQuestionSignatures(profile);
@@ -908,6 +967,9 @@ class LearningEngine {
 
   static recordAnswer(state, question, isCorrect, meta = {}) {
     const profile = this.getProfile(state);
+    if (question && !this.isQuestionAllowed(question)) {
+      return { ok: false, reason: 'Contenido bloqueado para este alumno.' };
+    }
     if (!question || !question.skill || !profile.skills[question.skill]) {
       return { ok: false, reason: 'Pregunta sin habilidad curricular valida.' };
     }
@@ -1294,13 +1356,13 @@ class LearningEngine {
     const plan = this.getPostBossReviewPlan(state, week);
     if (!plan || plan.completed) return [];
     const profile = this.getProfile(state);
-    const skillIds = plan.skills.map(item => item.id);
+    const skillIds = plan.skills.map(item => item.id).filter(skillId => this.isSkillAllowed(skillId));
     const dueReviewItems = this.getDueReviewItems(state)
-      .filter(item => skillIds.includes(item.skillId));
+      .filter(item => this.isSkillAllowed(item.skillId) && skillIds.includes(item.skillId));
     const dueReview = dueReviewItems
       .map(item => CurriculumData.questionBank.find(question => question.id === item.questionId))
-      .filter(Boolean);
-    const skillQuestions = skillIds.flatMap(skillId => CurriculumData.getQuestionsBySkill(skillId));
+      .filter(question => this.isQuestionAllowed(question));
+    const skillQuestions = skillIds.flatMap(skillId => this.getAllowedQuestionsBySkill(skillId));
     const targetedQuestions = this.selectLeastRepeatedQuestions(
       [...dueReview, ...skillQuestions],
       profile,
@@ -1311,7 +1373,7 @@ class LearningEngine {
     );
     if (targetedQuestions.length > 0) return targetedQuestions.slice(0, count);
     const subjectQuestions = [...new Set(plan.skills.map(item => item.subjectId).filter(Boolean))]
-      .flatMap(subjectId => CurriculumData.questionBank.filter(question => question.subject === subjectId));
+      .flatMap(subjectId => this.allowedQuestionBank().filter(question => question.subject === subjectId));
     return this.selectLeastRepeatedQuestions(subjectQuestions, profile, count, `${plan.key}-fallback`, [], 'subject');
   }
 
@@ -1675,8 +1737,9 @@ class LearningEngine {
     this.getProfile(state);
     const questions = [];
     CurriculumData.diagnosticBlueprint.forEach(item => {
-      const skillQuestions = CurriculumData.getQuestionsBySkill(item.skill);
-      const subjectFallback = CurriculumData.questionBank.filter(question => question.subject === item.subject);
+      if (!this.isSkillAllowed(item.skill)) return;
+      const skillQuestions = this.getAllowedQuestionsBySkill(item.skill);
+      const subjectFallback = this.allowedQuestionBank().filter(question => question.subject === item.subject);
       this.uniqueQuestions([...skillQuestions, ...subjectFallback])
         .slice(0, Math.max(1, Math.min(2, item.count || 1)))
         .forEach(question => questions.push(question));

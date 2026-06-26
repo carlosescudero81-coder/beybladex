@@ -1381,9 +1381,12 @@ function buildCustomBeyFromCombo(state) {
     estamina: Math.max(42, Math.min(99, stamina)),
     velocidad: Math.max(42, Math.min(99, speed))
   };
+  const customName = typeof combo.name === 'string' && combo.name.trim()
+    ? combo.name.trim().slice(0, 24)
+    : 'Mi Peonza X';
   return {
     id: 'custom_x_bey',
-    nombre: 'Mi Peonza X',
+    nombre: customName,
     tipo: getCustomBeyType(stats),
     rareza: 'custom',
     ...stats,

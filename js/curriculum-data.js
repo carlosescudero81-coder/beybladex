@@ -212,17 +212,17 @@ const SUMMER_WEEKS = [
   },
   {
     week: 6,
-    title: 'Numeros grandes y reparto',
-    focus: 'Numeracion hasta 9999, reparto, division inicial y medidas.',
-    boss: 'Capitan del Reparto',
+    title: 'Numeros grandes y medidas',
+    focus: 'Numeracion hasta 9999, problemas de suma/resta, tablas y medidas.',
+    boss: 'Capitan de las Medidas',
     subjects: ['math', 'english'],
-    skills: ['math_number_9999', 'math_division_intro', 'math_measure_time_money', 'eng_short_dialogue'],
+    skills: ['math_number_9999', 'math_word_problems', 'math_measure_time_money', 'math_tables_groups', 'eng_short_dialogue'],
     dailyPlan: [
       ['math', 'quiz', 'math_number_9999'],
-      ['math', 'practice', 'math_division_intro'],
+      ['math', 'practice', 'math_word_problems'],
       ['english', 'quiz', 'eng_greetings'],
       ['math', 'quiz', 'math_measure_time_money'],
-      ['math', 'practice', 'math_division_intro']
+      ['math', 'practice', 'math_tables_groups']
     ]
   },
   {
