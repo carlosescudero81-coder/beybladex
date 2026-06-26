@@ -808,6 +808,11 @@ class CombatSession {
     if (this.xtremeDashArmed) {
       this.specialArmed = false;
       this.selectCombatAction('attack', false);
+      // MEJORA 3: arrancar el anillo de cuenta atrás
+      this._startXtremeRingCountdown();
+    } else {
+      // Desarmado manualmente
+      this._cancelXtremeRingCountdown('');
     }
     this.showAttackBanner(
       this.xtremeDashArmed ? 'Xtreme Dash preparado' : 'Dash reservado',
@@ -816,6 +821,58 @@ class CombatSession {
       this.xtremeDashArmed ? 'xtreme-dash' : ''
     );
     this.updateXGauge();
+  }
+
+  // MEJORA 3: anillo SVG que decae en el tiempo de respuesta rápida
+  _startXtremeRingCountdown() {
+    const btn  = document.getElementById('btn-xtreme-dash');
+    const ring = document.getElementById('xtreme-ring-fill');
+    if (!btn || !ring) return;
+
+    this._cancelXtremeRingCountdown('');
+
+    const CIRCUMFERENCE = 113; // 2π×18
+    const fastWindow = this.currentQuestion?.isLightning
+      ? (this.currentQuestion.lightningWindowMs || 3200)
+      : Math.max(4500, 8500 - (this.difficulty * 420));
+
+    btn.classList.add('ring-active');
+    btn.classList.remove('ring-success', 'ring-failed');
+    ring.style.strokeDashoffset = '0';
+    ring.style.transition = `stroke-dashoffset ${fastWindow}ms linear`;
+    // Forzar reflow antes de animar
+    void ring.getBoundingClientRect();
+    ring.style.strokeDashoffset = String(CIRCUMFERENCE);
+
+    // Si el tiempo expira sin respuesta: el dash se cancela automáticamente
+    this._xtremeRingTimer = setTimeout(() => {
+      if (!this.xtremeDashArmed) return;
+      this._cancelXtremeRingCountdown('ring-failed');
+      this.xtremeDashArmed = false;
+      this.showAttackBanner('Dash cancelado', 'Tiempo agotado: el rail se cerró', 'rival', 'xtreme-risk');
+      this.updateXGauge();
+    }, fastWindow);
+  }
+
+  _cancelXtremeRingCountdown(resultClass = '') {
+    if (this._xtremeRingTimer) { clearTimeout(this._xtremeRingTimer); this._xtremeRingTimer = null; }
+    const btn  = document.getElementById('btn-xtreme-dash');
+    const ring = document.getElementById('xtreme-ring-fill');
+    if (!btn || !ring) return;
+    // Detener la transición donde esté
+    const computed = getComputedStyle(ring).strokeDashoffset;
+    ring.style.transition = 'none';
+    ring.style.strokeDashoffset = computed;
+    if (resultClass) {
+      btn.classList.add(resultClass);
+      setTimeout(() => {
+        btn.classList.remove('ring-active', 'ring-success', 'ring-failed');
+        ring.style.strokeDashoffset = '0';
+      }, 520);
+    } else {
+      btn.classList.remove('ring-active', 'ring-success', 'ring-failed');
+      ring.style.strokeDashoffset = '0';
+    }
   }
 
   selectCombatAction(action, playSound = true) {
@@ -883,8 +940,17 @@ class CombatSession {
 
   markRecommendedAction() {
     const recommended = this.getRecommendedAction();
+    const opposite = recommended === 'attack' ? 'charge' : recommended === 'defense' ? 'attack' : 'defense';
     document.querySelectorAll('[data-combat-action]').forEach(button => {
-      button.classList.toggle('recommended', button.dataset.combatAction === recommended);
+      const action = button.dataset.combatAction;
+      button.classList.toggle('recommended',    action === recommended);
+      button.classList.toggle('action-danger',  action === opposite);
+      // Rearmar el shake al cambiar intent (forzar reflow)
+      if (action === opposite) {
+        button.classList.remove('action-danger');
+        void button.offsetWidth;
+        button.classList.add('action-danger');
+      }
     });
   }
 
@@ -1082,6 +1148,9 @@ class CombatSession {
   dispose() {
     this.stopPhysicsSimulation();
     this.clearTowerBattleState();
+    this.cancelRivalChargeBuildup(); // MEJORA 3 (rival): limpiar timers de carga del rival
+    this._cancelXtremeRingCountdown(''); // MEJORA 3 (xtreme): anillo
+    if (this._specialReminderTimer) { clearTimeout(this._specialReminderTimer); this._specialReminderTimer = null; } // MEJORA 5
     if (this.gaugeInterval) clearInterval(this.gaugeInterval);
     this.gaugeInterval = null;
     if (this.battleIntroTimer) clearTimeout(this.battleIntroTimer);
@@ -1607,11 +1676,122 @@ class CombatSession {
     this.updateComboDots();
     this.questionStartedAt = Date.now();
     this.persistTowerBattleState();
+
+    // MEJORA 3: Rival acumula carga visiblemente si su intencion es 'charge'
+    this.startRivalChargeBuildup();
+  }
+
+  // MEJORA 3: Rival acumula carga mientras el jugador piensa
+  // Si su intencion es 'charge', el bey rival pulsa cada vez más rapido,
+  // y si el jugador tarda mas del umbral, el rival DISPARA PRIMERO causando daño extra.
+  startRivalChargeBuildup() {
+    // Cancelar cualquier buildup previo que no se resolvio
+    this.cancelRivalChargeBuildup();
+
+    const intent = this.rivalIntent?.type;
+    // Solo actua en intenciones de carga, y solo en dificultad media-alta
+    if (intent !== 'charge' || this.difficulty < 3) return;
+
+    const rivalTop = document.getElementById('rival-top');
+    if (!rivalTop) return;
+
+    // Ventana de tiempo antes de que el rival "dispare": segun dificultad
+    // Dificultad 3-4: 9s, 5-6: 7s, 7+: 5s
+    const triggerMs = this.difficulty >= 7 ? 5000 : this.difficulty >= 5 ? 7000 : 9000;
+
+    // Fases de pulso: el rival se hace cada vez mas brillante/agresivo
+    const phases = [
+      { delay: 0,               pulse: 'rival-charge-low',    hint: null },
+      { delay: triggerMs * 0.4, pulse: 'rival-charge-mid',    hint: 'El rival carga energia...' },
+      { delay: triggerMs * 0.7, pulse: 'rival-charge-high',   hint: '¡El rival casi dispara!' },
+    ];
+
+    // Inyectar estilos de pulso si no existen
+    if (!document.getElementById('rival-charge-styles')) {
+      const style = document.createElement('style');
+      style.id = 'rival-charge-styles';
+      style.textContent = `
+        @keyframes rivalChargeLow  { 0%,100%{filter:drop-shadow(0 0 4px #ff4400) brightness(1)}   50%{filter:drop-shadow(0 0 10px #ff6600) brightness(1.15)} }
+        @keyframes rivalChargeMid  { 0%,100%{filter:drop-shadow(0 0 8px #ff2200) brightness(1.1)} 50%{filter:drop-shadow(0 0 18px #ff4400) brightness(1.3)} }
+        @keyframes rivalChargeHigh { 0%,100%{filter:drop-shadow(0 0 14px #ff0000) brightness(1.2)} 50%{filter:drop-shadow(0 0 28px #ff0000) brightness(1.55)} }
+        .rival-charge-low  { animation: rivalChargeLow  1.1s ease-in-out infinite !important; }
+        .rival-charge-mid  { animation: rivalChargeMid  0.7s ease-in-out infinite !important; }
+        .rival-charge-high { animation: rivalChargeHigh 0.38s ease-in-out infinite !important; }
+      `;
+      document.head.appendChild(style);
+    }
+
+    this._rivalChargeTimers = [];
+
+    phases.forEach(phase => {
+      const timer = setTimeout(() => {
+        if (this.actionLocked) return; // Ya respondio, no hacer nada
+        rivalTop.classList.remove('rival-charge-low', 'rival-charge-mid', 'rival-charge-high');
+        rivalTop.classList.add(phase.pulse);
+        if (phase.hint) this.showAttackBanner('Rival cargando', phase.hint, 'rival', '');
+        // Tambien actualizamos el combatant para que el loop de fisica refleje el estado
+        if (this.rivalCombatant) this.rivalCombatant.status = 'special';
+      }, phase.delay);
+      this._rivalChargeTimers.push(timer);
+    });
+
+    // Timer principal: el rival DISPARA si el jugador no ha respondido a tiempo
+    this._rivalChargeFire = setTimeout(() => {
+      if (this.actionLocked) return; // Ya respondio, nos cruzamos en el tiempo
+      // Bloquear respuestas durante el ataque rival
+      this.actionLocked = true;
+
+      rivalTop.classList.remove('rival-charge-low', 'rival-charge-mid', 'rival-charge-high');
+      if (this.rivalCombatant) this.rivalCombatant.status = 'attacking';
+
+      // Daño del disparo precoz: proporcional a dificultad, pero acotado para no romper el balance
+      const preemptDamage = Math.min(22, Math.max(8, 6 + this.difficulty * 2));
+      this.playerHP = Math.max(0, this.playerHP - preemptDamage);
+      this.applyLastSpinIfNeeded();
+      this.updateHpBars();
+
+      // Animacion visual del ataque del rival
+      this.performAttackSequence('rival', 'special', preemptDamage);
+      this.triggerScreenFlash('xtreme');
+      this.showAttackBanner('¡Disparo anticipado!', `El rival cargo y golpea primero: -${preemptDamage} HP`, 'rival', 'xtreme-risk');
+
+      // Tras el ataque: si el jugador no ha muerto, desbloquear respuestas
+      setTimeout(() => {
+        this.actionLocked = false;
+        rivalTop.classList.remove('rival-charge-low', 'rival-charge-mid', 'rival-charge-high');
+        if (this.rivalCombatant) this.rivalCombatant.status = 'orbiting';
+        // Si el jugador quedo a 0 HP, gestionar derrota
+        if (this.playerHP <= 0) {
+          this.repeatCurrentRound('El rival disparo antes de que pudieras responder');
+        }
+      }, 900);
+    }, triggerMs);
+  }
+
+  cancelRivalChargeBuildup() {
+    if (this._rivalChargeTimers) {
+      this._rivalChargeTimers.forEach(t => clearTimeout(t));
+      this._rivalChargeTimers = [];
+    }
+    if (this._rivalChargeFire) {
+      clearTimeout(this._rivalChargeFire);
+      this._rivalChargeFire = null;
+    }
+    // Limpiar clases de pulso del rival
+    const rivalTop = document.getElementById('rival-top');
+    if (rivalTop) rivalTop.classList.remove('rival-charge-low', 'rival-charge-mid', 'rival-charge-high');
+    if (this.rivalCombatant && this.rivalCombatant.status === 'special') {
+      this.rivalCombatant.status = 'orbiting';
+    }
   }
 
   handleAnswer(selectedAnswer) {
     if (this.actionLocked) return;
     this.actionLocked = true;
+    // MEJORA 3: cancelar el buildup del rival en cuanto el jugador responde
+    this.cancelRivalChargeBuildup();
+    // MEJORA 3 (xtreme): si el dash estaba armado, el resultado lo resolverá en applyTurnOutcome;
+    // si NO se activa (fallo), cancelar el anillo aquí
     const action = this.selectedAction || 'attack';
     const answerMs = Date.now() - (this.questionStartedAt || Date.now());
     const fastWindow = this.currentQuestion?.isLightning
@@ -1663,6 +1843,8 @@ class CombatSession {
     }
     this.specialArmed = false;
     this.xtremeDashArmed = false;
+    // MEJORA 3: si el dash no se activó (outcome.xtremeDash es false), cancelar el anillo aquí
+    if (!outcome.xtremeDash && !outcome.xtremeRisk) this._cancelXtremeRingCountdown('');
     this.applyTurnOutcome(outcome, isCorrect);
     this.persistTowerBattleState();
     this.app.saveState();
@@ -2007,6 +2189,16 @@ class CombatSession {
     if (outcome.xtremeDash) this.xtremeDashUses += 1;
     if (outcome.xtremeRisk) this.xtremeDashRisks += 1;
     if (outcome.xtremeDash || outcome.xtremeRisk) this.pulseXtremeRail();
+    // MEJORA 3: resolver el anillo del dash con color de resultado
+    if (outcome.xtremeDash)  this._cancelXtremeRingCountdown('ring-success');
+    if (outcome.xtremeRisk)  this._cancelXtremeRingCountdown('ring-failed');
+    // MEJORA 5: limpiar estado de desbloqueo al gastar el especial
+    if (outcome.specialTriggered) {
+      this._specialWasReady = false;
+      const card = document.getElementById('special-attack-card');
+      if (card) card.classList.remove('just-unlocked', 'remind-pulse');
+      if (this._specialReminderTimer) { clearTimeout(this._specialReminderTimer); this._specialReminderTimer = null; }
+    }
 
     this.rivalHP = Math.max(0, this.rivalHP - outcome.playerDamage);
     this.playerHP = Math.max(0, this.playerHP - outcome.rivalDamage);
@@ -2350,6 +2542,12 @@ class CombatSession {
     const defender = attackerId === 'player' ? this.rivalCombatant : this.playerCombatant;
     if (!attacker || !defender) return;
 
+    // MEJORA 2: Xtreme Dash con trayectoria circular real por el rail
+    if (action === 'special' && attackerId === 'player' && this.xtremeDashArmed) {
+      this.performXtremeDashSequence(attacker, defender, damage);
+      return;
+    }
+
     const isSpecial = action === 'special';
     const forceBase = isSpecial ? 42 : action === 'attack' || action === 'counter' ? 32 : action === 'charge' ? 18 : 24;
     const force = forceBase * this.getImpactForceMultiplier(attackerId, action);
@@ -2377,6 +2575,209 @@ class CombatSession {
     setTimeout(() => {
       attacker.status = 'orbiting';
     }, isSpecial ? 850 : 520);
+  }
+
+  // MEJORA 2: Animacion completa del Xtreme Dash recorriendo el rail circular
+  performXtremeDashSequence(attacker, defender, damage = 0) {
+    if (!attacker) return;
+    const topEl = document.getElementById('player-top');
+    const arena = document.getElementById('battle-field');
+    if (!topEl || !arena) return;
+
+    // 1) Avatar grita la activacion del ataque, luego entra el dash
+    this.playXtremeDashCry(() => {
+      this._doXtremeDashMotion(attacker, defender, damage, topEl);
+    });
+  }
+
+  // Grito del avatar al activar Xtreme Dash
+  playXtremeDashCry(onComplete) {
+    // Frases de activacion segun el Bey equipado (usa habilidad si existe, sino frase generica)
+    const XTREME_CRIES = [
+      '¡Xtreme Dash!',
+      '¡Vamos al rail!',
+      '¡Enganchado al rail X!',
+      '¡Dash Xtreme activado!',
+      '¡Velocidad maxima!',
+      '¡Al carril, ya!',
+    ];
+    const beyName = this.playerBey?.habilidad
+      ? `¡${this.playerBey.habilidad}!`
+      : XTREME_CRIES[Math.floor(Math.random() * XTREME_CRIES.length)];
+
+    const avatarImg  = this.playerCharacter?.image  || '';
+    const avatarName = this.playerCharacter?.nombre || this.state?.player?.name || 'Blader';
+
+    // Inyectar keyframes una sola vez
+    if (!document.getElementById('xtreme-cry-styles')) {
+      const style = document.createElement('style');
+      style.id = 'xtreme-cry-styles';
+      style.textContent = `
+        @keyframes xcrySlidein  { from { transform: translateX(-110%) scale(0.82); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
+        @keyframes xcrySlideout { from { transform: translateX(0) scale(1); opacity: 1; } to { transform: translateX(-120%) scale(0.88); opacity: 0; } }
+        @keyframes xcryPulse    { 0%,100% { text-shadow: 0 0 18px #fff35a, 0 0 6px #ff9900; } 50% { text-shadow: 0 0 38px #fff35a, 0 0 14px #ffea00, 0 0 2px #fff; } }
+        @keyframes xcryBubble   { 0% { transform: scale(0.5) rotate(-4deg); opacity:0; } 60% { transform: scale(1.12) rotate(2deg); opacity:1; } 100% { transform: scale(1) rotate(0); opacity:1; } }
+        @keyframes xcryAvatarShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px) rotate(-2deg)} 40%{transform:translateX(6px) rotate(2deg)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+        .xcry-overlay {
+          position: fixed; inset: 0; z-index: 10500; pointer-events: none;
+          display: flex; align-items: flex-end; padding: 0 0 clamp(72px,18vw,110px) clamp(8px,3vw,18px);
+        }
+        .xcry-card {
+          display: flex; align-items: flex-end; gap: clamp(8px,2.5vw,16px);
+          animation: xcrySlidein 0.28s cubic-bezier(0.34,1.46,0.64,1) both;
+        }
+        .xcry-card.is-exiting { animation: xcrySlideout 0.26s ease-in both; }
+        .xcry-avatar {
+          width: clamp(64px,18vw,96px); height: clamp(64px,18vw,96px);
+          border-radius: 50%; border: 3px solid #fff35a;
+          box-shadow: 0 0 18px #fff35a, 0 0 6px #ff9900;
+          object-fit: cover; background: #0a0014; flex-shrink: 0;
+          animation: xcryAvatarShake 0.45s ease 0.18s both;
+        }
+        .xcry-bubble {
+          background: linear-gradient(135deg,#fff35a 0%,#ff9900 100%);
+          color: #0a0014; border-radius: 14px 14px 14px 2px;
+          padding: clamp(8px,2.5vw,13px) clamp(12px,3vw,20px);
+          font-weight: 900; font-size: clamp(1.05rem,3.8vw,1.55rem);
+          letter-spacing: 0.02em; line-height: 1.2;
+          box-shadow: 0 4px 24px rgba(255,234,0,0.45), 0 2px 0 #a05a00;
+          animation: xcryBubble 0.32s cubic-bezier(0.34,1.46,0.64,1) 0.12s both;
+          max-width: clamp(180px,55vw,340px);
+        }
+        .xcry-bubble .xcry-name {
+          font-size: 0.68em; opacity: 0.7; display: block; margin-bottom: 2px; font-weight: 700;
+        }
+        .xcry-bubble .xcry-text {
+          display: block;
+          animation: xcryPulse 0.55s ease-in-out 0.3s 2 both;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'xcry-overlay';
+
+    const card = document.createElement('div');
+    card.className = 'xcry-card';
+
+    // Avatar imagen
+    let avatarEl;
+    if (avatarImg) {
+      avatarEl = document.createElement('img');
+      avatarEl.className = 'xcry-avatar';
+      avatarEl.src = avatarImg;
+      avatarEl.alt = avatarName;
+    } else {
+      // Fallback emoji si no hay imagen
+      avatarEl = document.createElement('div');
+      avatarEl.className = 'xcry-avatar';
+      avatarEl.style.cssText += ';display:flex;align-items:center;justify-content:center;font-size:2.2rem;';
+      avatarEl.textContent = '🌀';
+    }
+
+    // Burbuja de texto
+    const bubble = document.createElement('div');
+    bubble.className = 'xcry-bubble';
+    bubble.innerHTML = `<span class="xcry-name">${avatarName}</span><span class="xcry-text">${beyName}</span>`;
+
+    card.appendChild(avatarEl);
+    card.appendChild(bubble);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    // Despues de mostrar el grito, iniciar el dash
+    const SHOW_MS = 820;
+    setTimeout(() => {
+      card.classList.add('is-exiting');
+      setTimeout(() => {
+        overlay.remove();
+        if (typeof onComplete === 'function') onComplete();
+      }, 280);
+    }, SHOW_MS);
+  }
+
+  // Logica de movimiento del dash (separada para que el grito la llame al terminar)
+  _doXtremeDashMotion(attacker, defender, damage, topEl) {
+    if (!attacker || !topEl) return;
+
+    // Pulsar el rail y mostrar pantalla flash
+    this.pulseXtremeRail();
+    this.triggerScreenFlash('xtreme');
+    if (typeof sounds !== 'undefined' && sounds.playSpecial) sounds.playSpecial();
+
+    // 2) Guardar posicion original del atacante
+    const originX = attacker.x;
+    const originY = attacker.y;
+
+    // 3) El rail es un circulo centrado en el estadio (cx=50, cy=50, r~40 unidades %)
+    // Calculamos el angulo de inicio mas cercano a la posicion actual del atacante
+    const railCx = 50;
+    const railCy = 50;
+    const railR = 40;
+    const startAngle = Math.atan2(originY - railCy, originX - railCx);
+
+    // 4) Animar la peonza a lo largo del rail durante ~900ms
+    const totalDuration = 900;
+    const startTs = performance.now();
+    // Sentido de giro segun el tipo de Bey: ataque en sentido horario, el resto antihorario
+    const direction = this.getBeyType(attacker.bey) === 'ataque' ? 1 : -1;
+
+    // Freeze la simulacion de fisica normal mientras dura el dash
+    attacker.status = 'special';
+    topEl.classList.add('is-special-strike');
+
+    // Traza de Xtreme para el trail
+    attacker.xtremeTrailUntil = Date.now() + totalDuration + 200;
+
+    const animateRail = (timestamp) => {
+      const elapsed = timestamp - startTs;
+      const t = Math.min(1, elapsed / totalDuration);
+      // Curva de velocidad: arranca rapido, desacelera al llegar al impacto
+      const eased = t < 0.7 ? t / 0.7 : 1;
+      // Recorre ~3/4 del circulo (270 grados = 1.5*PI)
+      const angle = startAngle + direction * eased * 1.5 * Math.PI;
+      attacker.x = railCx + Math.cos(angle) * railR;
+      attacker.y = railCy + Math.sin(angle) * railR;
+      // Velocidad artificial para que los trails se generen correctamente
+      attacker.vx = direction * -Math.sin(angle) * 60;
+      attacker.vy = direction * Math.cos(angle) * 60;
+
+      if (t < 1) {
+        const scheduleFrame = typeof requestAnimationFrame === 'function'
+          ? requestAnimationFrame : cb => setTimeout(() => cb(performance.now()), 16);
+        scheduleFrame(animateRail);
+      } else {
+        // 5) Fin del rail: lanzar hacia el rival con impulso maximo
+        const dx = defender.x - attacker.x;
+        const dy = defender.y - attacker.y;
+        const dist = Math.hypot(dx, dy) || 1;
+        const impactForce = 58 * this.getImpactForceMultiplier('player', 'special');
+        attacker.vx = (dx / dist) * impactForce;
+        attacker.vy = (dy / dist) * impactForce;
+        defender.vx += (dx / dist) * 24;
+        defender.vy += (dy / dist) * 24;
+
+        // 6) Flash y choque visual en el punto de impacto
+        const impactX = (attacker.x * 0.3) + (defender.x * 0.7);
+        const impactY = (attacker.y * 0.3) + (defender.y * 0.7);
+        this.triggerClashVisual(impactX, impactY, true);
+        this.spawnShockwave(impactX, impactY, '#fff35a', true, 'finish-xtreme');
+        this.spawnParticles(impactX, impactY, '#fff35a', 26);
+        if (damage > 0) this.spawnDamagePop(impactX, impactY, damage, 'player');
+
+        topEl.classList.remove('is-special-strike');
+        topEl.classList.add('is-dashing');
+        setTimeout(() => {
+          topEl.classList.remove('is-dashing');
+          attacker.status = 'orbiting';
+        }, 520);
+      }
+    };
+
+    const scheduleFrame = typeof requestAnimationFrame === 'function'
+      ? requestAnimationFrame : cb => setTimeout(() => cb(performance.now()), 16);
+    scheduleFrame(animateRail);
   }
 
   showAttackBanner(title, subtitle = '', side = 'player', variant = '') {
@@ -2539,49 +2940,77 @@ class CombatSession {
 
   updateXGauge() {
     const charge = Math.max(0, Math.min(3, this.playerCombatant?.charge || 0));
-    const fill = document.getElementById('x-gauge-fill');
     const label = document.getElementById('x-gauge-label');
     const specialCard = document.getElementById('special-attack-card');
     const specialName = document.getElementById('special-attack-name');
     const specialHelp = document.getElementById('special-attack-help');
     const specialBtn = document.getElementById('btn-special-attack');
     const xtremeBtn = document.getElementById('btn-xtreme-dash');
-    if (fill) {
-      fill.style.width = `${(charge / 3) * 100}%`;
-      fill.classList.toggle('ready', charge >= 3);
+
+    // ── MEJORA 2: gauge de 3 celdas líquidas ──────────────────────────
+    const prevCharge = this._lastGaugeCharge ?? -1;
+    this._lastGaugeCharge = charge;
+    for (let i = 1; i <= 3; i++) {
+      const cell = document.getElementById(`gauge-cell-${i}`);
+      if (!cell) continue;
+      const shouldFill = charge >= i;
+      const wasFilled  = cell.classList.contains('filled');
+      if (shouldFill && !wasFilled) {
+        // Llenado: pequeño delay en cascada para efecto líquido
+        setTimeout(() => {
+          cell.classList.add('filled');
+          cell.classList.remove('draining');
+        }, (i - 1) * 55);
+      } else if (!shouldFill && wasFilled) {
+        // Vaciado en cascada de derecha a izquierda
+        cell.classList.add('draining');
+        setTimeout(() => {
+          cell.classList.remove('filled', 'draining');
+        }, (4 - i) * 55 + 220);
+      }
+      // Glow especial cuando los 3 están llenos
+      cell.classList.toggle('ready-glow', charge >= 3);
     }
+    if (label) label.innerText = charge >= 3 ? 'Especial listo' : `${charge}/3 para especial`;
+
     const dashReady = this.selectedAction === 'attack'
       && ((this.currentQuestion?.isLightning === true)
         || (parseInt(this.currentQuestion?.difficulty, 10) || 1) >= 4
         || (this.playerBey?.velocidad || 70) >= 78);
     document.querySelectorAll('.x-gauge-panel').forEach(panel => panel.classList.toggle('dash-ready', dashReady));
     this.setXtremeStadiumState({ ready: this.canUseXtremeDash(), armed: this.xtremeDashArmed });
-    if (label) {
-      label.innerText = charge >= 3 ? 'Especial listo' : `${charge}/3 para especial`;
-    }
+
     if (specialCard) {
       const ready = this.canUseSpecialAttack();
       const xtremeReady = this.canUseXtremeDash();
       const attackName = this.playerBey?.habilidad || 'Ataque X';
+      const wasReady = this._specialWasReady || false;
+
       specialCard.classList.toggle('ready', ready);
       specialCard.classList.toggle('charging', charge > 0 && !ready);
       specialCard.classList.toggle('special-armed', this.specialArmed);
       specialCard.classList.toggle('xtreme-armed', this.xtremeDashArmed);
-      if (specialName) specialName.innerText = ready ? `${attackName} listo` : attackName;
+
+      // ── MEJORA 5: pop de desbloqueo + typewriter ───────────────────
+      if (ready && !wasReady) {
+        this._specialWasReady = true;
+        this._triggerSpecialUnlockAnimation(specialCard, attackName, specialName);
+      } else if (!ready) {
+        this._specialWasReady = false;
+        specialCard.classList.remove('just-unlocked', 'remind-pulse');
+        if (this._specialReminderTimer) { clearTimeout(this._specialReminderTimer); this._specialReminderTimer = null; }
+        if (specialName) specialName.innerText = attackName;
+      }
+
       if (specialHelp) {
-        if (this.specialArmed) {
-          specialHelp.innerText = 'Especial armado: acierta para gastarlo ahora.';
-        } else if (this.xtremeDashArmed) {
-          specialHelp.innerText = 'Dash armado: acierta rapido para entrar al rail.';
-        } else if (ready) {
-          specialHelp.innerText = 'Pulsa Usar especial cuando quieras gastarlo.';
-        } else if (xtremeReady) {
-          specialHelp.innerText = 'Puedes preparar Xtreme Dash para un ataque de riesgo.';
-        } else {
-          specialHelp.innerText = `Carga: ${charge}/3 · Combo: ${Math.min(3, this.correctStreak)}/3 aciertos.`;
-        }
+        if (this.specialArmed)       specialHelp.innerText = 'Especial armado: acierta para gastarlo ahora.';
+        else if (this.xtremeDashArmed) specialHelp.innerText = 'Dash armado: acierta rapido para entrar al rail.';
+        else if (ready)              specialHelp.innerText = 'Pulsa Usar especial cuando quieras gastarlo.';
+        else if (xtremeReady)        specialHelp.innerText = 'Puedes preparar Xtreme Dash para un ataque de riesgo.';
+        else                         specialHelp.innerText = `Carga: ${charge}/3 · Combo: ${Math.min(3, this.correctStreak)}/3 aciertos.`;
       }
     }
+
     if (specialBtn) {
       const ready = this.canUseSpecialAttack();
       specialBtn.disabled = this.actionLocked || !ready;
@@ -2592,7 +3021,9 @@ class CombatSession {
       const ready = this.canUseXtremeDash();
       xtremeBtn.disabled = this.actionLocked || !ready;
       xtremeBtn.classList.toggle('armed', this.xtremeDashArmed);
-      xtremeBtn.innerText = this.xtremeDashArmed ? 'Dash armado' : ready ? 'Xtreme Dash' : 'Dash no listo';
+      // Actualizar label dentro del span, no el innerText del botón (que tiene el SVG del anillo)
+      const lbl = xtremeBtn.querySelector('.xtreme-btn-label');
+      if (lbl) lbl.textContent = this.xtremeDashArmed ? 'Dash armado' : ready ? 'Xtreme Dash' : 'Dash no listo';
     }
     document.querySelectorAll('[data-combat-action="charge"]').forEach(button => {
       button.classList.toggle('special-ready', charge >= 3);
@@ -2600,6 +3031,89 @@ class CombatSession {
     document.querySelectorAll('[data-combat-action="attack"]').forEach(button => {
       button.classList.toggle('dash-ready', dashReady);
     });
+
+    // ── MEJORA 4: daño predicho en los botones de acción ──────────────
+    this._updateActionDamagePreview();
+  }
+
+  // MEJORA 4: calcula y muestra el efecto predicho en cada botón
+  _updateActionDamagePreview() {
+    if (!this.playerBey || !this.rivalBey) return;
+    const typeBonus  = this.calculateTypeMatchupModifier(this.playerBey, this.rivalBey);
+    const isGoodMatchup = typeBonus > 0;
+    const isBadMatchup  = typeBonus < 0;
+
+    // Ataque
+    const atkDmg  = this.calculatePlayerDamage('attack');
+    const atkCopy = document.getElementById('action-copy-attack');
+    if (atkCopy) {
+      atkCopy.textContent = `-${atkDmg} HP rival`;
+      atkCopy.className   = `combat-action-copy ${isGoodMatchup ? 'dmg-good' : isBadMatchup ? 'dmg-bad' : 'dmg-neutral'}`;
+    }
+
+    // Defensa: muestra % de reducción de daño recibido
+    const defReduction = 45; // Defense reduce ~45% según calculateRivalDamage con action='defense'
+    const defCopy = document.getElementById('action-copy-defense');
+    if (defCopy) {
+      defCopy.textContent = `bloquea ~${defReduction}%`;
+      defCopy.className   = 'combat-action-copy dmg-neutral';
+    }
+
+    // Carga
+    const chgDmg  = this.calculatePlayerDamage('charge');
+    const chgCopy = document.getElementById('action-copy-charge');
+    if (chgCopy) {
+      const charge = this.playerCombatant?.charge || 0;
+      chgCopy.textContent = charge >= 3 ? '+1 energia · MAX' : `+1 energia · ${chgDmg > 0 ? `-${chgDmg} HP` : 'sin golpe'}`;
+      chgCopy.className   = 'combat-action-copy dmg-neutral';
+    }
+  }
+
+  // MEJORA 5: animación de desbloqueo del especial
+  _triggerSpecialUnlockAnimation(card, attackName, nameEl) {
+    if (!card) return;
+    // Pop de escala
+    card.classList.remove('just-unlocked', 'remind-pulse');
+    void card.offsetWidth;
+    card.classList.add('just-unlocked');
+
+    // Partículas doradas alrededor de la card
+    const rect = card.getBoundingClientRect();
+    const colors = ['#ffea00', '#fff35a', '#ff9900', '#ffffff'];
+    for (let i = 0; i < 14; i++) {
+      const p = document.createElement('span');
+      p.className = 'special-unlock-particle';
+      const angle = (i / 14) * Math.PI * 2;
+      const dist  = 28 + Math.random() * 24;
+      p.style.cssText = `
+        left:${rect.left + rect.width / 2}px;
+        top:${rect.top + rect.height / 2}px;
+        --p-color:${colors[i % colors.length]};
+        --px:${Math.cos(angle) * dist}px;
+        --py:${Math.sin(angle) * dist}px;
+        position:fixed; z-index:9999;
+      `;
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 600);
+    }
+
+    // Typewriter del nombre del ataque
+    if (nameEl && attackName) {
+      const target = `${attackName} listo`;
+      nameEl.textContent = '';
+      let idx = 0;
+      const tw = setInterval(() => {
+        nameEl.textContent = target.slice(0, ++idx);
+        if (idx >= target.length) clearInterval(tw);
+      }, 38);
+    }
+
+    // Recordatorio pulsante si no se usa en 8s
+    this._specialReminderTimer = setTimeout(() => {
+      if (this.canUseSpecialAttack() && !this.specialArmed && !this.actionLocked) {
+        card.classList.add('remind-pulse');
+      }
+    }, 8000);
   }
 
   triggerClashVisual(x, y, isSpecial) {
