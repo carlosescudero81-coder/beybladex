@@ -30,6 +30,161 @@
     #map-nav-bar {
       grid-column: 1 / -1 !important;
     }
+
+    /* ═══════════════════════════════════════════════════════════
+       MEJORA 1 — Botones de acción: semáforo táctico
+    ═══════════════════════════════════════════════════════════ */
+    @keyframes recommendedPulse {
+      0%, 100% { box-shadow: 0 0 0 2px var(--yellow, #ffea00), 0 0 12px rgba(255,234,0,0.4); }
+      50%       { box-shadow: 0 0 0 3px var(--yellow, #ffea00), 0 0 22px rgba(255,234,0,0.75); }
+    }
+    @keyframes dangerShake {
+      0%,100% { transform: translateX(0); }
+      20%     { transform: translateX(-4px) rotate(-1deg); }
+      40%     { transform: translateX(4px)  rotate(1deg); }
+      60%     { transform: translateX(-3px); }
+      80%     { transform: translateX(3px); }
+    }
+    .combat-action-btn.recommended {
+      border-color: var(--yellow, #ffea00) !important;
+      animation: recommendedPulse 1.1s ease-in-out infinite;
+    }
+    .combat-action-btn.recommended .combat-action-title {
+      color: var(--yellow, #ffea00);
+    }
+    .combat-action-btn.action-danger {
+      border-color: #ff3333 !important;
+      animation: dangerShake 0.4s ease both;
+    }
+    .combat-action-btn.action-danger .combat-action-title {
+      color: #ff6666;
+    }
+    /* Daño predicho: colores tácticos */
+    .combat-action-copy.dmg-good  { color: #4dff91 !important; font-weight: 800; }
+    .combat-action-copy.dmg-bad   { color: #ff5555 !important; font-weight: 800; }
+    .combat-action-copy.dmg-neutral { color: rgba(255,255,255,0.6); }
+
+    /* ═══════════════════════════════════════════════════════════
+       MEJORA 2 — Gauge de 3 celdas líquidas
+    ═══════════════════════════════════════════════════════════ */
+    @keyframes cellFillIn  { from { height: 0%; opacity: 0.5; } to { height: 100%; opacity: 1; } }
+    @keyframes cellFillOut { from { height: 100%; opacity: 1; } to { height: 0%;   opacity: 0; } }
+    @keyframes cellReady   {
+      0%,100% { box-shadow: inset 0 0 8px rgba(0,240,255,0.3), 0 0 8px rgba(0,240,255,0.3); }
+      50%     { box-shadow: inset 0 0 16px rgba(0,240,255,0.7), 0 0 18px rgba(0,240,255,0.6); }
+    }
+    @keyframes cellCascadeOut {
+      0%   { height: 100%; opacity: 1; }
+      100% { height: 0%;   opacity: 0; }
+    }
+    .x-gauge-cells {
+      display: flex;
+      gap: 4px;
+      height: 14px;
+      margin-top: 4px;
+    }
+    .gauge-cell {
+      flex: 1;
+      border-radius: 4px;
+      border: 1.5px solid rgba(0,240,255,0.25);
+      background: rgba(0,0,0,0.45);
+      overflow: hidden;
+      position: relative;
+      transition: border-color 0.25s;
+    }
+    .gauge-cell-fill {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 0%;
+      background: linear-gradient(to top, #00f0ff 0%, #0088cc 60%, #00f0ff 100%);
+      border-radius: 3px;
+      transition: height 0.28s cubic-bezier(0.34,1.4,0.64,1);
+    }
+    .gauge-cell.filled {
+      border-color: rgba(0,240,255,0.7);
+    }
+    .gauge-cell.filled .gauge-cell-fill { height: 100%; }
+    .gauge-cell.ready-glow {
+      border-color: #00f0ff;
+      animation: cellReady 0.65s ease-in-out infinite;
+    }
+    .gauge-cell.ready-glow .gauge-cell-fill {
+      background: linear-gradient(to top, #ffffff 0%, #00f0ff 50%, #00cfff 100%);
+    }
+    /* Vaciado en cascada */
+    .gauge-cell.draining .gauge-cell-fill {
+      animation: cellCascadeOut 0.22s ease-in both;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       MEJORA 3 — Anillo SVG de cuenta atrás en Xtreme Dash
+    ═══════════════════════════════════════════════════════════ */
+    #btn-xtreme-dash {
+      position: relative;
+      overflow: visible;
+    }
+    .xtreme-ring-svg {
+      position: absolute;
+      inset: -6px;
+      width: calc(100% + 12px);
+      height: calc(100% + 12px);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      border-radius: 50%;
+    }
+    #btn-xtreme-dash.ring-active .xtreme-ring-svg { opacity: 1; }
+    .xtreme-ring-track {
+      fill: none;
+      stroke: rgba(255,243,90,0.15);
+      stroke-width: 3.5;
+    }
+    .xtreme-ring-fill {
+      fill: none;
+      stroke: #fff35a;
+      stroke-width: 3.5;
+      stroke-linecap: round;
+      stroke-dasharray: 113; /* 2π×18 ≈ 113 */
+      stroke-dashoffset: 0;
+      transform-origin: 22px 22px;
+      transform: rotate(-90deg);
+      transition: stroke 0.2s;
+      filter: drop-shadow(0 0 4px #fff35a);
+    }
+    #btn-xtreme-dash.ring-success .xtreme-ring-fill { stroke: #4dff91; filter: drop-shadow(0 0 6px #4dff91); }
+    #btn-xtreme-dash.ring-failed  .xtreme-ring-fill { stroke: #ff3333; filter: drop-shadow(0 0 4px #ff3333); }
+
+    /* ═══════════════════════════════════════════════════════════
+       MEJORA 5 — Pop de desbloqueo + recordatorio pulsante
+    ═══════════════════════════════════════════════════════════ */
+    @keyframes specialUnlockPop {
+      0%   { transform: scale(0.75); opacity: 0; }
+      55%  { transform: scale(1.14); opacity: 1; }
+      100% { transform: scale(1);    opacity: 1; }
+    }
+    @keyframes specialReminder {
+      0%,100% { box-shadow: 0 0 8px rgba(255,234,0,0.2); }
+      50%     { box-shadow: 0 0 22px rgba(255,234,0,0.7), 0 0 6px #ffea00; }
+    }
+    .special-attack-card.just-unlocked {
+      animation: specialUnlockPop 0.38s cubic-bezier(0.34,1.5,0.64,1) both;
+    }
+    .special-attack-card.remind-pulse {
+      animation: specialReminder 0.9s ease-in-out infinite;
+    }
+    /* Partículas de desbloqueo (inyectadas por JS) */
+    .special-unlock-particle {
+      position: absolute;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--p-color, #ffea00);
+      pointer-events: none;
+      animation: specialParticle 0.55s ease-out both;
+    }
+    @keyframes specialParticle {
+      from { transform: translate(0,0) scale(1); opacity: 1; }
+      to   { transform: translate(var(--px,0), var(--py,0)) scale(0); opacity: 0; }
+    }
   </style>
 </head>
 <body>
@@ -502,15 +657,15 @@
           <div class="combat-action-panel" aria-label="Comandos de combate">
             <button class="combat-action-btn" type="button" data-combat-action="attack">
               <span class="combat-action-title">Ataque</span>
-              <span class="combat-action-copy">Golpe rapido</span>
+              <span class="combat-action-copy" id="action-copy-attack">Golpe rapido</span>
             </button>
             <button class="combat-action-btn" type="button" data-combat-action="defense">
               <span class="combat-action-title">Defensa</span>
-              <span class="combat-action-copy">Aguanta el choque</span>
+              <span class="combat-action-copy" id="action-copy-defense">Aguanta el choque</span>
             </button>
             <button class="combat-action-btn" type="button" data-combat-action="charge">
               <span class="combat-action-title">Carga</span>
-              <span class="combat-action-copy">Sube el giro</span>
+              <span class="combat-action-copy" id="action-copy-charge">Sube el giro</span>
             </button>
           </div>
           <div class="combat-action-readout" id="combat-action-readout" aria-live="polite">Ataque listo: si aciertas, embistes fuerte.</div>
@@ -520,8 +675,10 @@
               <strong>Energia X</strong>
               <span id="x-gauge-label">0/3 para especial</span>
             </div>
-            <div class="x-gauge-track">
-              <div class="x-gauge-fill" id="x-gauge-fill"></div>
+            <div class="x-gauge-cells" id="x-gauge-cells" aria-hidden="true">
+              <div class="gauge-cell" id="gauge-cell-1"><div class="gauge-cell-fill"></div></div>
+              <div class="gauge-cell" id="gauge-cell-2"><div class="gauge-cell-fill"></div></div>
+              <div class="gauge-cell" id="gauge-cell-3"><div class="gauge-cell-fill"></div></div>
             </div>
           </div>
 
@@ -531,7 +688,13 @@
             <p id="special-attack-help">Consigue 3 aciertos seguidos o llena Energia X.</p>
             <div class="special-command-row">
               <button class="special-command-btn" id="btn-special-attack" type="button" disabled>Usar especial</button>
-              <button class="special-command-btn xtreme" id="btn-xtreme-dash" type="button" disabled>Xtreme Dash</button>
+              <button class="special-command-btn xtreme" id="btn-xtreme-dash" type="button" disabled>
+                <span class="xtreme-btn-label">Xtreme Dash</span>
+                <svg class="xtreme-ring-svg" viewBox="0 0 44 44" aria-hidden="true">
+                  <circle class="xtreme-ring-track" cx="22" cy="22" r="18"/>
+                  <circle class="xtreme-ring-fill" id="xtreme-ring-fill" cx="22" cy="22" r="18"/>
+                </svg>
+              </button>
             </div>
           </div>
 
