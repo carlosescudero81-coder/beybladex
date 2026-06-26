@@ -724,10 +724,36 @@ class CombatSession {
     const arena = document.getElementById('battle-field');
     if (!arena) return;
     const tier = this.towerFloor >= 21 ? 'xtreme' : this.towerFloor >= 11 ? 'advanced' : 'beginner';
-    arena.classList.remove('stadium-beginner', 'stadium-advanced', 'stadium-xtreme');
+    arena.classList.remove('stadium-beginner', 'stadium-advanced', 'stadium-xtreme', 'xtreme-ready', 'xtreme-armed', 'xtreme-dash-active', 'finish-over', 'finish-burst', 'finish-xtreme');
     arena.classList.add(`stadium-${tier}`);
     if (stadium?.colorPrincipal) this.setCssVar(arena, '--stadium-accent', stadium.colorPrincipal);
     if (stadium?.colorSecundario) this.setCssVar(arena, '--stadium-accent-2', stadium.colorSecundario);
+  }
+
+  setXtremeStadiumState({ ready = false, armed = false } = {}) {
+    const arena = document.getElementById('battle-field');
+    if (!arena) return;
+    arena.classList.toggle('xtreme-ready', Boolean(ready) && !armed);
+    arena.classList.toggle('xtreme-armed', Boolean(armed));
+  }
+
+  pulseXtremeRail() {
+    const arena = document.getElementById('battle-field');
+    if (!arena) return;
+    arena.classList.remove('xtreme-dash-active');
+    void arena.offsetWidth;
+    arena.classList.add('xtreme-dash-active');
+    setTimeout(() => arena.classList.remove('xtreme-dash-active'), 920);
+  }
+
+  pulseFinishPocket(type) {
+    const arena = document.getElementById('battle-field');
+    if (!arena || !type || type === 'spin') return;
+    const className = `finish-${type}`;
+    arena.classList.remove('finish-over', 'finish-burst', 'finish-xtreme');
+    void arena.offsetWidth;
+    arena.classList.add(className);
+    setTimeout(() => arena.classList.remove(className), 920);
   }
 
   setCssVar(element, name, value) {
@@ -1980,6 +2006,7 @@ class CombatSession {
     }
     if (outcome.xtremeDash) this.xtremeDashUses += 1;
     if (outcome.xtremeRisk) this.xtremeDashRisks += 1;
+    if (outcome.xtremeDash || outcome.xtremeRisk) this.pulseXtremeRail();
 
     this.rivalHP = Math.max(0, this.rivalHP - outcome.playerDamage);
     this.playerHP = Math.max(0, this.playerHP - outcome.rivalDamage);
@@ -2294,6 +2321,7 @@ class CombatSession {
       xtreme: { x: attackerId === 'player' ? 90 : 10, y: 38, color: '#fff35a', special: true }
     };
     const zone = zones[finish.type] || zones.spin;
+    this.pulseFinishPocket(finish.type);
     if (finish.type !== 'spin') this.spawnShockwave(zone.x, zone.y, zone.color, zone.special, `finish-${finish.type}`);
     this.spawnParticles(zone.x, zone.y, zone.color, finish.type === 'xtreme' ? 22 : 14);
     if (finish.type === 'xtreme') this.triggerScreenFlash('xtreme');
@@ -2527,6 +2555,7 @@ class CombatSession {
         || (parseInt(this.currentQuestion?.difficulty, 10) || 1) >= 4
         || (this.playerBey?.velocidad || 70) >= 78);
     document.querySelectorAll('.x-gauge-panel').forEach(panel => panel.classList.toggle('dash-ready', dashReady));
+    this.setXtremeStadiumState({ ready: this.canUseXtremeDash(), armed: this.xtremeDashArmed });
     if (label) {
       label.innerText = charge >= 3 ? 'Especial listo' : `${charge}/3 para especial`;
     }
