@@ -6737,6 +6737,202 @@ button,
   box-shadow: 0 0 22px rgba(255, 234, 0, 0.28);
 }
 
+.xtreme-stadium-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.xtreme-rail-track {
+  position: absolute;
+  top: 8%;
+  right: 5.5%;
+  width: 18%;
+  height: 84%;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.24), transparent 16% 84%, rgba(255, 255, 255, 0.18)),
+    repeating-linear-gradient(180deg, rgba(255, 234, 0, 0.88) 0 8px, rgba(0, 240, 255, 0.72) 8px 13px, transparent 13px 22px),
+    linear-gradient(180deg, rgba(0, 240, 255, 0.26), rgba(255, 0, 85, 0.22));
+  clip-path: polygon(24% 0, 100% 3%, 78% 100%, 0 96%);
+  opacity: 0.72;
+  box-shadow:
+    0 0 22px rgba(0, 240, 255, 0.48),
+    inset 0 0 18px rgba(255, 234, 0, 0.22);
+  transform: rotate(8deg);
+}
+
+.xtreme-rail-track::before,
+.xtreme-rail-track::after {
+  content: "";
+  position: absolute;
+  inset: 7% 28%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 234, 0, 0.2), rgba(0, 240, 255, 0.72));
+  filter: blur(2px);
+  opacity: 0.62;
+}
+
+.xtreme-rail-track::after {
+  inset: 0 43%;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+  opacity: 0;
+}
+
+.rail-tooth {
+  position: absolute;
+  right: 14%;
+  width: 48%;
+  height: 5%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 0 9px rgba(255, 234, 0, 0.72);
+  transform: rotate(-12deg);
+}
+
+.tooth-1 { top: 8%; }
+.tooth-2 { top: 19%; }
+.tooth-3 { top: 30%; }
+.tooth-4 { top: 41%; }
+.tooth-5 { top: 52%; }
+.tooth-6 { top: 63%; }
+.tooth-7 { top: 74%; }
+.tooth-8 { top: 85%; }
+
+.xtreme-rail-entry {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: clamp(54px, 8vw, 92px);
+  height: clamp(30px, 4.2vw, 46px);
+  border: 1px solid rgba(0, 240, 255, 0.48);
+  border-radius: 999px;
+  background: rgba(4, 12, 28, 0.68);
+  color: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.2), inset 0 0 14px rgba(0, 240, 255, 0.12);
+  font-family: var(--font-display);
+  font-size: clamp(0.52rem, 1.1vw, 0.82rem);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.rail-entry-left {
+  top: 13%;
+  right: 17%;
+  transform: rotate(-9deg);
+}
+
+.rail-entry-right {
+  right: 11%;
+  bottom: 12%;
+  transform: rotate(8deg);
+}
+
+.stadium-pocket {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: clamp(64px, 9vw, 112px);
+  height: clamp(42px, 6vw, 78px);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(0, 0, 0, 0.72), rgba(5, 12, 30, 0.28) 58%, transparent 72%),
+    linear-gradient(135deg, rgba(0, 240, 255, 0.18), rgba(255, 0, 85, 0.14));
+  color: rgba(255, 255, 255, 0.66);
+  box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.62), 0 0 16px rgba(0, 240, 255, 0.14);
+  font-family: var(--font-display);
+  font-size: clamp(0.48rem, 1vw, 0.74rem);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  opacity: 0.74;
+}
+
+.pocket-over-left {
+  --pocket-rotation: -18deg;
+  left: 3.5%;
+  top: 36%;
+  transform: rotate(var(--pocket-rotation));
+}
+
+.pocket-over-right {
+  --pocket-rotation: 17deg;
+  right: 3.5%;
+  top: 42%;
+  transform: rotate(var(--pocket-rotation));
+}
+
+.pocket-burst {
+  --pocket-rotation: 0deg;
+  left: 42%;
+  bottom: 4.5%;
+  border-color: rgba(255, 0, 85, 0.34);
+}
+
+.pocket-xtreme {
+  --pocket-rotation: 0deg;
+  right: 1.8%;
+  top: 8%;
+  width: clamp(70px, 10vw, 124px);
+  height: clamp(50px, 7vw, 90px);
+  border-color: rgba(255, 234, 0, 0.52);
+  background:
+    radial-gradient(circle, rgba(255, 234, 0, 0.32), rgba(0, 0, 0, 0.66) 56%, transparent 74%),
+    linear-gradient(135deg, rgba(255, 0, 85, 0.26), rgba(0, 240, 255, 0.2));
+  box-shadow: inset 0 0 28px rgba(255, 234, 0, 0.28), 0 0 22px rgba(255, 234, 0, 0.28);
+}
+
+.battlefield-arena.xtreme-ready .xtreme-rail-track,
+.battlefield-arena.xtreme-armed .xtreme-rail-track,
+.battlefield-arena.xtreme-dash-active .xtreme-rail-track {
+  opacity: 1;
+}
+
+.battlefield-arena.xtreme-ready .xtreme-rail-track {
+  animation: xtreme-rail-ready 1.15s ease-in-out infinite;
+}
+
+.battlefield-arena.xtreme-armed .xtreme-rail-track,
+.battlefield-arena.xtreme-dash-active .xtreme-rail-track {
+  animation: xtreme-rail-surge 620ms ease-out 2;
+}
+
+.battlefield-arena.xtreme-dash-active .xtreme-rail-track::after {
+  animation: xtreme-rail-sweep 620ms ease-out both;
+}
+
+.battlefield-arena.xtreme-armed .xtreme-rail-entry,
+.battlefield-arena.xtreme-dash-active .xtreme-rail-entry {
+  border-color: rgba(255, 234, 0, 0.75);
+  color: white;
+  box-shadow: 0 0 18px rgba(255, 234, 0, 0.38), inset 0 0 16px rgba(0, 240, 255, 0.18);
+}
+
+.battlefield-arena.finish-over .stadium-pocket[data-finish-pocket="over"],
+.battlefield-arena.finish-burst .stadium-pocket[data-finish-pocket="burst"],
+.battlefield-arena.finish-xtreme .stadium-pocket[data-finish-pocket="xtreme"] {
+  color: #fff;
+  opacity: 1;
+  animation: stadium-pocket-hit 780ms ease-out both;
+}
+
+.battlefield-arena.finish-over .stadium-pocket[data-finish-pocket="over"] {
+  border-color: rgba(255, 176, 0, 0.88);
+  box-shadow: inset 0 0 30px rgba(255, 176, 0, 0.32), 0 0 28px rgba(255, 176, 0, 0.42);
+}
+
+.battlefield-arena.finish-burst .stadium-pocket[data-finish-pocket="burst"] {
+  border-color: rgba(255, 79, 216, 0.9);
+  box-shadow: inset 0 0 30px rgba(255, 79, 216, 0.32), 0 0 30px rgba(255, 0, 85, 0.44);
+}
+
+.battlefield-arena.finish-xtreme .stadium-pocket[data-finish-pocket="xtreme"] {
+  border-color: rgba(255, 234, 0, 0.96);
+  box-shadow: inset 0 0 34px rgba(255, 234, 0, 0.42), 0 0 42px rgba(255, 234, 0, 0.62);
+}
+
 .trail-layer {
   z-index: 4;
 }
@@ -7588,6 +7784,35 @@ button,
   to { transform: rotate(360deg); }
 }
 
+@keyframes xtreme-rail-ready {
+  0%, 100% {
+    filter: brightness(1);
+    box-shadow: 0 0 22px rgba(0, 240, 255, 0.48), inset 0 0 18px rgba(255, 234, 0, 0.22);
+  }
+  50% {
+    filter: brightness(1.28);
+    box-shadow: 0 0 34px rgba(255, 234, 0, 0.58), inset 0 0 26px rgba(0, 240, 255, 0.28);
+  }
+}
+
+@keyframes xtreme-rail-surge {
+  0% { filter: brightness(1); transform: rotate(8deg) scale(1); }
+  35% { filter: brightness(1.65); transform: rotate(8deg) scale(1.035); }
+  100% { filter: brightness(1.05); transform: rotate(8deg) scale(1); }
+}
+
+@keyframes xtreme-rail-sweep {
+  0% { opacity: 0; transform: translateY(-70%); }
+  18% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(86%); }
+}
+
+@keyframes stadium-pocket-hit {
+  0% { transform: scale(1) rotate(var(--pocket-rotation, 0deg)); }
+  35% { transform: scale(1.16) rotate(var(--pocket-rotation, 0deg)); }
+  100% { transform: scale(1) rotate(var(--pocket-rotation, 0deg)); }
+}
+
 @keyframes motion-trail-fade {
   0% { opacity: 0.9; transform: translateX(-8px) scaleX(1); }
   100% { opacity: 0; transform: translateX(-34px) scaleX(0.3); }
@@ -7854,6 +8079,9 @@ button,
   .top-large-sprite .custom-top-image-stack,
   .motion-trail,
   .motion-trail.xtreme-trail,
+  .xtreme-rail-track,
+  .xtreme-rail-track::after,
+  .stadium-pocket,
   .impact-particle,
   .shockwave,
   .screen-flash-layer.active,
@@ -7991,6 +8219,17 @@ button,
   #screen-combat .motion-trail.xtreme-trail {
     width: clamp(120px, 22vw, 220px);
     height: clamp(15px, 3.2vw, 28px);
+  }
+
+  #screen-combat .xtreme-rail-track {
+    right: 4%;
+    width: 16%;
+  }
+
+  #screen-combat .stadium-pocket {
+    width: clamp(52px, 8vw, 82px);
+    height: clamp(34px, 5vw, 58px);
+    font-size: clamp(0.42rem, 0.9vw, 0.62rem);
   }
 
   #screen-combat .attack-banner-layer {
@@ -8376,6 +8615,18 @@ button,
   #screen-combat .motion-trail.xtreme-trail {
     width: clamp(112px, 15vw, 190px);
     height: clamp(14px, 2.4vw, 26px);
+  }
+
+  #screen-combat .xtreme-rail-entry {
+    width: clamp(48px, 5.8vw, 72px);
+    height: clamp(26px, 3vw, 38px);
+    font-size: clamp(0.46rem, 0.72vw, 0.64rem);
+  }
+
+  #screen-combat .stadium-pocket {
+    width: clamp(54px, 6.8vw, 86px);
+    height: clamp(34px, 4.6vw, 62px);
+    font-size: clamp(0.42rem, 0.7vw, 0.62rem);
   }
 
   #screen-combat .attack-banner {
