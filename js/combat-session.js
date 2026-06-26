@@ -784,7 +784,7 @@ class CombatSession {
     const charge = this.playerCombatant?.charge || 0;
     const speed = this.playerBey?.velocidad || 70;
     const difficulty = parseInt(this.currentQuestion?.difficulty, 10) || 1;
-    return charge >= 2 || speed >= 82 || this.currentQuestion?.isLightning === true || difficulty >= 4;
+    return charge >= 1 || speed >= 75 || this.currentQuestion?.isLightning === true || difficulty >= 4;
   }
 
   armSpecialAttack() {
@@ -2039,7 +2039,7 @@ class CombatSession {
         bannerSubtitle = 'Tu eleccion marco la diferencia';
       }
     } else {
-      chargeDelta = normalizedAction === 'charge' ? -2 : -1;
+      chargeDelta = normalizedAction === 'charge' ? -1 : -1;
       rivalDamage = this.calculateRivalDamage(normalizedAction);
       if (normalizedAction === 'defense') {
         rivalDamage = Math.max(3, Math.round(rivalDamage * 0.55));
@@ -3023,7 +3023,14 @@ class CombatSession {
       xtremeBtn.classList.toggle('armed', this.xtremeDashArmed);
       // Actualizar label dentro del span, no el innerText del botón (que tiene el SVG del anillo)
       const lbl = xtremeBtn.querySelector('.xtreme-btn-label');
-      if (lbl) lbl.textContent = this.xtremeDashArmed ? 'Dash armado' : ready ? 'Xtreme Dash' : 'Dash no listo';
+      if (lbl) {
+        const chargeCurrent = this.playerCombatant?.charge || 0;
+        lbl.textContent = this.xtremeDashArmed
+          ? 'Dash armado'
+          : ready
+          ? 'Xtreme Dash'
+          : `Dash (${chargeCurrent}/1 energía)`;
+      }
     }
     document.querySelectorAll('[data-combat-action="charge"]').forEach(button => {
       button.classList.toggle('special-ready', charge >= 3);
