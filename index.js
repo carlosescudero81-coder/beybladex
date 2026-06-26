@@ -1465,10 +1465,26 @@ class App {
   // -------------------- TOYSHOP SCREEN (TALLER) --------------------
   renderWorkshop() {
     this.renderTopPreview();
+    const nameInput = document.getElementById('custom-bey-name-input');
+    if (nameInput) {
+      nameInput.value = this.state.player.activeCombo?.name || 'Mi Peonza X';
+      nameInput.oninput = () => {
+        const value = nameInput.value.trim().slice(0, 24) || 'Mi Peonza X';
+        this.state.player.activeCombo.name = value;
+        this.renderHeader();
+      };
+      nameInput.onchange = () => {
+        this.state.player.activeCombo.name = (nameInput.value.trim().slice(0, 24) || 'Mi Peonza X');
+        this.saveState();
+        this.renderHeader();
+        this.renderWorkshop();
+      };
+    }
     const equipCustomBtn = document.getElementById('btn-equip-custom-bey');
     if (equipCustomBtn) {
       const isEquipped = this.state.player.equippedBeyId === 'custom_x_bey';
-      equipCustomBtn.innerText = isEquipped ? 'Mi Peonza X equipada' : 'Usar esta peonza en batalla';
+      const customName = buildCustomBeyFromCombo(this.state).nombre;
+      equipCustomBtn.innerText = isEquipped ? `${customName} equipada` : `Usar ${customName} en batalla`;
       equipCustomBtn.classList.toggle('equipped', isEquipped);
       equipCustomBtn.onclick = () => this.equipCustomWorkshopBey();
     }
@@ -1514,7 +1530,7 @@ class App {
     this.saveState();
     this.renderHeader();
     this.renderWorkshop();
-    this.showNotice('Mi Peonza X equipada. La proxima batalla usara tu montaje del taller.', 'Peonza del taller lista');
+    this.showNotice(`${buildCustomBeyFromCombo(this.state).nombre} equipada. La proxima batalla usara tu montaje del taller.`, 'Peonza del taller lista');
   }
 
   renderWorkshopItems(partType) {
@@ -1570,7 +1586,7 @@ class App {
           this.saveState();
           this.renderWorkshop();
           if (this.state.player.equippedBeyId === 'custom_x_bey') {
-            this.showNotice('Mi Peonza X actualizada para la proxima batalla.', 'Montaje actualizado');
+            this.showNotice(`${buildCustomBeyFromCombo(this.state).nombre} actualizada para la proxima batalla.`, 'Montaje actualizado');
           }
         };
       }
@@ -1617,7 +1633,15 @@ class App {
   }
 
   getNextBeyToUnlock() {
-    return BEYBLADE_X_BEYS.find(bey => !isBeyUnlocked(this.state, bey)) || null;
+    const currentFloor = getCurrentTowerFloor(this.state);
+    return [...BEYBLADE_X_BEYS]
+      .filter(bey => !isBeyUnlocked(this.state, bey))
+      .sort((a, b) => {
+        const aDue = Math.max(0, (a.nivelRequerido || 1) - currentFloor);
+        const bDue = Math.max(0, (b.nivelRequerido || 1) - currentFloor);
+        if (aDue !== bDue) return aDue - bDue;
+        return (a.nivelRequerido || 1) - (b.nivelRequerido || 1);
+      })[0] || null;
   }
 
   setAlbumTab(tab) {
@@ -2353,7 +2377,10 @@ class App {
     }
 
     const questions = LearningEngine.selectQuestionsForMission(this.state, mission, 4);
-    this.subjectQuestions = questions.length > 0 ? questions : CurriculumData.questionBank.filter(q => q.subject === subjectId).slice(0, 4);
+    const fallbackQuestions = typeof LearningEngine.allowedQuestionBank === 'function'
+      ? LearningEngine.allowedQuestionBank().filter(q => q.subject === subjectId)
+      : CurriculumData.questionBank.filter(q => q.subject === subjectId && q.skill !== 'math_division_intro');
+    this.subjectQuestions = questions.length > 0 ? questions : fallbackQuestions.slice(0, 4);
 
     document.getElementById('subject-mission-world').innerText = mission.subject.worldName;
     document.getElementById('subject-mission-title').innerText = `${mission.subject.name}: ${mission.skill.name}`;

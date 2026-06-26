@@ -86,52 +86,43 @@
     <!-- Screen Container -->
     <main id="screen-container">
 
-      <!-- 1. START SCREEN — PREMIUM COVER -->
+      <!-- 1. START SCREEN - PREMIUM COVER -->
       <section id="screen-start" class="screen active">
 
-        <!-- Full-bleed hero background -->
         <div class="hero-bg">
           <img src="PORTADA.png" alt="" class="hero-bg-img" aria-hidden="true">
-          <!-- Layered overlays for depth -->
           <div class="hero-overlay-bottom"></div>
           <div class="hero-overlay-top"></div>
           <div class="hero-scan-lines" aria-hidden="true"></div>
         </div>
 
-        <!-- Animated energy rings (purely CSS) -->
         <div class="energy-rings" aria-hidden="true">
           <div class="ring ring-1"></div>
           <div class="ring ring-2"></div>
           <div class="ring ring-3"></div>
         </div>
 
-        <!-- Floating particles -->
         <div class="sparks-layer" aria-hidden="true">
           <span class="spark"></span><span class="spark"></span><span class="spark"></span>
           <span class="spark"></span><span class="spark"></span><span class="spark"></span>
           <span class="spark"></span><span class="spark"></span>
         </div>
 
-        <!-- Content stack — centered over hero -->
         <div class="hero-content">
-
-          <!-- Badge -->
           <div class="hero-badge">
             <span class="badge-dot"></span>
             TORNEO DEL CONOCIMIENTO
             <span class="badge-dot"></span>
           </div>
 
-          <!-- Main title -->
           <div class="hero-title-block">
             <div class="hero-title-eyebrow">BEYBLADE X</div>
             <h1 class="hero-title-main">
               <span class="title-word title-word-1">ACADEMY</span>
             </h1>
-            <div class="hero-title-tagline">Entrena tu mente · Domina la X Tower · ¡Hazte leyenda!</div>
+            <div class="hero-title-tagline">Entrena tu mente · Domina la X Tower · Hazte leyenda</div>
           </div>
 
-          <!-- Stats strip -->
           <div class="hero-stats-strip">
             <div class="hero-stat">
               <span class="hero-stat-value">50</span>
@@ -144,24 +135,21 @@
             </div>
             <div class="hero-stat-divider"></div>
             <div class="hero-stat">
-              <span class="hero-stat-value">∞</span>
-              <span class="hero-stat-label">Poder</span>
+              <span class="hero-stat-value">X</span>
+              <span class="hero-stat-label">Dash</span>
             </div>
           </div>
 
-          <!-- CTA -->
           <div class="hero-cta-group">
             <button id="btn-start-game" class="btn-hero-launch">
               <span class="btn-hero-icon">⚡</span>
-              <span class="btn-hero-text">¡LANZAR BEY!</span>
+              <span class="btn-hero-text">Lanzar Bey</span>
               <span class="btn-hero-glow"></span>
             </button>
             <button id="btn-parents-gate-trigger" class="parent-portal-hint" type="button">Acceso para Padres</button>
           </div>
-
         </div>
 
-        <!-- Bottom gradient fade into game -->
         <div class="hero-bottom-fade" aria-hidden="true"></div>
 
       </section>
@@ -510,6 +498,10 @@
             <span class="special-attack-kicker">Ataque especial</span>
             <strong id="special-attack-name">Combo X</strong>
             <p id="special-attack-help">Consigue 3 aciertos seguidos o llena Energia X.</p>
+            <div class="special-command-row">
+              <button class="special-command-btn" id="btn-special-attack" type="button" disabled>Usar especial</button>
+              <button class="special-command-btn xtreme" id="btn-xtreme-dash" type="button" disabled>Xtreme Dash</button>
+            </div>
           </div>
 
           <!-- Attack Multiplier Combo Dots -->
@@ -592,6 +584,10 @@
               <!-- SVG preview rendered dynamically -->
             </div>
           </div>
+          <label class="workshop-name-field">
+            <span>Nombre de tu Bey</span>
+            <input id="custom-bey-name-input" type="text" maxlength="24" value="Mi Peonza X" autocomplete="off">
+          </label>
 
           <div class="workshop-stats-panel">
             <div class="workshop-stat-row">
@@ -628,7 +624,7 @@
         <!-- Inventory customizer (Right) -->
         <div class="workshop-right">
           <div class="workshop-tabs">
-            <button class="workshop-tab active" data-part="core">N?CLEO</button>
+            <button class="workshop-tab active" data-part="core">NÚCLEO</button>
             <button class="workshop-tab" data-part="ring">ANILLO</button>
             <button class="workshop-tab" data-part="driver">PUNTA</button>
             <button class="workshop-tab" data-part="color">ENERGÍA</button>
