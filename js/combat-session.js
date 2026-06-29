@@ -144,8 +144,14 @@ class CombatSession {
     if (rivalBeyName) rivalBeyName.innerText = `Rival: ${this.rivalBey.nombre}`;
     const playerTopLabel = document.querySelector('.top-label-player');
     const rivalTopLabel = document.querySelector('.top-label-rival');
-    if (playerTopLabel) playerTopLabel.innerText = this.playerBey.nombre;
-    if (rivalTopLabel) rivalTopLabel.innerText = this.rivalBey.nombre;
+    if (playerTopLabel) {
+      playerTopLabel.dataset.baseName = this.playerBey.nombre;
+      playerTopLabel.innerText = this.playerBey.nombre;
+    }
+    if (rivalTopLabel) {
+      rivalTopLabel.dataset.baseName = this.rivalBey.nombre;
+      rivalTopLabel.innerText = this.rivalBey.nombre;
+    }
     const stadiumImg = document.querySelector('.battle-stadium-img');
     if (stadiumImg) {
       stadiumImg.src = stadium.image;
@@ -417,9 +423,15 @@ class CombatSession {
     if (rivalImg) rivalImg.src = rival.image;
     if (rivalName) rivalName.innerText = this.isBoss || round?.isFinal ? (round?.rivalName || rival.nombre) : `Rival ${round.index + 1}: ${round?.rivalName || rival.nombre}`;
     if (playerBeyName) playerBeyName.innerText = `Tu Bey: ${this.playerBey.nombre}`;
-    if (playerTopLabel) playerTopLabel.innerText = this.playerBey.nombre;
+    if (playerTopLabel) {
+      playerTopLabel.dataset.baseName = this.playerBey.nombre;
+      playerTopLabel.innerText = this.playerBey.nombre;
+    }
     if (rivalBeyName) rivalBeyName.innerText = `Rival: ${rivalBey.nombre}`;
-    if (rivalTopLabel) rivalTopLabel.innerText = rivalBey.nombre;
+    if (rivalTopLabel) {
+      rivalTopLabel.dataset.baseName = rivalBey.nombre;
+      rivalTopLabel.innerText = rivalBey.nombre;
+    }
     const floorLabel = document.getElementById('combat-floor-label');
     if (floorLabel) floorLabel.innerText = this.getRoundLabelText();
   }
@@ -780,6 +792,16 @@ class CombatSession {
     void arena.offsetWidth;
     arena.classList.add('xtreme-camera');
     setTimeout(() => arena.classList.remove('xtreme-camera'), duration);
+  }
+
+  triggerCombatCamera(action = 'attack', duration = 420) {
+    const arena = document.getElementById('battle-field');
+    if (!arena) return;
+    const cameraClass = action === 'defense' ? 'camera-guard' : action === 'charge' ? 'camera-charge' : action === 'special' ? 'camera-heavy' : 'camera-hit';
+    arena.classList.remove('camera-hit', 'camera-guard', 'camera-charge', 'camera-heavy');
+    void arena.offsetWidth;
+    arena.classList.add(cameraClass);
+    setTimeout(() => arena.classList.remove(cameraClass), duration);
   }
 
   scheduleCombatFrame(callback) {
@@ -1301,10 +1323,26 @@ class CombatSession {
     ];
     labels.forEach(([combatant, label]) => {
       if (!combatant || !label) return;
+      if (!label.dataset.baseName) label.dataset.baseName = label.innerText || (combatant.id === 'player' ? 'Tu Bey' : 'Rival');
+      const stateText = this.getCombatantStateLabel(combatant);
+      label.innerText = stateText ? `${label.dataset.baseName} · ${stateText}` : label.dataset.baseName;
       label.style.left = `${combatant.x}%`;
       label.style.top = `${Math.max(5, combatant.y - 12)}%`;
       label.classList.toggle('boosting', combatant.status === 'attacking' || combatant.status === 'special' || combatant.status === 'xtreme-dash');
+      label.classList.toggle('state-alert', ['special', 'xtreme-dash', 'stunned'].includes(combatant.status));
     });
+  }
+
+  getCombatantStateLabel(combatant) {
+    if (!combatant) return '';
+    if (combatant.status === 'attacking') return 'Ataca';
+    if (combatant.status === 'special') return 'Especial';
+    if (combatant.status === 'xtreme-dash') return 'Rail X';
+    if (combatant.status === 'guarding') return 'Defiende';
+    if (combatant.status === 'charging') return 'Carga';
+    if (combatant.status === 'stunned') return 'Aturdida';
+    if ((combatant.charge || 0) >= 3) return 'Lista';
+    return '';
   }
 
   dispose() {
@@ -2395,6 +2433,20 @@ class CombatSession {
     this.updateRivalChargeVisual();
   }
 
+  telegraphRivalPlan(plan) {
+    const rivalTop = document.getElementById('rival-top');
+    if (!rivalTop || !plan) return;
+    rivalTop.classList.remove('rival-telegraph-attack', 'rival-telegraph-charge', 'rival-telegraph-special');
+    const telegraphClass = plan.type === 'charge'
+      ? 'rival-telegraph-charge'
+      : plan.type === 'special' || plan.type === 'xtreme'
+        ? 'rival-telegraph-special'
+        : 'rival-telegraph-attack';
+    void rivalTop.offsetWidth;
+    rivalTop.classList.add(telegraphClass);
+    setTimeout(() => rivalTop.classList.remove(telegraphClass), 1050);
+  }
+
   getBlockTimingResult(startedAt, durationMs) {
     const elapsed = Math.max(0, Date.now() - startedAt);
     const cycle = (elapsed % (durationMs * 2)) / durationMs;
@@ -2416,6 +2468,7 @@ class CombatSession {
     if (!overlay || !button) return Promise.resolve({ skipped: true, damage: 0 });
 
     const plan = this.chooseRivalTurnPlan();
+    this.telegraphRivalPlan(plan);
     const durationMs = Math.max(980, 2600 - (this.difficulty * 110) - (this.rivalPattern?.blockSpeedBonus || 0) + (plan.blockDurationMod || 0));
     const fullDamage = this.getRivalTurnDamage(plan);
     const startedAt = Date.now();
@@ -2882,6 +2935,15 @@ class CombatSession {
     }
   }
 
+  getDamageVariant(action, damage, blocked = false) {
+    if (blocked) return 'blocked';
+    if (action === 'defense') return 'blocked';
+    if (action === 'special') return 'critical';
+    if (damage >= 38) return 'super';
+    if (damage >= 26) return 'critical';
+    return 'normal';
+  }
+
   performAttackSequence(attackerId, action = 'dash', damage = 0, options = {}) {
     const attacker = attackerId === 'player' ? this.playerCombatant : this.rivalCombatant;
     const defender = attackerId === 'player' ? this.rivalCombatant : this.playerCombatant;
@@ -2895,16 +2957,24 @@ class CombatSession {
 
     const isSpecial = action === 'special';
     this.playActionStartCue(attackerId, action, attacker);
+    this.triggerCombatCamera(action, isSpecial ? 620 : action === 'charge' ? 520 : 420);
     const forceBase = isSpecial ? 42 : action === 'attack' || action === 'counter' ? 34 : action === 'charge' ? 15 : action === 'defense' ? 20 : 24;
     const force = forceBase * this.getImpactForceMultiplier(attackerId, action);
     const dx = defender.x - attacker.x;
     const dy = defender.y - attacker.y;
     const dist = Math.hypot(dx, dy) || 1;
-    attacker.status = isSpecial ? 'special' : 'attacking';
+    attacker.status = action === 'defense' ? 'guarding' : action === 'charge' ? 'charging' : isSpecial ? 'special' : 'attacking';
     attacker.vx += (dx / dist) * force;
     attacker.vy += (dy / dist) * force;
-    defender.vx += (dx / dist) * (isSpecial ? 18 : 10);
-    defender.vy += (dy / dist) * (isSpecial ? 18 : 10);
+    const rebound = isSpecial ? 28 : action === 'defense' ? 20 : action === 'charge' ? 6 : 15;
+    defender.vx += (dx / dist) * rebound;
+    defender.vy += (dy / dist) * rebound;
+    if (isSpecial || damage >= 28) {
+      defender.status = 'stunned';
+      setTimeout(() => {
+        if (defender.status === 'stunned') defender.status = 'orbiting';
+      }, isSpecial ? 760 : 420);
+    }
 
     const impactX = (attacker.x * 0.35) + (defender.x * 0.65);
     const impactY = (attacker.y * 0.35) + (defender.y * 0.65);
@@ -2920,7 +2990,7 @@ class CombatSession {
         this.spawnShockwave(impactX, impactY, '#ffea00', true, 'finish-burst');
         this.spawnParticles(impactX, impactY, '#ffea00', 22);
       }
-      if (damage > 0) this.spawnDamagePop(impactX, impactY, damage, attackerId);
+      if (damage > 0) this.spawnDamagePop(impactX, impactY, damage, attackerId, this.getDamageVariant(action, damage, action === 'defense'));
     }, 110);
 
     const topEl = document.getElementById(`${attackerId}-top`);
@@ -2930,8 +3000,8 @@ class CombatSession {
       setTimeout(() => topEl.classList.remove('is-special-strike', 'is-dashing', 'is-guarding', 'is-charging'), isSpecial ? 850 : action === 'charge' ? 760 : 520);
     }
     setTimeout(() => {
-      attacker.status = 'orbiting';
-    }, isSpecial ? 850 : 520);
+      if (attacker.status !== 'stunned') attacker.status = 'orbiting';
+    }, isSpecial ? 850 : action === 'charge' ? 760 : 520);
   }
 
   // MEJORA 2: Animacion completa del Xtreme Dash recorriendo el rail circular
@@ -3159,15 +3229,15 @@ class CombatSession {
     setTimeout(() => wave.remove(), isSpecial ? 900 : 620);
   }
 
-  spawnDamagePop(x, y, amount, attackerId) {
+  spawnDamagePop(x, y, amount, attackerId, variant = '') {
     const layer = document.getElementById('damage-layer');
     if (!layer) return;
     const pop = document.createElement('span');
-    const powerClass = amount >= 38 ? ' super' : amount >= 26 ? ' critical' : '';
+    const powerClass = variant ? ` ${variant}` : amount >= 38 ? ' super' : amount >= 26 ? ' critical' : '';
     pop.className = `damage-pop ${attackerId}${powerClass}`;
     pop.style.left = `${x}%`;
     pop.style.top = `${Math.max(8, y - 6)}%`;
-    pop.innerText = `-${amount}`;
+    pop.innerText = variant === 'blocked' ? `-${amount} bloqueado` : `-${amount}`;
     layer.appendChild(pop);
     setTimeout(() => pop.remove(), 900);
   }
@@ -3255,6 +3325,11 @@ class CombatSession {
     document.getElementById('dot-1').className = `combo-dot ${this.correctStreak >= 1 ? 'active' : ''}`;
     document.getElementById('dot-2').className = `combo-dot ${this.correctStreak >= 2 ? 'active' : ''}`;
     document.getElementById('dot-3').className = `combo-dot ${this.correctStreak >= 3 ? 'active' : ''}`;
+    const playerTop = document.getElementById('player-top');
+    if (playerTop) {
+      playerTop.classList.toggle('combo-heating', this.correctStreak >= 2);
+      playerTop.classList.toggle('combo-max', this.correctStreak >= 3);
+    }
     this.updateXGauge();
   }
 
