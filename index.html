@@ -601,6 +601,22 @@
 
               <div class="attack-banner-layer" id="attack-banner-layer" data-attack-banner aria-live="polite"></div>
               <div class="screen-flash-layer" id="screen-flash-layer" aria-hidden="true"></div>
+              <div class="xtreme-cutin" id="xtreme-cutin" hidden aria-hidden="true">
+                <div class="xtreme-cutin__speedlines" aria-hidden="true"></div>
+                <div class="xtreme-cutin__rail" aria-hidden="true"></div>
+                <div class="xtreme-cutin__character-wrap">
+                  <img id="xtreme-cutin-character" class="xtreme-cutin__character" src="" alt="">
+                </div>
+                <div class="xtreme-cutin__bey-wrap">
+                  <img id="xtreme-cutin-bey" class="xtreme-cutin__bey" src="" alt="">
+                </div>
+                <div class="xtreme-cutin__copy">
+                  <span id="xtreme-cutin-name" class="xtreme-cutin__name">Blader</span>
+                  <strong id="xtreme-cutin-cry" class="xtreme-cutin__cry">Xtreme Dash</strong>
+                  <span id="xtreme-cutin-bey-name" class="xtreme-cutin__bey-name">Bey</span>
+                </div>
+                <div class="xtreme-cutin__burst" aria-hidden="true">X</div>
+              </div>
 
               <div class="rival-intent-badge" id="rival-intent-badge" data-rival-intent>
                 <span class="intent-kicker">Rival</span>
@@ -654,6 +670,18 @@
             <button class="btn-answer">63</button>
           </div>
 
+          <div class="combat-tactic-card" id="combat-tactic-card" aria-live="polite">
+            <div class="combat-tactic-head">
+              <span class="combat-tactic-kicker">Turno tactico</span>
+              <strong id="combat-tactic-title">Lee al rival</strong>
+            </div>
+            <div class="combat-tactic-grid">
+              <span id="combat-tactic-rival">Rival: ataque</span>
+              <span id="combat-tactic-choice">Mejor: defensa</span>
+              <span id="combat-tactic-risk">Riesgo: medio</span>
+            </div>
+          </div>
+
           <div class="combat-action-panel" aria-label="Comandos de combate">
             <button class="combat-action-btn" type="button" data-combat-action="attack">
               <span class="combat-action-title">Ataque</span>
@@ -679,6 +707,10 @@
               <div class="gauge-cell" id="gauge-cell-1"><div class="gauge-cell-fill"></div></div>
               <div class="gauge-cell" id="gauge-cell-2"><div class="gauge-cell-fill"></div></div>
               <div class="gauge-cell" id="gauge-cell-3"><div class="gauge-cell-fill"></div></div>
+            </div>
+            <div class="combat-match-row" id="combat-match-row">
+              <span id="combat-finish-score">Finish 0 pts</span>
+              <span id="combat-rival-energy">Rival 0/3</span>
             </div>
           </div>
 
