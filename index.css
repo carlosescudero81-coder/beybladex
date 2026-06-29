@@ -6924,6 +6924,22 @@ button,
   animation: xtreme-camera-hit 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+.battlefield-arena.camera-hit {
+  animation: combat-camera-hit 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.battlefield-arena.camera-guard {
+  animation: combat-camera-guard 420ms ease-out both;
+}
+
+.battlefield-arena.camera-charge {
+  animation: combat-camera-charge 520ms ease-out both;
+}
+
+.battlefield-arena.camera-heavy {
+  animation: combat-camera-heavy 620ms cubic-bezier(0.12, 1.35, 0.2, 1) both;
+}
+
 .battlefield-arena.xtreme-armed .xtreme-rail-entry,
 .battlefield-arena.xtreme-dash-active .xtreme-rail-entry {
   border-color: rgba(255, 234, 0, 0.75);
@@ -7046,6 +7062,16 @@ button,
   animation: xtreme-shockwave-expand 680ms ease-out forwards;
 }
 
+.shockwave.guard {
+  border-color: rgba(77, 255, 145, 0.9);
+  box-shadow: 0 0 24px rgba(77, 255, 145, 0.58), inset 0 0 18px rgba(0, 240, 255, 0.22);
+}
+
+.shockwave.charge {
+  border-color: rgba(255, 234, 0, 0.9);
+  box-shadow: 0 0 24px rgba(255, 234, 0, 0.58), inset 0 0 18px rgba(255, 0, 85, 0.16);
+}
+
 .damage-pop {
   position: absolute;
   max-width: min(220px, 54vw);
@@ -7074,6 +7100,14 @@ button,
   box-shadow: 0 0 18px rgba(255, 0, 85, 0.34);
 }
 
+.damage-pop.blocked {
+  color: #baffd3;
+  background: rgba(5, 28, 18, 0.88);
+  border-color: rgba(77, 255, 145, 0.76);
+  box-shadow: 0 0 18px rgba(77, 255, 145, 0.34);
+  font-size: clamp(0.86rem, 2.2vw, 1.18rem);
+}
+
 .damage-pop.critical {
   transform: translate(-50%, -50%) scale(0.95);
 }
@@ -7096,6 +7130,15 @@ button,
   color: #ffe7ef;
   border-color: rgba(255, 0, 85, 0.72);
   box-shadow: 0 0 20px rgba(255, 0, 85, 0.38);
+}
+
+.damage-pop.blocked,
+.damage-pop.player.blocked,
+.damage-pop.rival.blocked {
+  color: #baffd3;
+  background: rgba(5, 28, 18, 0.88);
+  border-color: rgba(77, 255, 145, 0.76);
+  box-shadow: 0 0 18px rgba(77, 255, 145, 0.34);
 }
 
 .attack-banner,
@@ -8185,6 +8228,20 @@ button,
   filter: drop-shadow(0 15px 12px rgba(0, 0, 0, 0.56)) drop-shadow(0 0 24px rgba(255, 0, 85, 0.82)) drop-shadow(0 0 18px rgba(255, 234, 0, 0.52));
 }
 
+.top-sprite.combo-heating {
+  filter:
+    drop-shadow(0 15px 12px rgba(0, 0, 0, 0.56))
+    drop-shadow(0 0 18px rgba(0, 240, 255, 0.66))
+    drop-shadow(0 0 14px rgba(255, 234, 0, 0.42));
+}
+
+.top-sprite.combo-max {
+  filter:
+    drop-shadow(0 15px 12px rgba(0, 0, 0, 0.56))
+    drop-shadow(0 0 26px rgba(255, 234, 0, 0.84))
+    drop-shadow(0 0 20px rgba(0, 240, 255, 0.58));
+}
+
 .top-sprite.rival-energy-ready::before {
   content: "";
   position: absolute;
@@ -8194,6 +8251,19 @@ button,
   background: radial-gradient(circle, rgba(255, 0, 85, 0.38), rgba(255, 234, 0, 0.18) 48%, transparent 72%);
   animation: top-aura-pulse 820ms ease-in-out infinite;
   pointer-events: none;
+}
+
+.top-sprite.rival-telegraph-attack {
+  animation: rival-telegraph-attack 520ms ease-in-out 2;
+}
+
+.top-sprite.rival-telegraph-charge {
+  animation: rival-telegraph-charge 720ms ease-in-out 2;
+}
+
+.top-sprite.rival-telegraph-special {
+  z-index: 15;
+  animation: rival-telegraph-special 580ms ease-in-out 2;
 }
 
 .top-sprite[data-bey-type="ataque"] {
@@ -8292,6 +8362,13 @@ button,
 
 .top-label.boosting {
   box-shadow: 0 0 16px rgba(255, 234, 0, 0.36);
+}
+
+.top-label.state-alert {
+  color: #06101e;
+  background: linear-gradient(135deg, var(--yellow), #ffffff);
+  border-color: rgba(255, 234, 0, 0.8);
+  box-shadow: 0 0 18px rgba(255, 234, 0, 0.34);
 }
 
 .question-card {
@@ -8466,6 +8543,29 @@ button,
   62% { transform: translate3d(-2px, -1px, 0); }
 }
 
+@keyframes combat-camera-hit {
+  0%, 100% { transform: translate3d(0, 0, 0); filter: brightness(1); }
+  35% { transform: translate3d(-2px, 1px, 0); filter: brightness(1.08); }
+  58% { transform: translate3d(2px, -1px, 0); }
+}
+
+@keyframes combat-camera-guard {
+  0%, 100% { filter: brightness(1); }
+  42% { filter: brightness(1.12) saturate(1.18); }
+}
+
+@keyframes combat-camera-charge {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50% { filter: brightness(1.16) saturate(1.25); }
+}
+
+@keyframes combat-camera-heavy {
+  0%, 100% { transform: translate3d(0, 0, 0); filter: brightness(1); }
+  22% { transform: translate3d(-4px, 3px, 0); filter: brightness(1.18) saturate(1.28); }
+  44% { transform: translate3d(5px, -3px, 0); }
+  66% { transform: translate3d(-2px, 2px, 0); }
+}
+
 @keyframes action-streak-out {
   0% { opacity: 0; transform: translateX(-22%) rotate(-18deg) scaleX(0.3); }
   20% { opacity: 1; }
@@ -8488,6 +8588,21 @@ button,
   0% { opacity: 0; transform: scale(0.5); }
   35% { opacity: 1; transform: scale(1.12); }
   100% { opacity: 0.25; transform: scale(1.32); }
+}
+
+@keyframes rival-telegraph-attack {
+  0%, 100% { transform: translate(-50%, -50%) scale(var(--top-scale, 1)); }
+  50% { transform: translate(-50%, -52%) scale(var(--top-scale, 1)); filter: drop-shadow(0 0 24px rgba(255, 0, 85, 0.88)); }
+}
+
+@keyframes rival-telegraph-charge {
+  0%, 100% { filter: drop-shadow(0 14px 12px rgba(0, 0, 0, 0.54)); }
+  50% { filter: drop-shadow(0 0 24px rgba(255, 234, 0, 0.86)); }
+}
+
+@keyframes rival-telegraph-special {
+  0%, 100% { transform: translate(-50%, -50%) scale(var(--top-scale, 1)); }
+  50% { transform: translate(-50%, -50%) scale(1.1); filter: drop-shadow(0 0 28px rgba(255, 0, 85, 0.9)) drop-shadow(0 0 22px rgba(255, 234, 0, 0.72)); }
 }
 
 @keyframes xtreme-shockwave-expand {
@@ -8691,6 +8806,10 @@ button,
 
 @media (prefers-reduced-motion: reduce) {
   .battlefield-arena::after,
+  .battlefield-arena.camera-hit,
+  .battlefield-arena.camera-guard,
+  .battlefield-arena.camera-charge,
+  .battlefield-arena.camera-heavy,
   .battlefield-arena.xtreme-camera,
   .top-sprite.aura::before,
   .top-sprite.boosting::before,
@@ -8701,6 +8820,9 @@ button,
   .top-sprite.action-charge-build::before,
   .top-sprite.action-special-smash::before,
   .top-sprite.rival-energy-ready::before,
+  .top-sprite.rival-telegraph-attack,
+  .top-sprite.rival-telegraph-charge,
+  .top-sprite.rival-telegraph-special,
   .top-sprite[data-bey-type]::before,
   .top-sprite.boosting,
   .top-sprite.xtreme-dashing,
