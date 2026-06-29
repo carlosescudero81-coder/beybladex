@@ -82,6 +82,8 @@ class CombatSession {
     this.finishStats = { spin: 0, over: 0, burst: 0, xtreme: 0 };
     this.xtremeDashUses = 0;
     this.xtremeDashRisks = 0;
+    this.lastTurnSummary = null;
+    this.tutorialFlags = {};
   }
 
   start() {
@@ -479,6 +481,8 @@ class CombatSession {
     };
     this.xtremeDashUses = Math.max(0, parseInt(savedBattle.xtremeDashUses, 10) || 0);
     this.xtremeDashRisks = Math.max(0, parseInt(savedBattle.xtremeDashRisks, 10) || 0);
+    this.savedPlayerCharge = Math.max(0, Math.min(3, parseInt(savedBattle.playerCharge, 10) || 0));
+    this.savedRivalCharge = Math.max(0, Math.min(3, parseInt(savedBattle.rivalCharge, 10) || 0));
     this.usedTowerQuestionIds = new Set(savedBattle.usedQuestionIds || []);
     this.usedTowerQuestionSignatures = new Set(savedBattle.usedQuestionSignatures || []);
     if (Array.isArray(savedBattle.questionBank) && savedBattle.questionBank.length > 0) {
@@ -526,6 +530,8 @@ class CombatSession {
       usedQuestionSignatures: [...this.usedTowerQuestionSignatures],
       playerHP: Math.round(this.playerHP),
       rivalHP: Math.round(this.rivalHP),
+      playerCharge: Math.max(0, Math.min(3, Math.round(this.playerCombatant?.charge || 0))),
+      rivalCharge: Math.max(0, Math.min(3, Math.round(this.rivalCombatant?.charge || 0))),
       correctStreak: this.correctStreak,
       sessionCorrect: this.sessionCorrect,
       sessionIncorrect: this.sessionIncorrect,
@@ -644,6 +650,10 @@ class CombatSession {
   initCombatants() {
     this.playerCombatant = this.createCombatant('player', this.playerBey, 28, 54, 24, -9);
     this.rivalCombatant = this.createCombatant('rival', this.rivalBey, 72, 42, -22, 10);
+    if (this.resumedTowerBattle) {
+      this.playerCombatant.charge = Math.max(0, Math.min(3, this.savedPlayerCharge || 0));
+      this.rivalCombatant.charge = Math.max(0, Math.min(3, this.savedRivalCharge || 0));
+    }
     this.playerX = this.playerCombatant.x;
     this.playerY = this.playerCombatant.y;
     this.rivalX = this.rivalCombatant.x;
@@ -718,6 +728,23 @@ class CombatSession {
       this.setCssVar(rivalTop, '--top-color', this.rivalCombatant.color);
       this.setCssVar(rivalTop, '--top-color-2', this.rivalCombatant.secondaryColor);
     }
+    this.updateRivalChargeVisual();
+  }
+
+  updateRivalChargeVisual() {
+    const rivalTop = document.getElementById('rival-top');
+    const rivalEnergy = document.getElementById('combat-rival-energy');
+    if (!this.rivalCombatant) return;
+    const charge = this.rivalCombatant.charge || 0;
+    if (rivalTop) {
+      rivalTop.classList.toggle('rival-energy-ready', charge >= 3);
+      rivalTop.classList.toggle('rival-energy-building', charge > 0 && charge < 3);
+    }
+    if (rivalEnergy) {
+      rivalEnergy.innerText = charge >= 3 ? 'Rival especial listo' : `Rival ${charge}/3`;
+      rivalEnergy.classList.toggle('is-ready', charge >= 3);
+      rivalEnergy.classList.toggle('is-building', charge > 0 && charge < 3);
+    }
   }
 
   decorateStadiumVisual(stadium = getFloorStadium(this.towerFloor)) {
@@ -744,6 +771,22 @@ class CombatSession {
     void arena.offsetWidth;
     arena.classList.add('xtreme-dash-active');
     setTimeout(() => arena.classList.remove('xtreme-dash-active'), 920);
+  }
+
+  triggerXtremeCamera(duration = 760) {
+    const arena = document.getElementById('battle-field');
+    if (!arena) return;
+    arena.classList.remove('xtreme-camera');
+    void arena.offsetWidth;
+    arena.classList.add('xtreme-camera');
+    setTimeout(() => arena.classList.remove('xtreme-camera'), duration);
+  }
+
+  scheduleCombatFrame(callback) {
+    const scheduleFrame = typeof requestAnimationFrame === 'function'
+      ? requestAnimationFrame
+      : cb => setTimeout(() => cb(performance.now()), 16);
+    return scheduleFrame(callback);
   }
 
   pulseFinishPocket(type) {
@@ -777,14 +820,18 @@ class CombatSession {
   }
 
   canUseSpecialAttack() {
-    return (this.playerCombatant?.charge || 0) >= 3 || this.correctStreak >= 2;
+    return (this.playerCombatant?.charge || 0) >= 3 || this.correctStreak >= 3;
+  }
+
+  hasXtremeRailWindow() {
+    const speed = this.playerBey?.velocidad || 70;
+    const difficulty = parseInt(this.currentQuestion?.difficulty, 10) || 1;
+    return this.currentQuestion?.isLightning === true || difficulty >= 4 || speed >= 78;
   }
 
   canUseXtremeDash() {
     const charge = this.playerCombatant?.charge || 0;
-    const speed = this.playerBey?.velocidad || 70;
-    const difficulty = parseInt(this.currentQuestion?.difficulty, 10) || 1;
-    return charge >= 1 || speed >= 75 || this.currentQuestion?.isLightning === true || difficulty >= 4;
+    return charge >= 1 && this.hasXtremeRailWindow();
   }
 
   armSpecialAttack() {
@@ -808,11 +855,15 @@ class CombatSession {
     if (this.xtremeDashArmed) {
       this.specialArmed = false;
       this.selectCombatAction('attack', false);
+      this.previewXtremeDashArming('player');
       // MEJORA 3: arrancar el anillo de cuenta atrás
       this._startXtremeRingCountdown();
     } else {
       // Desarmado manualmente
       this._cancelXtremeRingCountdown('');
+      if (this.playerCombatant?.status === 'special' || this.playerCombatant?.status === 'xtreme-dash') {
+        this.playerCombatant.status = 'orbiting';
+      }
     }
     this.showAttackBanner(
       this.xtremeDashArmed ? 'Xtreme Dash preparado' : 'Dash reservado',
@@ -821,6 +872,54 @@ class CombatSession {
       this.xtremeDashArmed ? 'xtreme-dash' : ''
     );
     this.updateXGauge();
+  }
+
+  previewXtremeDashArming(attackerId = 'player') {
+    const combatant = attackerId === 'rival' ? this.rivalCombatant : this.playerCombatant;
+    const topEl = document.getElementById(`${attackerId}-top`);
+    if (!combatant || !topEl) return;
+
+    this.pulseXtremeRail();
+    this.triggerXtremeCamera(460);
+    combatant.status = 'xtreme-dash';
+    combatant.xtremeTrailUntil = Date.now() + 760;
+    topEl.classList.remove('xtreme-rail-riding', 'xtreme-impact');
+    topEl.classList.add('xtreme-dashing', 'xtreme-arming', 'special-ready');
+
+    const startX = combatant.x;
+    const startY = combatant.y;
+    const railX = attackerId === 'rival' ? 78 : 82;
+    const railY = attackerId === 'rival' ? 28 : 72;
+    const duration = 460;
+    const startTs = performance.now();
+
+    const animate = timestamp => {
+      const t = Math.min(1, (timestamp - startTs) / duration);
+      const ease = 1 - Math.pow(1 - t, 3);
+      const wobble = Math.sin(t * Math.PI) * (attackerId === 'rival' ? -5 : 5);
+      combatant.x = startX + (railX - startX) * ease;
+      combatant.y = startY + (railY - startY) * ease + wobble;
+      topEl.style.left = `${combatant.x}%`;
+      topEl.style.top = `${combatant.y}%`;
+      this.updateTopLabels();
+      if (t < 1 && this.xtremeDashArmed) {
+        this.scheduleCombatFrame(animate);
+      } else {
+        if (this.xtremeDashArmed) {
+          combatant.vx = attackerId === 'rival' ? -14 : 14;
+          combatant.vy = attackerId === 'rival' ? 8 : -8;
+          combatant.status = 'special';
+          topEl.classList.remove('xtreme-arming');
+          topEl.classList.add('xtreme-rail-riding');
+          setTimeout(() => topEl.classList.remove('xtreme-rail-riding'), 360);
+        } else {
+          combatant.status = 'orbiting';
+          topEl.classList.remove('xtreme-dashing', 'xtreme-arming', 'xtreme-rail-riding', 'special-ready');
+        }
+      }
+    };
+
+    this.scheduleCombatFrame(animate);
   }
 
   // MEJORA 3: anillo SVG que decae en el tiempo de respuesta rápida
@@ -849,6 +948,9 @@ class CombatSession {
       if (!this.xtremeDashArmed) return;
       this._cancelXtremeRingCountdown('ring-failed');
       this.xtremeDashArmed = false;
+      if (this.playerCombatant?.status === 'special' || this.playerCombatant?.status === 'xtreme-dash') {
+        this.playerCombatant.status = 'orbiting';
+      }
       this.showAttackBanner('Dash cancelado', 'Tiempo agotado: el rail se cerró', 'rival', 'xtreme-risk');
       this.updateXGauge();
     }, fastWindow);
@@ -858,9 +960,13 @@ class CombatSession {
     if (this._xtremeRingTimer) { clearTimeout(this._xtremeRingTimer); this._xtremeRingTimer = null; }
     const btn  = document.getElementById('btn-xtreme-dash');
     const ring = document.getElementById('xtreme-ring-fill');
+    const playerTop = document.getElementById('player-top');
+    if (playerTop) playerTop.classList.remove('xtreme-dashing', 'xtreme-arming', 'xtreme-rail-riding', 'xtreme-impact');
     if (!btn || !ring) return;
     // Detener la transición donde esté
-    const computed = getComputedStyle(ring).strokeDashoffset;
+    const computed = typeof getComputedStyle === 'function'
+      ? getComputedStyle(ring).strokeDashoffset
+      : (ring.style?.strokeDashoffset || '0');
     ring.style.transition = 'none';
     ring.style.strokeDashoffset = computed;
     if (resultClass) {
@@ -913,6 +1019,7 @@ class CombatSession {
       label.classList.toggle('readout-risk', !isMatch && validAction === oppositeAction);
     }
     this.updateXGauge();
+    this.updateTacticalPanel();
   }
 
   setRivalIntent(intent) {
@@ -923,12 +1030,19 @@ class CombatSession {
       badge.innerHTML = `<span>${this.rivalIntent.label}</span><small>${this.rivalIntent.hint}</small>`;
     }
     this.markRecommendedAction();
+    this.updateTacticalPanel();
   }
 
   getActionAdvice() {
     const recommended = this.getRecommendedAction();
     const labels = { attack: 'Ataque', defense: 'Defensa', charge: 'Carga' };
-    return `Consejo: ${labels[recommended]}.`;
+    const intent = this.rivalIntent?.type || 'attack';
+    const rule = intent === 'attack'
+      ? 'Defensa bloquea Ataque.'
+      : intent === 'defense'
+        ? 'Carga supera Defensa.'
+        : 'Ataque corta Carga.';
+    return `Consejo: ${labels[recommended]}. ${rule}`;
   }
 
   getRecommendedAction() {
@@ -952,6 +1066,50 @@ class CombatSession {
         button.classList.add('action-danger');
       }
     });
+  }
+
+  getActionLabel(action) {
+    return { attack: 'Ataque', defense: 'Defensa', charge: 'Carga' }[action] || 'Ataque';
+  }
+
+  getTacticRule(intent = this.rivalIntent?.type || 'attack') {
+    if (intent === 'attack') return 'Defensa vence Ataque';
+    if (intent === 'defense') return 'Carga vence Defensa';
+    return 'Ataque vence Carga';
+  }
+
+  getShortRivalIntent() {
+    const type = this.rivalIntent?.type || 'attack';
+    if (type === 'attack') return 'Rival ataca';
+    if (type === 'defense') return 'Rival se cubre';
+    return 'Rival carga';
+  }
+
+  getTacticRisk(action = this.selectedAction) {
+    const recommended = this.getRecommendedAction();
+    const opposite = recommended === 'attack' ? 'charge' : recommended === 'defense' ? 'attack' : 'defense';
+    if (action === recommended) return { label: 'Ventaja', className: 'is-good' };
+    if (action === opposite) return { label: 'Peligro', className: 'is-danger' };
+    return { label: 'Neutral', className: 'is-neutral' };
+  }
+
+  updateTacticalPanel(summary = null) {
+    const card = document.getElementById('combat-tactic-card');
+    if (!card) return;
+    const title = document.getElementById('combat-tactic-title');
+    const rival = document.getElementById('combat-tactic-rival');
+    const choice = document.getElementById('combat-tactic-choice');
+    const risk = document.getElementById('combat-tactic-risk');
+    const recommended = this.getRecommendedAction();
+    const selected = this.selectedAction || 'attack';
+    const riskState = this.getTacticRisk(selected);
+
+    card.classList.remove('is-good', 'is-danger', 'is-neutral', 'is-result');
+    card.classList.add(summary ? 'is-result' : riskState.className);
+    if (title) title.innerText = summary?.title || this.getTacticRule();
+    if (rival) rival.innerText = summary?.rival || this.getShortRivalIntent();
+    if (choice) choice.innerText = summary?.choice || `Mejor ${this.getActionLabel(recommended)} · Elegida ${this.getActionLabel(selected)}`;
+    if (risk) risk.innerText = summary?.risk || `Estado: ${riskState.label}`;
   }
 
   chooseRivalIntent() {
@@ -1027,6 +1185,7 @@ class CombatSession {
   updateMotion(dt, timestamp) {
     const combatants = [this.playerCombatant, this.rivalCombatant].filter(Boolean);
     combatants.forEach(combatant => {
+      if (combatant.status === 'xtreme-dash') return;
       const centerPull = combatant.status === 'attacking' ? 0.8 : 0.18;
       combatant.vx += (50 - combatant.x) * centerPull * dt;
       combatant.vy += (50 - combatant.y) * centerPull * dt;
@@ -1049,7 +1208,9 @@ class CombatSession {
       this.resolveArenaBounds(combatant, timestamp);
     });
 
-    this.resolveTopCollision(this.playerCombatant, this.rivalCombatant, timestamp);
+    if (this.playerCombatant?.status !== 'xtreme-dash' && this.rivalCombatant?.status !== 'xtreme-dash') {
+      this.resolveTopCollision(this.playerCombatant, this.rivalCombatant, timestamp);
+    }
     this.trailAccumulator += dt;
     if (this.trailAccumulator > 0.045) {
       this.trailAccumulator = 0;
@@ -1122,8 +1283,9 @@ class CombatSession {
       el.style.left = `${combatant.x}%`;
       el.style.top = `${combatant.y}%`;
       this.setCssVar(el, '--top-scale', depthScale.toFixed(2));
-      el.classList.toggle('boosting', combatant.status === 'attacking');
-      el.classList.toggle('special-ready', combatant.charge >= 3 || combatant.status === 'special');
+      el.classList.toggle('boosting', combatant.status === 'attacking' || combatant.status === 'xtreme-dash');
+      el.classList.toggle('special-ready', combatant.charge >= 3 || combatant.status === 'special' || combatant.status === 'xtreme-dash');
+      el.classList.toggle('xtreme-dashing', combatant.status === 'xtreme-dash');
     });
     this.updateTopLabels();
     this.playerX = this.playerCombatant?.x || this.playerX;
@@ -1141,7 +1303,7 @@ class CombatSession {
       if (!combatant || !label) return;
       label.style.left = `${combatant.x}%`;
       label.style.top = `${Math.max(5, combatant.y - 12)}%`;
-      label.classList.toggle('boosting', combatant.status === 'attacking' || combatant.status === 'special');
+      label.classList.toggle('boosting', combatant.status === 'attacking' || combatant.status === 'special' || combatant.status === 'xtreme-dash');
     });
   }
 
@@ -1630,6 +1792,7 @@ class CombatSession {
     this.actionLocked = false;
     this.setRivalIntent(this.chooseRivalIntent());
     this.selectCombatAction(this.selectedAction || 'attack', false);
+    this.showCombatTutorialNudge();
     
     // Update combat text indicators
     const roundQuestionNumber = Math.max(1, this.currentQuestionIdx - (round?.start || 0) + 1);
@@ -1646,13 +1809,13 @@ class CombatSession {
       questionTextEl.classList.toggle('is-very-long', length > 120);
       questionTextEl.style.fontSize = '';
       if (length > 120) {
-        questionTextEl.style.fontSize = 'clamp(1.02rem, 2.2vw, 1.28rem)';
+        questionTextEl.style.fontSize = 'clamp(0.94rem, 1.9vw, 1.16rem)';
       } else if (length > 58) {
-        questionTextEl.style.fontSize = 'clamp(1.18rem, 2.8vw, 1.55rem)';
+        questionTextEl.style.fontSize = 'clamp(1.02rem, 2.25vw, 1.32rem)';
       } else if (length > 25) {
-        questionTextEl.style.fontSize = 'clamp(1.45rem, 3.8vw, 2.1rem)';
+        questionTextEl.style.fontSize = 'clamp(1.18rem, 3vw, 1.68rem)';
       } else {
-        questionTextEl.style.fontSize = 'clamp(2.3rem, 5vw, 3.5rem)';
+        questionTextEl.style.fontSize = 'clamp(1.85rem, 4.2vw, 2.8rem)';
       }
       questionTextEl.innerText = this.currentQuestion.text;
     }
@@ -1679,6 +1842,17 @@ class CombatSession {
 
     // MEJORA 3: Rival acumula carga visiblemente si su intencion es 'charge'
     this.startRivalChargeBuildup();
+  }
+
+  showCombatTutorialNudge() {
+    if (this.tutorialFlags?.triangle || this.currentQuestionIdx > 0 || this.currentRoundIndex > 0) return;
+    this.tutorialFlags.triangle = true;
+    this.updateTacticalPanel({
+      title: 'Regla Beyblade X',
+      rival: 'Defensa vence Ataque · Ataque vence Carga',
+      choice: 'Carga vence Defensa',
+      risk: 'Elige antes de responder: tu boton cambia el combate'
+    });
   }
 
   // MEJORA 3: Rival acumula carga mientras el jugador piensa
@@ -1857,9 +2031,8 @@ class CombatSession {
     const characterFocus = this.playerCharacterStats?.focus || 55;
     const rivalCharacterDefense = this.rivalCharacterStats?.defense || 55;
     const statBonus = Math.round((attack - defenderDefense) / 14) + Math.round((characterAttack + characterFocus - rivalCharacterDefense - 55) / 18);
-    // Contraste ampliado: attack +12 (antes +7), charge -4 (antes -2), defense 0
-    // Diferencia visible entre accion correcta e incorrecta: ~16 pts brutos antes de multiplicadores
-    const actionBonus = action === 'attack' ? 12 : action === 'charge' ? -4 : 0;
+    // Contraste claro: Ataque pega fuerte, Defensa controla, Carga sacrifica daño por energia.
+    const actionBonus = action === 'attack' ? 12 : action === 'charge' ? -7 : 0;
     const rivalGuard = this.rivalIntent?.type === 'defense' ? -4 : 0;
     const fastBonus = this.fastAnswerStreak > 0 && this.fastAnswerStreak % 2 === 0 ? 2 : 0;
     const typeBonus = this.calculateTypeMatchupModifier(this.playerBey, this.rivalBey);
@@ -1914,7 +2087,7 @@ class CombatSession {
     if (action !== 'attack' || !isCorrect || !isFastAnswer) return false;
     const speed = this.playerBey?.velocidad || 70;
     const difficulty = parseInt(this.currentQuestion?.difficulty, 10) || 1;
-    return speed >= 78 || this.currentQuestion?.isLightning || difficulty >= 4;
+    return (this.playerCombatant?.charge || 0) >= 1 && (speed >= 84 || this.currentQuestion?.isLightning || difficulty >= 5);
   }
 
   shouldApplyXtremeRisk(action, isCorrect) {
@@ -1941,13 +2114,13 @@ class CombatSession {
         ? this.calculatePlayerDamage(normalizedAction)
         : 0;
 
-    // Bonus tactico visible: la accion recomendada debe notarse tambien en HP, no solo en texto.
-    // Rango moderado: +14 si contrarresta al rival, -10 si se elige la accion opuesta.
+    // Bonus tactico visible: el triangulo debe notarse en HP y no solo en texto.
+    // Rango moderado: +16 si contrarresta al rival, -12 si se elige la accion opuesta.
     if (isCorrect && !specialTriggered && playerDamage > 0) {
       if (isRecommended) {
-        playerDamage += 14;
+        playerDamage += 16;
       } else if (normalizedAction === oppositeAction) {
-        playerDamage = Math.max(7, playerDamage - 10);
+        playerDamage = Math.max(6, playerDamage - 12);
       }
     }
 
@@ -1993,13 +2166,14 @@ class CombatSession {
         bannerSubtitle = 'Ataque especial elegido';
         chargeDelta = -(this.playerCombatant?.charge || 0);
       } else if (normalizedAction === 'charge') {
-        chargeDelta = 1;
-        bannerTitle = 'Carga +1';
-        bannerSubtitle = 'Energia X';
+        chargeDelta = rivalIntent === 'defense' ? 2 : 1;
+        bannerTitle = rivalIntent === 'defense' ? 'Carga doble' : 'Carga +1';
+        bannerSubtitle = rivalIntent === 'defense' ? 'Aprovechas su guardia para llenar Energia X' : 'Energia X';
       } else if (normalizedAction === 'defense' && rivalIntent === 'attack') {
         // Banner explicito: la Defensa fue la accion recomendada y bloqueó el ataque
         bannerTitle = '¡Defensa perfecta!';
-        bannerSubtitle = 'Tu eleccion bloqueo el ataque rival';
+        bannerSubtitle = 'Bloqueas y devuelves el choque';
+        playerDamage += Math.max(5, Math.round(this.calculateRivalDamage('defense') * 0.34));
       } else if (normalizedAction === 'attack' && rivalIntent === 'charge') {
         // Banner explicito: Ataque interrumpio la carga rival
         bannerTitle = '¡Interrupcion X!';
@@ -2017,10 +2191,10 @@ class CombatSession {
           bannerSubtitle = 'Pegas fuerte, pero recibes impacto';
         } else if (rivalIntent === 'attack' && normalizedAction === 'charge') {
           // Accion opuesta a la recomendada: daño recibido mayor
-          rivalDamage = Math.max(5, Math.round(this.calculateRivalDamage('charge') * 0.65));
-          chargeDelta = Math.max(chargeDelta, 1);
+          rivalDamage = Math.max(7, Math.round(this.calculateRivalDamage('charge') * 0.82));
+          chargeDelta = Math.max(chargeDelta, 2);
           bannerTitle = bannerTitle || 'Carga arriesgada';
-          bannerSubtitle = 'Ganas energia, pero el rival te golpea fuerte';
+          bannerSubtitle = 'Ganas mucha energia, pero el rival te castiga';
         } else if (rivalIntent === 'defense' && normalizedAction === 'attack') {
           rivalDamage = Math.max(1, Math.round(this.getDifficultyDamageBonus() + 2));
           bannerTitle = bannerTitle || 'Rebote de guardia';
@@ -2069,6 +2243,19 @@ class CombatSession {
       }
     }
 
+    const tacticSummary = this.buildTurnSummary({
+      action: normalizedAction,
+      isCorrect,
+      isRecommended,
+      oppositeAction,
+      playerDamage,
+      rivalDamage,
+      chargeDelta,
+      specialTriggered,
+      xtremeDash,
+      finish
+    });
+
     return {
       action: normalizedAction,
       isCorrect,
@@ -2084,17 +2271,128 @@ class CombatSession {
       finish,
       xtremeDash,
       xtremeRisk: this.shouldApplyXtremeRisk(normalizedAction, isCorrect),
+      tacticSummary,
       // Resultado tactico para colorear el readout tras el turno
       tacticResult: isCorrect ? (isRecommended ? 'match' : 'neutral') : (normalizedAction === 'defense' ? 'saved' : 'risk')
     };
   }
 
-  getRivalTurnDamage() {
-    const base = this.calculateRivalDamage('attack');
+  buildTurnSummary(data) {
+    const actionName = this.getActionLabel(data.action);
+    const recommendedName = this.getActionLabel(this.getRecommendedAction());
+    let title = data.isCorrect ? 'Turno ganado' : 'Turno perdido';
+    let risk = data.isCorrect ? `Daño: -${Math.max(0, Math.round(data.playerDamage))} HP rival` : `Recibes: -${Math.max(0, Math.round(data.rivalDamage))} HP`;
+    if (data.specialTriggered) {
+      title = 'Especial ejecutado';
+      risk = `Especial: -${Math.max(0, Math.round(data.playerDamage))} HP`;
+    } else if (data.xtremeDash) {
+      title = 'Xtreme Dash conectado';
+      risk = `Rail X: -${Math.max(0, Math.round(data.playerDamage))} HP`;
+    } else if (data.isCorrect && data.isRecommended) {
+      title = 'Elegiste la tactica correcta';
+      risk = `${actionName} dio ventaja real`;
+    } else if (data.action === data.oppositeAction) {
+      title = data.isCorrect ? 'Victoria con riesgo' : 'Mala lectura';
+      risk = data.isCorrect ? 'Pegas, pero sin ventaja tactica' : 'El rival aprovecha tu error';
+    }
+    if (data.chargeDelta > 0) risk += ` · +${data.chargeDelta} Energia X`;
+    if (data.finish) risk += ` · ${data.finish.label} +${data.finish.points}`;
+    return {
+      title,
+      rival: this.getTacticRule(),
+      choice: `${actionName} vs ${recommendedName}`,
+      risk
+    };
+  }
+
+  getRivalTurnDamage(plan = this.chooseRivalTurnPlan()) {
+    const base = this.calculateRivalDamage(plan.baseAction || 'attack');
     const intentBoost = this.rivalIntent?.type === 'attack' ? 3 : this.rivalIntent?.type === 'charge' ? 2 : 0;
     const patternBoost = this.rivalPattern?.damageBonus || 0;
     // Turno activo del rival: amenaza clara pero contenida para no romper el balance de planta.
-    return Math.max(6, Math.min(28, Math.round((base * 0.62) + intentBoost + patternBoost)));
+    return Math.max(6, Math.min(38, Math.round(((base * 0.62) + intentBoost + patternBoost + plan.flatBonus) * plan.multiplier)));
+  }
+
+  canRivalUseXtremeDash() {
+    const charge = this.rivalCombatant?.charge || 0;
+    const speed = this.rivalBey?.velocidad || 70;
+    return charge >= 1 && (speed >= 76 || this.rivalIntent?.type === 'attack' || this.difficulty >= 5);
+  }
+
+  chooseRivalTurnPlan() {
+    const charge = this.rivalCombatant?.charge || 0;
+    const speed = this.rivalBey?.velocidad || 70;
+    const attackBias = this.rivalIntent?.type === 'attack' || this.rivalPattern?.id === 'sprinter' || this.rivalPattern?.id === 'pressure';
+    const specialReady = charge >= 3;
+    const xtremeReady = this.canRivalUseXtremeDash();
+    if (specialReady && (this.difficulty >= 4 || this.playerHP <= this.playerMaxHP * 0.55)) {
+      return {
+        type: 'special',
+        title: '¡Especial rival!',
+        hint: 'Bloquea el ataque cargado',
+        banner: this.rivalBey?.habilidad || 'Ataque especial rival',
+        variant: 'finish-burst',
+        baseAction: 'attack',
+        attackAction: 'special',
+        multiplier: 1.34,
+        flatBonus: 4,
+        chargeDelta: -3,
+        blockDurationMod: -180
+      };
+    }
+    if (xtremeReady && (attackBias || speed >= 82 || Math.random() < Math.min(0.52, 0.22 + this.difficulty * 0.035))) {
+      return {
+        type: 'xtreme',
+        title: '¡Xtreme Dash rival!',
+        hint: 'El rival entra al Rail X. Pulsa en la zona amarilla.',
+        banner: 'Xtreme Dash rival',
+        variant: 'xtreme-dash',
+        baseAction: 'attack',
+        attackAction: 'special',
+        multiplier: 1.42,
+        flatBonus: 5,
+        chargeDelta: -1,
+        blockDurationMod: -260
+      };
+    }
+    if (this.rivalIntent?.type === 'charge') {
+      return {
+        type: 'charge',
+        title: 'Frena la carga rival',
+        hint: 'Si no bloqueas, gana energía y golpea.',
+        banner: 'Carga rival',
+        variant: '',
+        baseAction: 'charge',
+        attackAction: 'counter',
+        multiplier: 1.05,
+        flatBonus: 1,
+        chargeDelta: 1,
+        blockDurationMod: -80
+      };
+    }
+    return {
+      type: 'normal',
+      title: 'Bloquea el golpe',
+      hint: this.rivalPattern?.hint || 'Pulsa cuando la luz pase por la zona amarilla',
+      banner: 'Golpe rival',
+      variant: '',
+      baseAction: 'attack',
+      attackAction: 'counter',
+      multiplier: 1,
+      flatBonus: 0,
+      chargeDelta: attackBias ? 0 : 1,
+      blockDurationMod: 0
+    };
+  }
+
+  applyRivalTurnPlanCharge(plan, timing) {
+    if (!this.rivalCombatant || !plan) return;
+    const blockedPerfectly = timing?.quality === 'perfect';
+    let delta = plan.chargeDelta || 0;
+    if (plan.type === 'charge' && blockedPerfectly) delta = 0;
+    if ((plan.type === 'special' || plan.type === 'xtreme') && blockedPerfectly) delta = Math.min(delta, -1);
+    this.rivalCombatant.charge = Math.max(0, Math.min(3, (this.rivalCombatant.charge || 0) + delta));
+    this.updateRivalChargeVisual();
   }
 
   getBlockTimingResult(startedAt, durationMs) {
@@ -2117,14 +2415,21 @@ class CombatSession {
     const hint = document.getElementById('rival-block-hint');
     if (!overlay || !button) return Promise.resolve({ skipped: true, damage: 0 });
 
-    const durationMs = Math.max(1250, 2600 - (this.difficulty * 110) - (this.rivalPattern?.blockSpeedBonus || 0));
-    const fullDamage = this.getRivalTurnDamage();
+    const plan = this.chooseRivalTurnPlan();
+    const durationMs = Math.max(980, 2600 - (this.difficulty * 110) - (this.rivalPattern?.blockSpeedBonus || 0) + (plan.blockDurationMod || 0));
+    const fullDamage = this.getRivalTurnDamage(plan);
     const startedAt = Date.now();
     this.setCssVar(overlay, '--block-duration', `${durationMs}ms`);
     overlay.classList.add('active');
     overlay.setAttribute('aria-hidden', 'false');
-    if (title) title.innerText = this.rivalIntent?.type === 'charge' ? 'Frena el golpe cargado' : 'Bloquea el golpe';
-    if (hint) hint.innerText = this.rivalPattern?.hint || 'Pulsa cuando la luz pase por la zona amarilla';
+    if (title) title.innerText = plan.title;
+    if (hint) hint.innerText = `${plan.hint} · Carga rival ${this.rivalCombatant?.charge || 0}/3`;
+    if (plan.type === 'xtreme') {
+      this.pulseXtremeRail();
+      this.showAttackBanner('¡Rival al Rail X!', 'Prepara el bloqueo', 'rival', 'xtreme-dash');
+    } else if (plan.type === 'special') {
+      this.showAttackBanner('¡Especial rival listo!', 'Bloquea o recibiras el golpe completo', 'rival', 'finish-burst');
+    }
 
     return new Promise(resolve => {
       let settled = false;
@@ -2136,6 +2441,7 @@ class CombatSession {
         let damage = Math.max(0, Math.round(fullDamage * (1 - timing.reduction)));
         const companionBlock = this.applyCompanionRivalDamageReduction(damage, 'block');
         damage = companionBlock.damage;
+        this.applyRivalTurnPlanCharge(plan, timing);
         overlay.classList.remove('active');
         overlay.setAttribute('aria-hidden', 'true');
         button.onclick = null;
@@ -2146,21 +2452,21 @@ class CombatSession {
           this.applyLastSpinIfNeeded();
           this.updateHpBars();
           this.showAttackBanner(
-            timing.quality === 'perfect' ? '¡Bloqueo perfecto!' : timing.quality === 'partial' ? 'Bloqueo parcial' : 'Golpe rival',
+            timing.quality === 'perfect' ? '¡Bloqueo perfecto!' : timing.quality === 'partial' ? 'Bloqueo parcial' : plan.banner,
             companionBlock.message
               ? `${timing.quality === 'miss' ? `-${damage} HP` : `Reducido a -${damage} HP`} · ${companionBlock.message}`
               : timing.quality === 'miss' ? `-${damage} HP` : `Reducido a -${damage} HP`,
             timing.quality === 'miss' ? 'rival' : 'player',
-            timing.quality === 'miss' ? 'xtreme-risk' : 'round-cleared'
+            timing.quality === 'miss' ? plan.variant || 'xtreme-risk' : 'round-cleared'
           );
-          this.performAttackSequence('rival', timing.quality === 'miss' ? 'special' : 'counter', damage);
+          this.performAttackSequence('rival', timing.quality === 'miss' ? plan.attackAction : 'counter', damage, { xtremeDash: plan.type === 'xtreme' && timing.quality === 'miss' });
         } else {
           this.showAttackBanner('¡Bloqueo perfecto!', 'Sin daño', 'player', 'round-cleared');
         }
 
         this.persistTowerBattleState();
         this.app.saveState();
-        setTimeout(() => resolve({ ...timing, damage, fullDamage }), damage > 0 ? 620 : 420);
+        setTimeout(() => resolve({ ...timing, damage, fullDamage, planTitle: plan.title, planType: plan.type }), damage > 0 ? 620 : 420);
       };
 
       button.onclick = () => finish(false);
@@ -2170,6 +2476,8 @@ class CombatSession {
 
   applyTurnOutcome(outcome, isCorrect) {
     if (!outcome) return;
+    this.lastTurnSummary = outcome.tacticSummary || null;
+    this.updateTacticalPanel(this.lastTurnSummary);
 
     if (outcome.chargeDelta && this.playerCombatant) {
       this.playerCombatant.charge = Math.max(0, Math.min(3, this.playerCombatant.charge + outcome.chargeDelta));
@@ -2205,6 +2513,7 @@ class CombatSession {
     this.applyLastSpinIfNeeded();
     this.updateHpBars();
     this.updateXGauge();
+    this.updateRivalChargeVisual();
 
     if (outcome.xtremeDash && this.playerCombatant) this.playerCombatant.xtremeTrailUntil = Date.now() + 820;
     if (outcome.bannerTitle) {
@@ -2212,20 +2521,28 @@ class CombatSession {
       this.showAttackBanner(outcome.bannerTitle, outcome.bannerSubtitle, outcome.rivalDamage > 0 && !outcome.playerDamage ? 'rival' : 'player', bannerVariant);
     }
     if (outcome.playerDamage > 0) {
-      this.performAttackSequence('player', outcome.playerAttackAction, outcome.playerDamage);
+      this.performAttackSequence('player', outcome.playerAttackAction, outcome.playerDamage, { xtremeDash: outcome.xtremeDash });
     }
     if (outcome.rivalDamage > 0) {
       setTimeout(() => this.performAttackSequence('rival', outcome.rivalAttackAction, outcome.rivalDamage), outcome.playerDamage > 0 ? 260 : 80);
     }
 
-    const delay = outcome.specialTriggered || outcome.rivalDamage > 0 ? 980 : 720;
+    const delay = outcome.xtremeDash ? 2100 : outcome.specialTriggered || outcome.rivalDamage > 0 ? 980 : 720;
     setTimeout(async () => {
       if (this.rivalHP <= 0) {
         this.completeRound();
       } else if (this.playerHP <= 0) {
         this.repeatCurrentRound('El rival gana esta ronda');
       } else {
-        await this.startRivalBlockPhase(outcome);
+        const blockResult = await this.startRivalBlockPhase(outcome);
+        if (blockResult && !blockResult.skipped) {
+          this.updateTacticalPanel({
+            title: blockResult.damage > 0 ? 'El rival contraataco' : 'Bloqueo perfecto',
+            rival: `Turno rival: ${blockResult.planTitle || 'ataque'}`,
+            choice: blockResult.quality === 'perfect' ? 'Bloqueo en zona perfecta' : blockResult.quality === 'partial' ? 'Bloqueo parcial' : 'Sin bloqueo',
+            risk: blockResult.damage > 0 ? `Recibes -${blockResult.damage} HP de ${blockResult.fullDamage}` : 'Sin daño recibido'
+          });
+        }
         if (this.playerHP <= 0) {
           this.repeatCurrentRound('El rival gana esta ronda');
           return;
@@ -2537,19 +2854,48 @@ class CombatSession {
     setTimeout(() => flash.classList.remove('active'), 620);
   }
 
-  performAttackSequence(attackerId, action = 'dash', damage = 0) {
+  playActionStartCue(attackerId, action, attacker) {
+    const topEl = document.getElementById(`${attackerId}-top`);
+    if (!topEl || !attacker) return;
+    const classByAction = {
+      attack: 'action-attack-strike',
+      counter: 'action-counter-strike',
+      defense: 'action-defense-guard',
+      charge: 'action-charge-build',
+      special: 'action-special-smash',
+      dash: 'action-attack-strike'
+    };
+    const cueClass = classByAction[action] || classByAction.dash;
+    topEl.classList.remove('action-attack-strike', 'action-counter-strike', 'action-defense-guard', 'action-charge-build', 'action-special-smash');
+    void topEl.offsetWidth;
+    topEl.classList.add(cueClass);
+    setTimeout(() => topEl.classList.remove(cueClass), action === 'charge' ? 780 : action === 'defense' ? 620 : 520);
+
+    if (action === 'defense') {
+      this.spawnShockwave(attacker.x, attacker.y, attackerId === 'rival' ? '#ff5a9e' : '#33f5ff', false, 'guard');
+      this.spawnParticles(attacker.x, attacker.y, attackerId === 'rival' ? '#ff5a9e' : '#33f5ff', 10);
+    } else if (action === 'charge') {
+      this.spawnShockwave(attacker.x, attacker.y, '#fff35a', false, 'charge');
+      this.spawnParticles(attacker.x, attacker.y, '#fff35a', 14);
+    } else if (action === 'special') {
+      this.triggerScreenFlash('special');
+    }
+  }
+
+  performAttackSequence(attackerId, action = 'dash', damage = 0, options = {}) {
     const attacker = attackerId === 'player' ? this.playerCombatant : this.rivalCombatant;
     const defender = attackerId === 'player' ? this.rivalCombatant : this.playerCombatant;
     if (!attacker || !defender) return;
 
     // MEJORA 2: Xtreme Dash con trayectoria circular real por el rail
-    if (action === 'special' && attackerId === 'player' && this.xtremeDashArmed) {
-      this.performXtremeDashSequence(attacker, defender, damage);
+    if (action === 'special' && (options.xtremeDash || (attackerId === 'player' && this.xtremeDashArmed))) {
+      this.performXtremeDashSequence(attackerId, attacker, defender, damage);
       return;
     }
 
     const isSpecial = action === 'special';
-    const forceBase = isSpecial ? 42 : action === 'attack' || action === 'counter' ? 32 : action === 'charge' ? 18 : 24;
+    this.playActionStartCue(attackerId, action, attacker);
+    const forceBase = isSpecial ? 42 : action === 'attack' || action === 'counter' ? 34 : action === 'charge' ? 15 : action === 'defense' ? 20 : 24;
     const force = forceBase * this.getImpactForceMultiplier(attackerId, action);
     const dx = defender.x - attacker.x;
     const dy = defender.y - attacker.y;
@@ -2564,13 +2910,24 @@ class CombatSession {
     const impactY = (attacker.y * 0.35) + (defender.y * 0.65);
     setTimeout(() => {
       this.triggerClashVisual(impactX, impactY, isSpecial);
+      if (action === 'attack' || action === 'counter') {
+        this.spawnShockwave(impactX, impactY, attackerId === 'rival' ? '#ff0055' : '#33f5ff', false);
+      } else if (action === 'defense') {
+        this.spawnShockwave(impactX, impactY, '#33f5ff', true, 'guard');
+      } else if (action === 'charge') {
+        this.spawnParticles(attacker.x, attacker.y, '#fff35a', 10);
+      } else if (isSpecial) {
+        this.spawnShockwave(impactX, impactY, '#ffea00', true, 'finish-burst');
+        this.spawnParticles(impactX, impactY, '#ffea00', 22);
+      }
       if (damage > 0) this.spawnDamagePop(impactX, impactY, damage, attackerId);
     }, 110);
 
     const topEl = document.getElementById(`${attackerId}-top`);
     if (topEl) {
-      topEl.classList.add(isSpecial ? 'is-special-strike' : 'is-dashing');
-      setTimeout(() => topEl.classList.remove('is-special-strike', 'is-dashing'), isSpecial ? 850 : 520);
+      const motionClass = action === 'defense' ? 'is-guarding' : action === 'charge' ? 'is-charging' : isSpecial ? 'is-special-strike' : 'is-dashing';
+      topEl.classList.add(motionClass);
+      setTimeout(() => topEl.classList.remove('is-special-strike', 'is-dashing', 'is-guarding', 'is-charging'), isSpecial ? 850 : action === 'charge' ? 760 : 520);
     }
     setTimeout(() => {
       attacker.status = 'orbiting';
@@ -2578,21 +2935,20 @@ class CombatSession {
   }
 
   // MEJORA 2: Animacion completa del Xtreme Dash recorriendo el rail circular
-  performXtremeDashSequence(attacker, defender, damage = 0) {
+  performXtremeDashSequence(attackerId, attacker, defender, damage = 0) {
     if (!attacker) return;
-    const topEl = document.getElementById('player-top');
+    const topEl = document.getElementById(`${attackerId}-top`);
     const arena = document.getElementById('battle-field');
     if (!topEl || !arena) return;
 
     // 1) Avatar grita la activacion del ataque, luego entra el dash
-    this.playXtremeDashCry(() => {
-      this._doXtremeDashMotion(attacker, defender, damage, topEl);
+    this.playXtremeDashCry(attackerId, () => {
+      this._doXtremeDashMotion(attackerId, attacker, defender, damage, topEl);
     });
   }
 
   // Grito del avatar al activar Xtreme Dash
-  playXtremeDashCry(onComplete) {
-    // Frases de activacion segun el Bey equipado (usa habilidad si existe, sino frase generica)
+  playXtremeDashCry(attackerId = 'player', onComplete) {
     const XTREME_CRIES = [
       '¡Xtreme Dash!',
       '¡Vamos al rail!',
@@ -2601,108 +2957,69 @@ class CombatSession {
       '¡Velocidad maxima!',
       '¡Al carril, ya!',
     ];
-    const beyName = this.playerBey?.habilidad
-      ? `¡${this.playerBey.habilidad}!`
+    const isRival = attackerId === 'rival';
+    const character = isRival ? this.rivalCharacter : this.playerCharacter;
+    const bey = isRival ? this.rivalBey : this.playerBey;
+    const displayName = isRival ? (this.rivalCharacter?.nombre || 'Rival') : (this.state?.player?.name || this.playerCharacter?.nombre || 'Blader');
+    const cryText = bey?.habilidad
+      ? `¡${bey.habilidad}!`
       : XTREME_CRIES[Math.floor(Math.random() * XTREME_CRIES.length)];
 
-    const avatarImg  = this.playerCharacter?.image  || '';
-    const avatarName = this.playerCharacter?.nombre || this.state?.player?.name || 'Blader';
-
-    // Inyectar keyframes una sola vez
-    if (!document.getElementById('xtreme-cry-styles')) {
-      const style = document.createElement('style');
-      style.id = 'xtreme-cry-styles';
-      style.textContent = `
-        @keyframes xcrySlidein  { from { transform: translateX(-110%) scale(0.82); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
-        @keyframes xcrySlideout { from { transform: translateX(0) scale(1); opacity: 1; } to { transform: translateX(-120%) scale(0.88); opacity: 0; } }
-        @keyframes xcryPulse    { 0%,100% { text-shadow: 0 0 18px #fff35a, 0 0 6px #ff9900; } 50% { text-shadow: 0 0 38px #fff35a, 0 0 14px #ffea00, 0 0 2px #fff; } }
-        @keyframes xcryBubble   { 0% { transform: scale(0.5) rotate(-4deg); opacity:0; } 60% { transform: scale(1.12) rotate(2deg); opacity:1; } 100% { transform: scale(1) rotate(0); opacity:1; } }
-        @keyframes xcryAvatarShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px) rotate(-2deg)} 40%{transform:translateX(6px) rotate(2deg)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
-        .xcry-overlay {
-          position: fixed; inset: 0; z-index: 10500; pointer-events: none;
-          display: flex; align-items: flex-end; padding: 0 0 clamp(72px,18vw,110px) clamp(8px,3vw,18px);
-        }
-        .xcry-card {
-          display: flex; align-items: flex-end; gap: clamp(8px,2.5vw,16px);
-          animation: xcrySlidein 0.28s cubic-bezier(0.34,1.46,0.64,1) both;
-        }
-        .xcry-card.is-exiting { animation: xcrySlideout 0.26s ease-in both; }
-        .xcry-avatar {
-          width: clamp(64px,18vw,96px); height: clamp(64px,18vw,96px);
-          border-radius: 50%; border: 3px solid #fff35a;
-          box-shadow: 0 0 18px #fff35a, 0 0 6px #ff9900;
-          object-fit: cover; background: #0a0014; flex-shrink: 0;
-          animation: xcryAvatarShake 0.45s ease 0.18s both;
-        }
-        .xcry-bubble {
-          background: linear-gradient(135deg,#fff35a 0%,#ff9900 100%);
-          color: #0a0014; border-radius: 14px 14px 14px 2px;
-          padding: clamp(8px,2.5vw,13px) clamp(12px,3vw,20px);
-          font-weight: 900; font-size: clamp(1.05rem,3.8vw,1.55rem);
-          letter-spacing: 0.02em; line-height: 1.2;
-          box-shadow: 0 4px 24px rgba(255,234,0,0.45), 0 2px 0 #a05a00;
-          animation: xcryBubble 0.32s cubic-bezier(0.34,1.46,0.64,1) 0.12s both;
-          max-width: clamp(180px,55vw,340px);
-        }
-        .xcry-bubble .xcry-name {
-          font-size: 0.68em; opacity: 0.7; display: block; margin-bottom: 2px; font-weight: 700;
-        }
-        .xcry-bubble .xcry-text {
-          display: block;
-          animation: xcryPulse 0.55s ease-in-out 0.3s 2 both;
-        }
-      `;
-      document.head.appendChild(style);
-    }
-
-    const overlay = document.createElement('div');
-    overlay.className = 'xcry-overlay';
-
-    const card = document.createElement('div');
-    card.className = 'xcry-card';
-
-    // Avatar imagen
-    let avatarEl;
-    if (avatarImg) {
-      avatarEl = document.createElement('img');
-      avatarEl.className = 'xcry-avatar';
-      avatarEl.src = avatarImg;
-      avatarEl.alt = avatarName;
-    } else {
-      // Fallback emoji si no hay imagen
-      avatarEl = document.createElement('div');
-      avatarEl.className = 'xcry-avatar';
-      avatarEl.style.cssText += ';display:flex;align-items:center;justify-content:center;font-size:2.2rem;';
-      avatarEl.textContent = '🌀';
-    }
-
-    // Burbuja de texto
-    const bubble = document.createElement('div');
-    bubble.className = 'xcry-bubble';
-    bubble.innerHTML = `<span class="xcry-name">${avatarName}</span><span class="xcry-text">${beyName}</span>`;
-
-    card.appendChild(avatarEl);
-    card.appendChild(bubble);
-    overlay.appendChild(card);
-    document.body.appendChild(overlay);
-
-    // Despues de mostrar el grito, iniciar el dash
-    const SHOW_MS = 820;
-    setTimeout(() => {
-      card.classList.add('is-exiting');
+    const overlay = document.getElementById('xtreme-cutin');
+    if (!overlay) {
       setTimeout(() => {
-        overlay.remove();
+        if (typeof onComplete === 'function') onComplete();
+      }, 180);
+      return;
+    }
+
+    const characterImg = document.getElementById('xtreme-cutin-character');
+    const beyImg = document.getElementById('xtreme-cutin-bey');
+    const nameEl = document.getElementById('xtreme-cutin-name');
+    const cryEl = document.getElementById('xtreme-cutin-cry');
+    const beyNameEl = document.getElementById('xtreme-cutin-bey-name');
+
+    if (nameEl) nameEl.textContent = displayName;
+    if (cryEl) cryEl.textContent = cryText;
+    if (beyNameEl) beyNameEl.textContent = bey?.nombre || 'Bey';
+    if (characterImg) {
+      characterImg.src = character?.image || '';
+      characterImg.alt = displayName;
+      characterImg.hidden = !character?.image;
+    }
+    if (beyImg) {
+      beyImg.src = bey?.image || '';
+      beyImg.alt = bey?.nombre || 'Bey';
+      beyImg.hidden = !bey?.image;
+    }
+
+    overlay.hidden = false;
+    overlay.setAttribute('aria-hidden', 'false');
+    overlay.classList.remove('is-active', 'is-exiting', 'is-rival');
+    overlay.classList.toggle('is-rival', isRival);
+    void overlay.offsetWidth;
+    overlay.classList.add('is-active');
+
+    const SHOW_MS = 980;
+    setTimeout(() => {
+      overlay.classList.remove('is-active');
+      overlay.classList.add('is-exiting');
+      setTimeout(() => {
+        overlay.hidden = true;
+        overlay.setAttribute('aria-hidden', 'true');
+        overlay.classList.remove('is-exiting');
         if (typeof onComplete === 'function') onComplete();
       }, 280);
     }, SHOW_MS);
   }
 
   // Logica de movimiento del dash (separada para que el grito la llame al terminar)
-  _doXtremeDashMotion(attacker, defender, damage, topEl) {
+  _doXtremeDashMotion(attackerId, attacker, defender, damage, topEl) {
     if (!attacker || !topEl) return;
 
     // Pulsar el rail y mostrar pantalla flash
     this.pulseXtremeRail();
+    this.triggerXtremeCamera(980);
     this.triggerScreenFlash('xtreme');
     if (typeof sounds !== 'undefined' && sounds.playSpecial) sounds.playSpecial();
 
@@ -2724,8 +3041,9 @@ class CombatSession {
     const direction = this.getBeyType(attacker.bey) === 'ataque' ? 1 : -1;
 
     // Freeze la simulacion de fisica normal mientras dura el dash
-    attacker.status = 'special';
-    topEl.classList.add('is-special-strike');
+    attacker.status = 'xtreme-dash';
+    topEl.classList.remove('xtreme-arming', 'xtreme-impact');
+    topEl.classList.add('is-special-strike', 'xtreme-dashing', 'xtreme-rail-riding');
 
     // Traza de Xtreme para el trail
     attacker.xtremeTrailUntil = Date.now() + totalDuration + 200;
@@ -2739,20 +3057,24 @@ class CombatSession {
       const angle = startAngle + direction * eased * 1.5 * Math.PI;
       attacker.x = railCx + Math.cos(angle) * railR;
       attacker.y = railCy + Math.sin(angle) * railR;
+      topEl.style.left = `${attacker.x}%`;
+      topEl.style.top = `${attacker.y}%`;
+      this.updateTopLabels();
       // Velocidad artificial para que los trails se generen correctamente
       attacker.vx = direction * -Math.sin(angle) * 60;
       attacker.vy = direction * Math.cos(angle) * 60;
+      if (Math.floor(elapsed / 90) !== Math.floor((elapsed - 16) / 90)) {
+        this.spawnParticles(attacker.x, attacker.y, attackerId === 'rival' ? '#ff0055' : '#fff35a', 3);
+      }
 
       if (t < 1) {
-        const scheduleFrame = typeof requestAnimationFrame === 'function'
-          ? requestAnimationFrame : cb => setTimeout(() => cb(performance.now()), 16);
-        scheduleFrame(animateRail);
+        this.scheduleCombatFrame(animateRail);
       } else {
         // 5) Fin del rail: lanzar hacia el rival con impulso maximo
         const dx = defender.x - attacker.x;
         const dy = defender.y - attacker.y;
         const dist = Math.hypot(dx, dy) || 1;
-        const impactForce = 58 * this.getImpactForceMultiplier('player', 'special');
+        const impactForce = 58 * this.getImpactForceMultiplier(attackerId, 'special');
         attacker.vx = (dx / dist) * impactForce;
         attacker.vy = (dy / dist) * impactForce;
         defender.vx += (dx / dist) * 24;
@@ -2764,20 +3086,18 @@ class CombatSession {
         this.triggerClashVisual(impactX, impactY, true);
         this.spawnShockwave(impactX, impactY, '#fff35a', true, 'finish-xtreme');
         this.spawnParticles(impactX, impactY, '#fff35a', 26);
-        if (damage > 0) this.spawnDamagePop(impactX, impactY, damage, 'player');
+        if (damage > 0) this.spawnDamagePop(impactX, impactY, damage, attackerId);
 
-        topEl.classList.remove('is-special-strike');
-        topEl.classList.add('is-dashing');
+        topEl.classList.remove('is-special-strike', 'xtreme-rail-riding');
+        topEl.classList.add('is-dashing', 'xtreme-impact');
         setTimeout(() => {
-          topEl.classList.remove('is-dashing');
+          topEl.classList.remove('is-dashing', 'xtreme-dashing', 'xtreme-impact');
           attacker.status = 'orbiting';
         }, 520);
       }
     };
 
-    const scheduleFrame = typeof requestAnimationFrame === 'function'
-      ? requestAnimationFrame : cb => setTimeout(() => cb(performance.now()), 16);
-    scheduleFrame(animateRail);
+    this.scheduleCombatFrame(animateRail);
   }
 
   showAttackBanner(title, subtitle = '', side = 'player', variant = '') {
@@ -2954,7 +3274,9 @@ class CombatSession {
       const cell = document.getElementById(`gauge-cell-${i}`);
       if (!cell) continue;
       const shouldFill = charge >= i;
-      const wasFilled  = cell.classList.contains('filled');
+      const wasFilled = typeof cell.classList?.contains === 'function'
+        ? cell.classList.contains('filled')
+        : String(cell.className || '').split(/\s+/).includes('filled');
       if (shouldFill && !wasFilled) {
         // Llenado: pequeño delay en cascada para efecto líquido
         setTimeout(() => {
@@ -2973,12 +3295,15 @@ class CombatSession {
     }
     if (label) label.innerText = charge >= 3 ? 'Especial listo' : `${charge}/3 para especial`;
 
-    const dashReady = this.selectedAction === 'attack'
-      && ((this.currentQuestion?.isLightning === true)
-        || (parseInt(this.currentQuestion?.difficulty, 10) || 1) >= 4
-        || (this.playerBey?.velocidad || 70) >= 78);
+    const dashReady = this.selectedAction === 'attack' && this.canUseXtremeDash();
     document.querySelectorAll('.x-gauge-panel').forEach(panel => panel.classList.toggle('dash-ready', dashReady));
     this.setXtremeStadiumState({ ready: this.canUseXtremeDash(), armed: this.xtremeDashArmed });
+    const scoreEl = document.getElementById('combat-finish-score');
+    if (scoreEl) {
+      scoreEl.innerText = `Finish ${this.finishPoints || 0} pts`;
+      scoreEl.classList.toggle('is-hot', (this.finishPoints || 0) >= 4);
+    }
+    this.updateRivalChargeVisual();
 
     if (specialCard) {
       const ready = this.canUseSpecialAttack();
@@ -3005,9 +3330,9 @@ class CombatSession {
       if (specialHelp) {
         if (this.specialArmed)       specialHelp.innerText = 'Especial armado: acierta para gastarlo ahora.';
         else if (this.xtremeDashArmed) specialHelp.innerText = 'Dash armado: acierta rapido para entrar al rail.';
-        else if (ready)              specialHelp.innerText = 'Pulsa Usar especial cuando quieras gastarlo.';
-        else if (xtremeReady)        specialHelp.innerText = 'Puedes preparar Xtreme Dash para un ataque de riesgo.';
-        else                         specialHelp.innerText = `Carga: ${charge}/3 · Combo: ${Math.min(3, this.correctStreak)}/3 aciertos.`;
+        else if (ready)              specialHelp.innerText = 'Listo: pulsa el boton y acierta para lanzar el especial.';
+        else if (xtremeReady)        specialHelp.innerText = 'Rail X abierto: gasta 1 energia y responde rapido.';
+        else                         specialHelp.innerText = `Especial: ${charge}/3 energia · Combo: ${Math.min(3, this.correctStreak)}/3. Dash necesita energia + rail.`;
       }
     }
 
@@ -3029,7 +3354,9 @@ class CombatSession {
           ? 'Dash armado'
           : ready
           ? 'Xtreme Dash'
-          : `Dash (${chargeCurrent}/1 energía)`;
+          : chargeCurrent < 1
+            ? 'Dash: falta energia'
+            : 'Dash: espera rail';
       }
     }
     document.querySelectorAll('[data-combat-action="charge"]').forEach(button => {
@@ -3049,21 +3376,25 @@ class CombatSession {
     const typeBonus  = this.calculateTypeMatchupModifier(this.playerBey, this.rivalBey);
     const isGoodMatchup = typeBonus > 0;
     const isBadMatchup  = typeBonus < 0;
+    const recommended = this.getRecommendedAction();
+    const riskFor = action => this.getTacticRisk(action);
 
     // Ataque
     const atkDmg  = this.calculatePlayerDamage('attack');
     const atkCopy = document.getElementById('action-copy-attack');
     if (atkCopy) {
-      atkCopy.textContent = `-${atkDmg} HP rival`;
-      atkCopy.className   = `combat-action-copy ${isGoodMatchup ? 'dmg-good' : isBadMatchup ? 'dmg-bad' : 'dmg-neutral'}`;
+      const risk = riskFor('attack');
+      atkCopy.textContent = recommended === 'attack' ? `corta carga · -${atkDmg + 16}` : `golpe · -${atkDmg}`;
+      atkCopy.className   = `combat-action-copy ${risk.className === 'is-good' || isGoodMatchup ? 'dmg-good' : risk.className === 'is-danger' || isBadMatchup ? 'dmg-bad' : 'dmg-neutral'}`;
     }
 
     // Defensa: muestra % de reducción de daño recibido
-    const defReduction = 45; // Defense reduce ~45% según calculateRivalDamage con action='defense'
+    const defReduction = 55; // Defensa reduce daño y puede devolver parte del choque si contrarresta Ataque.
     const defCopy = document.getElementById('action-copy-defense');
     if (defCopy) {
-      defCopy.textContent = `bloquea ~${defReduction}%`;
-      defCopy.className   = 'combat-action-copy dmg-neutral';
+      const risk = riskFor('defense');
+      defCopy.textContent = recommended === 'defense' ? `bloquea + contra` : `bloquea ~${defReduction}%`;
+      defCopy.className   = `combat-action-copy ${risk.className === 'is-good' ? 'dmg-good' : risk.className === 'is-danger' ? 'dmg-bad' : 'dmg-neutral'}`;
     }
 
     // Carga
@@ -3071,8 +3402,10 @@ class CombatSession {
     const chgCopy = document.getElementById('action-copy-charge');
     if (chgCopy) {
       const charge = this.playerCombatant?.charge || 0;
-      chgCopy.textContent = charge >= 3 ? '+1 energia · MAX' : `+1 energia · ${chgDmg > 0 ? `-${chgDmg} HP` : 'sin golpe'}`;
-      chgCopy.className   = 'combat-action-copy dmg-neutral';
+      const risk = riskFor('charge');
+      const gain = recommended === 'charge' ? '+2 energia' : '+1 energia';
+      chgCopy.textContent = charge >= 3 ? 'energia MAX' : `${gain} · -${Math.max(0, chgDmg)} HP`;
+      chgCopy.className   = `combat-action-copy ${risk.className === 'is-good' ? 'dmg-good' : risk.className === 'is-danger' ? 'dmg-bad' : 'dmg-neutral'}`;
     }
   }
 
