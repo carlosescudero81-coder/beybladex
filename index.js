@@ -22,6 +22,8 @@ class App {
     this.postBossReviewPlan = null;
     this.albumTab = 'team';
     this.albumCompareIds = [];
+    this.workshopPreviewCombo = null;
+    this.workshopPreviewPart = null;
   }
 
   init() {
@@ -90,6 +92,10 @@ class App {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  escapeHtml(value) {
+    return this.escapeReportText(value);
   }
 
   buildWeeklyFamilyReportHtml() {
@@ -435,7 +441,7 @@ class App {
             ${this.renderCharacterAvatar(selectedCharacter)}
           </button>
           <div class="profile-info">
-            <span class="player-name" id="header-player-name">${this.state.player.name}</span>
+            <span class="player-name" id="header-player-name">${this.escapeHtml(this.state.player.name)}</span>
             <span class="player-level" id="header-player-level">Rango Blader 1</span>
           </div>
         `;
@@ -714,7 +720,9 @@ class App {
           t.classList.remove('active');
         });
         clicked.classList.add('active');
-        this.renderWorkshopItems(clicked.dataset.part);
+        this.workshopPreviewCombo = null;
+        this.workshopPreviewPart = null;
+        this.renderWorkshop();
       };
     });
   }
@@ -991,11 +999,11 @@ class App {
 
   getAvatarStatCards(stats = {}) {
     return [
-      { key: 'attack', label: 'Ataque', icon: '⚡', color: '#ff2b3d', value: stats.attack || 0, meaning: 'Golpea fuerte' },
-      { key: 'defense', label: 'Defensa', icon: '⬟', color: '#3aa7ff', value: stats.defense || 0, meaning: 'Aguanta mejor' },
-      { key: 'stamina', label: 'Estamina', icon: '◎', color: '#ffd33d', value: stats.stamina || 0, meaning: 'Gira mas tiempo' },
-      { key: 'speed', label: 'Velocidad', icon: '➜', color: '#00e5ff', value: stats.speed || 0, meaning: 'Corre como un rayo' },
-      { key: 'focus', label: 'Foco', icon: '✦', color: '#9cff3a', value: stats.focus || 0, meaning: 'Mantiene la calma' }
+      { key: 'attack', label: 'Ataque', icon: '?', color: '#ff2b3d', value: stats.attack || 0, meaning: 'Golpea fuerte' },
+      { key: 'defense', label: 'Defensa', icon: '?', color: '#3aa7ff', value: stats.defense || 0, meaning: 'Aguanta mejor' },
+      { key: 'stamina', label: 'Estamina', icon: '?', color: '#ffd33d', value: stats.stamina || 0, meaning: 'Gira mas tiempo' },
+      { key: 'speed', label: 'Velocidad', icon: '?', color: '#00e5ff', value: stats.speed || 0, meaning: 'Corre como un rayo' },
+      { key: 'focus', label: 'Foco', icon: '?', color: '#9cff3a', value: stats.focus || 0, meaning: 'Mantiene la calma' }
     ];
   }
 
@@ -1463,6 +1471,228 @@ class App {
     `;
   }
   // -------------------- TOYSHOP SCREEN (TALLER) --------------------
+  getWorkshopCombo(overrides = {}) {
+    return {
+      ...this.state.player.activeCombo,
+      ...(overrides || {})
+    };
+  }
+
+  getWorkshopBey(combo = this.state.player.activeCombo) {
+    return buildCustomBeyFromCombo({
+      ...this.state,
+      player: {
+        ...this.state.player,
+        activeCombo: {
+          ...this.state.player.activeCombo,
+          ...(combo || {})
+        }
+      }
+    });
+  }
+
+  getWorkshopTypeInfo(type) {
+    const info = {
+      ataque: {
+        title: 'Bey de ATAQUE',
+        copy: 'Pega fuerte y busca terminar rapido.',
+        tip: 'Ideal si Carlos responde con seguridad y quiere castigar al rival.'
+      },
+      defensa: {
+        title: 'Bey de DEFENSA',
+        copy: 'Aguanta golpes y reduce errores peligrosos.',
+        tip: 'Ideal contra rivales que hacen mucho daño.'
+      },
+      estamina: {
+        title: 'Bey de ESTAMINA',
+        copy: 'Mantiene el giro y premia las rachas largas.',
+        tip: 'Ideal para plantas con muchas preguntas.'
+      },
+      balance: {
+        title: 'Bey BALANCE',
+        copy: 'Se adapta sin tener un punto debil claro.',
+        tip: 'Ideal cuando no sabes que rival viene.'
+      }
+    };
+    return info[type] || info.balance;
+  }
+
+  getWorkshopPartRole(partType) {
+    const roles = {
+      core: 'Define el caracter del Bey: potencia, control o giro.',
+      ring: 'Marca como choca: cortes, rebotes y defensa exterior.',
+      driver: 'Decide como se mueve por el estadio y cuanto dura girando.',
+      color: 'Cambia la energia visual y firma del montaje.'
+    };
+    return roles[partType] || 'Ajusta el comportamiento del montaje.';
+  }
+
+  getWorkshopUnlockHint(partType, index) {
+    if (partType === 'core') return index < 1 ? 'Inicial' : 'Capsulas de jefe y duelos de ascenso.';
+    if (partType === 'ring') return index < 1 ? 'Inicial' : 'Capsulas de jefe y plantas especiales.';
+    if (partType === 'driver') return index < 1 ? 'Inicial' : 'Capsulas normales al ganar combates.';
+    if (partType === 'color') return index < 1 ? 'Inicial' : 'Capsulas normales y recompensas de energia.';
+    return 'Recompensa de la X Tower.';
+  }
+
+  getWorkshopPartDelta(partType, part, baseCombo = this.state.player.activeCombo) {
+    const current = this.getWorkshopBey(baseCombo);
+    const preview = this.getWorkshopBey({ ...baseCombo, [partType]: part.id });
+    return {
+      ataque: preview.ataque - current.ataque,
+      defensa: preview.defensa - current.defensa,
+      estamina: preview.estamina - current.estamina,
+      velocidad: preview.velocidad - current.velocidad,
+      typeChanged: preview.tipo !== current.tipo,
+      preview
+    };
+  }
+
+  formatWorkshopDelta(value) {
+    if (!value) return '0';
+    return value > 0 ? `+${value}` : `${value}`;
+  }
+
+  getWorkshopRecommendedType() {
+    const floor = getCurrentTowerFloor(this.state);
+    const floorData = getTowerFloorData(floor);
+    const rivalBey = getBeyById(floorData?.rivalBeyId);
+    const rivalType = rivalBey?.tipo || 'balance';
+    const recommendedByRival = {
+      ataque: 'defensa',
+      defensa: 'estamina',
+      estamina: 'ataque'
+    };
+    const recommendedType = recommendedByRival[rivalType] || 'balance';
+    return { floor, floorData, rivalBey, rivalType, recommendedType };
+  }
+
+  renderWorkshopTypePanel(bey) {
+    const panel = document.getElementById('workshop-type-panel');
+    if (!panel) return;
+    const info = this.getWorkshopTypeInfo(bey.tipo);
+    panel.dataset.type = bey.tipo;
+    panel.innerHTML = `
+      <div>
+        <span>Tipo actual</span>
+        <strong>${info.title}</strong>
+      </div>
+      <p>${info.copy}</p>
+      <em>${bey.habilidad}: ${info.tip}</em>
+    `;
+  }
+
+  renderWorkshopRecommendation(bey) {
+    const panel = document.getElementById('workshop-recommendation-panel');
+    if (!panel) return;
+    const recommendation = this.getWorkshopRecommendedType();
+    const typeInfo = this.getWorkshopTypeInfo(recommendation.recommendedType);
+    const isReady = bey.tipo === recommendation.recommendedType || recommendation.recommendedType === 'balance';
+    panel.classList.toggle('ready', isReady);
+    panel.innerHTML = `
+      <span>Próxima planta ${recommendation.floor}</span>
+      <strong>${isReady ? 'Montaje preparado' : `Conviene ${typeInfo.title.replace('Bey ', '')}`}</strong>
+      <p>Rival: ${recommendation.floorData?.rivalName || 'Rival'} con ${recommendation.rivalBey?.nombre || 'Bey rival'} (${recommendation.rivalType}).</p>
+    `;
+  }
+
+  renderWorkshopComparison(activeBey, previewBey = null, part = null) {
+    const panel = document.getElementById('workshop-compare-panel');
+    if (!panel) return;
+    if (!previewBey || !part) {
+      panel.innerHTML = `
+        <strong>Elige una pieza</strong>
+        <p>Pasa por encima o toca una pieza para ver si mejora ataque, defensa, giro o velocidad antes de montarla.</p>
+      `;
+      return;
+    }
+    const stats = ['ataque', 'defensa', 'estamina', 'velocidad'];
+    panel.innerHTML = `
+      <strong>${part.name}</strong>
+      <p>${this.getWorkshopPartRole(this.workshopPreviewPart?.type)}</p>
+      <div class="workshop-delta-grid">
+        ${stats.map(stat => {
+          const delta = previewBey[stat] - activeBey[stat];
+          const cls = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
+          return `<span class="${cls}"><b>${stat}</b><i>${this.formatWorkshopDelta(delta)}</i></span>`;
+        }).join('')}
+      </div>
+      <em>${previewBey.tipo !== activeBey.tipo ? `Cambia a tipo ${previewBey.tipo.toUpperCase()}.` : `Mantiene tipo ${previewBey.tipo.toUpperCase()}.`}</em>
+    `;
+  }
+
+  renderWorkshopBuildSlots() {
+    const container = document.getElementById('workshop-build-slots');
+    if (!container) return;
+    const builds = Array.isArray(this.state.player.savedBeyBuilds) ? this.state.player.savedBeyBuilds.slice(0, 3) : [];
+    container.innerHTML = '';
+    for (let index = 0; index < 3; index++) {
+      const build = builds[index] || null;
+      const bey = build ? this.getWorkshopBey(build) : null;
+      const slot = document.createElement('div');
+      slot.className = `workshop-build-slot ${build ? 'filled' : 'empty'}`;
+      const safeBeyName = bey ? this.escapeHtml(bey.nombre) : '';
+      const safeBeyType = bey ? this.escapeHtml(bey.tipo.toUpperCase()) : '';
+      const safeAbility = bey ? this.escapeHtml(bey.habilidad) : '';
+      slot.innerHTML = build ? `
+        <strong>${safeBeyName}</strong>
+        <span>${safeBeyType} · ${safeAbility}</span>
+        <div class="workshop-build-actions">
+          <button type="button" data-load-build="${index}">Usar</button>
+          <button type="button" data-save-build="${index}">Guardar aquí</button>
+        </div>
+      ` : `
+        <strong>Ranura ${index + 1}</strong>
+        <span>Vacía</span>
+        <div class="workshop-build-actions">
+          <button type="button" data-save-build="${index}">Guardar aquí</button>
+        </div>
+      `;
+      container.appendChild(slot);
+    }
+    container.querySelectorAll('[data-save-build]').forEach(button => {
+      button.onclick = () => this.saveWorkshopBuild(parseInt(button.dataset.saveBuild, 10));
+    });
+    container.querySelectorAll('[data-load-build]').forEach(button => {
+      button.onclick = () => this.loadWorkshopBuild(parseInt(button.dataset.loadBuild, 10));
+    });
+  }
+
+  saveWorkshopBuild(index) {
+    sounds.playClick();
+    if (!Array.isArray(this.state.player.savedBeyBuilds)) this.state.player.savedBeyBuilds = [];
+    this.state.player.savedBeyBuilds[index] = { ...this.state.player.activeCombo };
+    this.saveState();
+    this.renderWorkshop();
+    this.showNotice('Montaje guardado en el garaje.', 'Build guardada');
+  }
+
+  loadWorkshopBuild(index) {
+    const build = this.state.player.savedBeyBuilds?.[index];
+    if (!build) return;
+    sounds.playClick();
+    this.state.player.activeCombo = {
+      ...this.state.player.activeCombo,
+      ...build
+    };
+    this.saveState();
+    this.renderHeader();
+    this.renderWorkshop();
+    this.showNotice(`${this.getWorkshopBey().nombre} cargada en el taller.`, 'Build lista');
+  }
+
+  runWorkshopSpinTest() {
+    const viewer = document.getElementById('workshop-top-preview');
+    const bey = this.getWorkshopBey(this.state.player.activeCombo);
+    if (!viewer) return;
+    sounds.playClick();
+    viewer.classList.remove('workshop-spin-test', 'workshop-spin-attack', 'workshop-spin-defense', 'workshop-spin-stamina', 'workshop-spin-balance');
+    void viewer.offsetWidth;
+    viewer.classList.add('workshop-spin-test', `workshop-spin-${bey.tipo}`);
+    this.showNotice(`${bey.nombre}: ${bey.habilidad}. Ataque ${bey.ataque}, defensa ${bey.defensa}, giro ${bey.estamina}.`, 'Prueba de giro');
+    setTimeout(() => viewer.classList.remove('workshop-spin-test', 'workshop-spin-attack', 'workshop-spin-defense', 'workshop-spin-stamina', 'workshop-spin-balance'), 2600);
+  }
+
   renderWorkshop() {
     this.renderTopPreview();
     const nameInput = document.getElementById('custom-bey-name-input');
@@ -1472,6 +1702,7 @@ class App {
         const value = nameInput.value.trim().slice(0, 24) || 'Mi Peonza X';
         this.state.player.activeCombo.name = value;
         this.renderHeader();
+        this.renderTopPreview();
       };
       nameInput.onchange = () => {
         this.state.player.activeCombo.name = (nameInput.value.trim().slice(0, 24) || 'Mi Peonza X');
@@ -1480,6 +1711,8 @@ class App {
         this.renderWorkshop();
       };
     }
+    const testSpinBtn = document.getElementById('btn-workshop-test-spin');
+    if (testSpinBtn) testSpinBtn.onclick = () => this.runWorkshopSpinTest();
     const equipCustomBtn = document.getElementById('btn-equip-custom-bey');
     if (equipCustomBtn) {
       const isEquipped = this.state.player.equippedBeyId === 'custom_x_bey';
@@ -1502,26 +1735,24 @@ class App {
   }
 
   renderTopPreview() {
-    const combo = this.state.player.activeCombo;
+    const combo = this.workshopPreviewCombo || this.state.player.activeCombo;
+    const activeBey = this.getWorkshopBey(this.state.player.activeCombo);
+    const previewBey = this.getWorkshopBey(combo);
     const container = document.getElementById('workshop-top-preview');
     container.innerHTML = generateTopSVG(combo.core, combo.ring, combo.driver, combo.color);
+    container.classList.toggle('previewing', !!this.workshopPreviewCombo);
 
-    // Calculate dynamic stats
-    const coreData = CUSTOM_PARTS.core.find(c => c.id === combo.core);
-    const ringData = CUSTOM_PARTS.ring.find(r => r.id === combo.ring);
-    const driverData = CUSTOM_PARTS.driver.find(d => d.id === combo.driver);
+    document.getElementById('stat-val-attack').innerText = previewBey.ataque;
+    document.getElementById('stat-val-defense').innerText = previewBey.defensa;
+    document.getElementById('stat-val-stamina').innerText = previewBey.estamina;
 
-    const attack = (coreData?.stat.attack || 0) + (ringData?.stat.attack || 0) + (driverData?.stat.attack || 0) + 15;
-    const defense = (coreData?.stat.defense || 0) + (ringData?.stat.defense || 0) + (driverData?.stat.defense || 0) + 15;
-    const stamina = (coreData?.stat.stamina || 0) + (ringData?.stat.stamina || 0) + (driverData?.stat.stamina || 0) + 15;
-
-    document.getElementById('stat-val-attack').innerText = attack;
-    document.getElementById('stat-val-defense').innerText = defense;
-    document.getElementById('stat-val-stamina').innerText = stamina;
-
-    document.getElementById('stat-bar-attack').style.width = `${Math.min(100, attack)}%`;
-    document.getElementById('stat-bar-defense').style.width = `${Math.min(100, defense)}%`;
-    document.getElementById('stat-bar-stamina').style.width = `${Math.min(100, stamina)}%`;
+    document.getElementById('stat-bar-attack').style.width = `${Math.min(100, previewBey.ataque)}%`;
+    document.getElementById('stat-bar-defense').style.width = `${Math.min(100, previewBey.defensa)}%`;
+    document.getElementById('stat-bar-stamina').style.width = `${Math.min(100, previewBey.estamina)}%`;
+    this.renderWorkshopTypePanel(previewBey);
+    this.renderWorkshopRecommendation(previewBey);
+    this.renderWorkshopComparison(activeBey, this.workshopPreviewCombo ? previewBey : null, this.workshopPreviewPart?.part || null);
+    this.renderWorkshopBuildSlots();
   }
 
   equipCustomWorkshopBey() {
@@ -1546,23 +1777,27 @@ class App {
       return;
     }
 
-    partsList.forEach(part => {
+    partsList.forEach((part, index) => {
       const isUnlocked = unlockedIds.includes(part.id);
       const isSelected = activeCombo[partType] === part.id;
+      const delta = this.getWorkshopPartDelta(partType, part, activeCombo);
       
       const itemCard = document.createElement('div');
       itemCard.className = `workshop-item-card ${isSelected ? 'selected' : ''}`;
+      itemCard.dataset.partType = partType;
+      itemCard.dataset.partId = part.id;
       
       if (!isUnlocked) {
         itemCard.style.opacity = '0.35';
         itemCard.innerHTML = `
-          <div class="workshop-item-icon" style="font-size: 2.2rem; text-align:center;">🔒</div>
+          <div class="workshop-item-icon" style="font-size: 2.2rem; text-align:center;">??</div>
           <div class="workshop-item-name">${part.name}</div>
           <div class="workshop-item-rarity rarity-${part.rarity}">${part.rarity}</div>
+          <div class="workshop-item-meta">${this.getWorkshopUnlockHint(partType, index)}</div>
         `;
         itemCard.onclick = () => {
           sounds.playIncorrect();
-          this.showNotice("Esta pieza esta bloqueada. Sigue superando entrenamientos del Torneo para conseguirla.", "Pieza bloqueada");
+          this.showNotice(`Esta pieza esta bloqueada. ${this.getWorkshopUnlockHint(partType, index)}`, "Pieza bloqueada");
         };
       } else {
         let previewHtml = '';
@@ -1578,13 +1813,37 @@ class App {
           ${previewHtml}
           <div class="workshop-item-name">${part.name}</div>
           <div class="workshop-item-rarity rarity-${part.rarity}">${part.rarity}</div>
+          <div class="workshop-item-deltas">
+            <span class="${delta.ataque > 0 ? 'up' : delta.ataque < 0 ? 'down' : ''}">ATK ${this.formatWorkshopDelta(delta.ataque)}</span>
+            <span class="${delta.defensa > 0 ? 'up' : delta.defensa < 0 ? 'down' : ''}">DEF ${this.formatWorkshopDelta(delta.defensa)}</span>
+            <span class="${delta.estamina > 0 ? 'up' : delta.estamina < 0 ? 'down' : ''}">GIR ${this.formatWorkshopDelta(delta.estamina)}</span>
+          </div>
+          <div class="workshop-item-meta">${this.getWorkshopPartRole(partType)}</div>
         `;
 
+        const preview = () => {
+          this.workshopPreviewCombo = { ...activeCombo, [partType]: part.id };
+          this.workshopPreviewPart = { type: partType, part };
+          this.renderTopPreview();
+        };
+        const clearPreview = () => {
+          this.workshopPreviewCombo = null;
+          this.workshopPreviewPart = null;
+          this.renderTopPreview();
+        };
+        itemCard.onmouseenter = preview;
+        itemCard.onfocus = preview;
+        itemCard.onmouseleave = clearPreview;
+        itemCard.onblur = clearPreview;
+        itemCard.tabIndex = 0;
         itemCard.onclick = () => {
           sounds.playClick();
+          itemCard.classList.add('assembling');
           this.state.player.activeCombo[partType] = part.id;
+          this.workshopPreviewCombo = null;
+          this.workshopPreviewPart = null;
           this.saveState();
-          this.renderWorkshop();
+          setTimeout(() => this.renderWorkshop(), 110);
           if (this.state.player.equippedBeyId === 'custom_x_bey') {
             this.showNotice(`${buildCustomBeyFromCombo(this.state).nombre} actualizada para la proxima batalla.`, 'Montaje actualizado');
           }
@@ -1766,7 +2025,7 @@ class App {
         </div>
         <div class="collection-card-actions">
           <button class="btn-action collection-equip" type="button" ${unlocked ? '' : 'disabled'}>${equipped.id === bey.id ? 'Equipado' : 'Usar este Bey'}</button>
-          <button class="collection-icon-btn ${favorite ? 'active' : ''}" type="button" data-favorite-bey="${bey.id}" title="Favorito"></button>
+          <button class="collection-icon-btn ${favorite ? 'active' : ''}" type="button" data-favorite-bey="${bey.id}" title="Favorito">&#9733;</button>
           <button class="collection-icon-btn ${comparing ? 'active' : ''}" type="button" data-compare-bey="${bey.id}" title="Comparar">VS</button>
         </div>
       </div>
@@ -1912,7 +2171,7 @@ class App {
         <p>${stadium.descripcion}</p>
         <div class="collection-card-actions">
           <button class="btn-action collection-info" type="button">Ver mundo</button>
-          <button class="collection-icon-btn ${favorite ? 'active' : ''}" type="button" data-favorite-stadium="${stadium.id}" title="Favorito"></button>
+          <button class="collection-icon-btn ${favorite ? 'active' : ''}" type="button" data-favorite-stadium="${stadium.id}" title="Favorito">&#9733;</button>
         </div>
       </div>
     `;
@@ -2049,7 +2308,7 @@ class App {
       // Card metadata based on card index
       let name = `Rival Astral #${c}`;
       let rarity = 'comun';
-      let icon = '🛡️';
+      let icon = '???';
       let desc = 'Entrenador de la Liga Spin.';
       
       // Custom cards for weekly bosses
@@ -2517,6 +2776,9 @@ class App {
     this.rewardBossSummary = stats?.bossSummary || (isBoss ? LearningEngine.getWeeklyBossSummary(this.state, weekNum) : null);
     this.rewardMatchSummary = stats?.matchSummary || null;
     this.rewardTowerFloor = Math.max(1, Math.min(50, parseInt(stats?.towerFloor || this.currentTowerFloor || getCurrentTowerFloor(this.state), 10) || 1));
+    const floorRewardForModal = getTowerFloorData(this.rewardTowerFloor)?.reward || {};
+    this.rewardCoins = Math.max(0, parseInt(stats?.coins ?? floorRewardForModal.coins ?? (isBoss ? 100 : 25), 10) || 0);
+    this.rewardXp = Math.max(0, parseInt(stats?.xp ?? floorRewardForModal.xp ?? (isBoss ? 150 : 40), 10) || 0);
 
     const isPostBossReview = weekNum === 'post-boss-review';
     const floorReward = getTowerFloorData(this.rewardTowerFloor)?.reward || null;
@@ -2624,7 +2886,7 @@ class App {
           this.state.progress.pendingReward = null;
         }
         this.saveState();
-        document.getElementById('reward-item-icon').innerText = '✓';
+        document.getElementById('reward-item-icon').innerText = '?';
         document.getElementById('reward-item-name').innerText = 'Capsula ya recogida';
         document.getElementById('reward-rarity-badge').innerText = 'COMPLETADO';
         document.getElementById('reward-rarity-badge').className = 'rarity-comun';
@@ -2707,9 +2969,9 @@ class App {
         }
       }
 
-      // Add coins & XP
-      const gainedCoins = this.rewardIsBoss ? 100 : 25;
-      const gainedXp = this.rewardIsBoss ? 150 : 40;
+      // Usa la recompensa calculada por planta/dificultad; perfiles antiguos caen al valor base.
+      const gainedCoins = Math.max(0, parseInt(this.rewardCoins, 10) || (this.rewardIsBoss ? 100 : 25));
+      const gainedXp = Math.max(0, parseInt(this.rewardXp, 10) || (this.rewardIsBoss ? 150 : 40));
       this.state.player.coins += gainedCoins;
       this.state.player.xp += gainedXp;
       if (this.state.progress.pendingReward?.key === this.rewardSessionKey) {

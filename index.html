@@ -844,17 +844,33 @@
               </div>
             </div>
           </div>
+          <div class="workshop-type-panel" id="workshop-type-panel"></div>
+          <div class="workshop-recommendation-panel" id="workshop-recommendation-panel"></div>
+          <button class="btn-action secondary workshop-test-btn" id="btn-workshop-test-spin" type="button">Probar giro</button>
+          <div class="workshop-builds-panel">
+            <div class="workshop-builds-head">
+              <strong>Garaje de builds</strong>
+              <span>Guarda 3 montajes</span>
+            </div>
+            <div class="workshop-build-slots" id="workshop-build-slots"></div>
+          </div>
           <button class="btn-action workshop-equip-btn" id="btn-equip-custom-bey" type="button">Usar esta peonza en batalla</button>
         </div>
 
         <!-- Inventory customizer (Right) -->
         <div class="workshop-right">
+          <div class="workshop-part-roles">
+            <div><strong>Núcleo</strong><span>corazón y potencia</span></div>
+            <div><strong>Anillo</strong><span>golpes y defensa</span></div>
+            <div><strong>Punta</strong><span>movimiento y giro</span></div>
+          </div>
           <div class="workshop-tabs">
             <button class="workshop-tab active" data-part="core">NÚCLEO</button>
             <button class="workshop-tab" data-part="ring">ANILLO</button>
             <button class="workshop-tab" data-part="driver">PUNTA</button>
             <button class="workshop-tab" data-part="color">ENERGÍA</button>
           </div>
+          <div class="workshop-compare-panel" id="workshop-compare-panel"></div>
           <div class="workshop-items-grid" id="workshop-items-container">
             <!-- Populated dynamically -->
           </div>
