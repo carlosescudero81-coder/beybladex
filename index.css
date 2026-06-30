@@ -8213,6 +8213,32 @@ button,
   border-color: rgba(255, 234, 0, 0.44);
 }
 
+.combat-depth-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.combat-depth-row span {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(120, 247, 255, 0.2);
+}
+
+.combat-depth-row span.is-danger,
+#combat-burst-status.is-danger {
+  color: #ffd3df;
+  background: rgba(255, 0, 85, 0.12);
+  border-color: rgba(255, 0, 85, 0.55);
+}
+
+#combat-zone-status[data-zone="rail"] {
+  color: var(--yellow);
+  border-color: rgba(255, 234, 0, 0.5);
+}
+
+#combat-zone-status[data-zone="edge"] {
+  color: #ffb3c9;
+  border-color: rgba(255, 0, 85, 0.42);
+}
+
 .x-gauge-track {
   height: 12px;
   overflow: hidden;
@@ -8328,6 +8354,20 @@ button,
   cursor: not-allowed;
   opacity: 0.48;
   box-shadow: none;
+}
+
+.deck-switch-btn {
+  width: 100%;
+  min-height: 46px;
+  border-color: rgba(0, 240, 255, 0.42);
+  background:
+    radial-gradient(circle at 15% 20%, rgba(0, 240, 255, 0.18), transparent 42%),
+    linear-gradient(135deg, rgba(0, 240, 255, 0.12), rgba(255, 234, 0, 0.08));
+}
+
+.deck-switch-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
 }
 
 .special-attack-card.special-armed,
@@ -9603,8 +9643,23 @@ button,
     font-size: clamp(0.68rem, 1.8vw, 0.82rem);
   }
 
+  #screen-combat .combat-depth-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  #screen-combat .combat-depth-row span {
+    padding: 5px 6px;
+    font-size: clamp(0.58rem, 1.55vw, 0.72rem);
+  }
+
   #screen-combat .special-command-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #screen-combat .deck-switch-btn {
+    min-height: 44px;
+    font-size: clamp(0.74rem, 1.8vw, 0.9rem);
   }
 }
 
@@ -9872,6 +9927,21 @@ button,
   #screen-combat .special-command-btn {
     min-height: 46px;
     font-size: clamp(0.74rem, 1.9vh, 0.92rem);
+  }
+
+  #screen-combat .combat-depth-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  #screen-combat .combat-depth-row span {
+    padding: 4px 5px;
+    font-size: clamp(0.52rem, 1.22vh, 0.66rem);
+  }
+
+  #screen-combat .deck-switch-btn {
+    min-height: 44px;
+    font-size: clamp(0.72rem, 1.7vh, 0.88rem);
   }
 
   #screen-combat .combat-tactic-card {

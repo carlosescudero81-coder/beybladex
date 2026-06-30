@@ -2841,6 +2841,11 @@ class App {
         <div><span>Dash X</span><strong>${summary.xtremeDashUses || 0}</strong></div>
         <div><span>Riesgo X</span><strong>${summary.xtremeDashRisks || 0}</strong></div>
         <div><span>Cambios deck</span><strong>${summary.deckSwitches || 0}</strong></div>
+        <div><span>Cambio táctico</span><strong>${summary.manualSwitches || 0}</strong></div>
+        <div><span>Giro final</span><strong>${summary.spinLeft || 0}</strong></div>
+        <div><span>Riesgo Burst</span><strong>${summary.burstRisk || 0}%</strong></div>
+        <div><span>Bloqueos perfectos</span><strong>${summary.styleRewards?.blockPerfects || 0}</strong></div>
+        <div><span>Remontadas</span><strong>${summary.styleRewards?.comebackWins || 0}</strong></div>
         <div><span>Sin pista</span><strong>${summary.fastCorrect || 0}</strong></div>
         <div><span>Con calma</span><strong>${summary.assistedCorrect || 0}</strong></div>
       </div>
