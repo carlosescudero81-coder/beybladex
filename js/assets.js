@@ -1345,6 +1345,20 @@ function getCustomBeyType(stats) {
   return 'balance';
 }
 
+function getCustomBeyAbility(stats, combo = {}) {
+  const type = getCustomBeyType(stats);
+  const driver = getWorkshopPart('driver', combo.driver);
+  const ring = getWorkshopPart('ring', combo.ring);
+  const driverAttack = driver?.stat?.attack || 0;
+  const ringDefense = ring?.stat?.defense || 0;
+  if (type === 'ataque' && driverAttack >= 22) return 'Dash Cortante';
+  if (type === 'ataque') return 'Impacto X';
+  if (type === 'defensa' && ringDefense >= 22) return 'Muro X';
+  if (type === 'defensa') return 'Guardia de Rebote';
+  if (type === 'estamina') return 'Giro Infinito';
+  return 'Cambio Balance';
+}
+
 function getCustomBeyImage(color = '#00f0ff') {
   const safeColor = String(color || '#00f0ff').replace(/[^#a-zA-Z0-9(),.%\s-]/g, '');
   const svg = `
@@ -1391,7 +1405,7 @@ function buildCustomBeyFromCombo(state) {
     rareza: 'custom',
     ...stats,
     nivelRequerido: 1,
-    habilidad: 'Combo del Taller',
+    habilidad: getCustomBeyAbility(stats, combo),
     descripcion: `Creada con ${core?.name || 'nucleo'}, ${ring?.name || 'anillo'} y ${driver?.name || 'punta'}.`,
     personajeAsociado: state?.player?.name || 'Carlos',
     colorPrincipal: color?.code || '#00f0ff',
