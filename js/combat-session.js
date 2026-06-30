@@ -320,6 +320,7 @@ class CombatSession {
   applyCompanionStartPassive() {
     if (!this.companionPassive || this.companionPassive.type !== 'charge' || this.companionPassiveUsed.charge || !this.playerCombatant) return null;
     this.playerCombatant.charge = Math.min(3, (this.playerCombatant.charge || 0) + 1);
+    this.syncPersistentXGauge();
     this.companionPassiveUsed.charge = true;
     this.companionStartMessage = `${this.companionPassive.characterName}: ${this.companionPassive.label}`;
     return `${this.companionPassive.characterName}: ${this.companionPassive.label}`;
@@ -337,7 +338,10 @@ class CombatSession {
     }
     if (passive.type === 'dash' && isFastAnswer && !this.companionPassiveUsed.dash) {
       this.companionPassiveUsed.dash = true;
-      if (this.playerCombatant) this.playerCombatant.charge = Math.min(3, (this.playerCombatant.charge || 0) + 1);
+      if (this.playerCombatant) {
+        this.playerCombatant.charge = Math.min(3, (this.playerCombatant.charge || 0) + 1);
+        this.syncPersistentXGauge();
+      }
       return {
         damage: damage + Math.round(passive.value || 5),
         message: `${passive.characterName}: ${passive.label}`
@@ -533,6 +537,7 @@ class CombatSession {
 
   persistTowerBattleState() {
     if (!this.isTowerBattle || !this.state?.progress) return;
+    this.syncPersistentXGauge();
     this.state.progress.activeTowerBattle = {
       key: this.getTowerBattleKey(),
       floor: this.towerFloor,
@@ -665,11 +670,18 @@ class CombatSession {
     if (this.resumedTowerBattle) {
       this.playerCombatant.charge = Math.max(0, Math.min(3, this.savedPlayerCharge || 0));
       this.rivalCombatant.charge = Math.max(0, Math.min(3, this.savedRivalCharge || 0));
+    } else {
+      this.playerCombatant.charge = Math.max(0, Math.min(3, parseInt(this.state?.player?.xGauge, 10) || 0));
     }
     this.playerX = this.playerCombatant.x;
     this.playerY = this.playerCombatant.y;
     this.rivalX = this.rivalCombatant.x;
     this.rivalY = this.rivalCombatant.y;
+  }
+
+  syncPersistentXGauge() {
+    if (!this.state?.player || !this.playerCombatant) return;
+    this.state.player.xGauge = Math.max(0, Math.min(3, Math.round(this.playerCombatant.charge || 0)));
   }
 
   createCombatant(id, bey, x, y, vx, vy) {
@@ -848,6 +860,8 @@ class CombatSession {
   hasXtremeRailWindow() {
     const speed = this.playerBey?.velocidad || 70;
     const difficulty = parseInt(this.currentQuestion?.difficulty, 10) || 1;
+    const charge = this.playerCombatant?.charge || 0;
+    if (charge >= 3) return true;
     return this.currentQuestion?.isLightning === true || difficulty >= 4 || speed >= 78;
   }
 
@@ -1421,6 +1435,7 @@ class CombatSession {
             sounds.playSpecial();
             this.rivalHP = Math.max(0, this.rivalHP - 15);
             if (this.playerCombatant) this.playerCombatant.charge = 1;
+            this.syncPersistentXGauge();
             this.updateHpBars();
             this.updateXGauge();
             this.performAttackSequence('player', 'special');
@@ -2024,6 +2039,7 @@ class CombatSession {
       this.state.pedagogy.math.correctAnswers += 1;
       if (this.currentQuestion?.isLightning && isFastAnswer && this.playerCombatant) {
         this.playerCombatant.charge = Math.min(3, this.playerCombatant.charge + 1);
+        this.syncPersistentXGauge();
         this.lightningDamageBonus = 5;
         this.showAttackBanner('Relampago X', '+1 Energia X y golpe reforzado');
       }
@@ -2534,10 +2550,12 @@ class CombatSession {
 
     if (outcome.chargeDelta && this.playerCombatant) {
       this.playerCombatant.charge = Math.max(0, Math.min(3, this.playerCombatant.charge + outcome.chargeDelta));
+      this.syncPersistentXGauge();
     }
     if (outcome.specialTriggered && this.playerCombatant) {
       sounds.playSpecial();
       this.playerCombatant.charge = 0;
+      this.syncPersistentXGauge();
       this.correctStreak = 0;
       this.app.showNotice(`¡Combo de conocimiento!\nAtaque critico: "${outcome.bannerTitle}".`, "Ataque especial");
     }
@@ -2856,6 +2874,7 @@ class CombatSession {
     this.lastSpinUsed = true;
     this.playerHP = Math.min(this.playerMaxHP, this.playerHP + 14);
     if (this.playerCombatant) this.playerCombatant.charge = Math.min(3, this.playerCombatant.charge + 1);
+    this.syncPersistentXGauge();
     this.showAttackBanner('Ultimo Giro', 'Remonta con calma');
     this.spawnShockwave(this.playerCombatant?.x || 35, this.playerCombatant?.y || 55, '#00ff66', true);
   }
@@ -3368,7 +3387,7 @@ class CombatSession {
       // Glow especial cuando los 3 están llenos
       cell.classList.toggle('ready-glow', charge >= 3);
     }
-    if (label) label.innerText = charge >= 3 ? 'Especial listo' : `${charge}/3 para especial`;
+    if (label) label.innerText = charge >= 3 ? 'Especial/Dash listo' : `${charge}/3 energia guardada`;
 
     const dashReady = this.selectedAction === 'attack' && this.canUseXtremeDash();
     document.querySelectorAll('.x-gauge-panel').forEach(panel => panel.classList.toggle('dash-ready', dashReady));
@@ -3407,7 +3426,7 @@ class CombatSession {
         else if (this.xtremeDashArmed) specialHelp.innerText = 'Dash armado: acierta rapido para entrar al rail.';
         else if (ready)              specialHelp.innerText = 'Listo: pulsa el boton y acierta para lanzar el especial.';
         else if (xtremeReady)        specialHelp.innerText = 'Rail X abierto: gasta 1 energia y responde rapido.';
-        else                         specialHelp.innerText = `Especial: ${charge}/3 energia · Combo: ${Math.min(3, this.correctStreak)}/3. Dash necesita energia + rail.`;
+        else                         specialHelp.innerText = `Energia guardada: ${charge}/3 · Combo: ${Math.min(3, this.correctStreak)}/3. Se mantiene entre batallas.`;
       }
     }
 
@@ -3556,6 +3575,7 @@ class CombatSession {
 
   endCombat(playerWon) {
     this.stopPhysicsSimulation();
+    this.syncPersistentXGauge();
     
     if (playerWon) {
       this.clearTowerBattleState();

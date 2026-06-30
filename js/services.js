@@ -12,6 +12,7 @@ const INITIAL_STATE = {
     currentDay: 1,
     currentLeague: "Arena de Pruebas",
     equippedBeyId: 'blackshell',
+    xGauge: 0,
     activeCombo: {
       core: 'core_wood',
       ring: 'ring_wood',
@@ -19,6 +20,7 @@ const INITIAL_STATE = {
       color: 'col_cyan',
       name: 'Mi Peonza X'
     },
+    savedBeyBuilds: [],
     customAvatar: {
       expression: 'alegre',
       hairStyle: 'corto',
@@ -174,6 +176,9 @@ class StorageService {
       state.player.activeCombo.name = typeof state.player.activeCombo.name === 'string' && state.player.activeCombo.name.trim()
         ? state.player.activeCombo.name.trim().slice(0, 24)
         : INITIAL_STATE.player.activeCombo.name;
+      state.player.savedBeyBuilds = Array.isArray(raw.player.savedBeyBuilds)
+        ? raw.player.savedBeyBuilds.slice(0, 3)
+        : [];
       state.player.customAvatar = {
         ...INITIAL_STATE.player.customAvatar,
         ...(raw.player.customAvatar || {})
@@ -238,12 +243,22 @@ class StorageService {
       : state.player.characterAvatarId;
     state.player.coins = Math.max(0, parseInt(state.player.coins, 10) || 0);
     state.player.xp = Math.max(0, parseInt(state.player.xp, 10) || 0);
+    state.player.xGauge = Math.max(0, Math.min(3, parseInt(state.player.xGauge, 10) || 0));
     state.player.currentWeek = Math.min(12, Math.max(1, parseInt(state.player.currentWeek, 10) || 1));
     state.player.currentDay = Math.min(5, Math.max(1, parseInt(state.player.currentDay, 10) || 1));
     state.player.characterProgress = state.player.characterProgress && typeof state.player.characterProgress === 'object' && !Array.isArray(state.player.characterProgress)
       ? state.player.characterProgress
       : {};
     state.player.dailyStreak = Math.max(0, parseInt(state.player.dailyStreak, 10) || 0);
+    state.player.savedBeyBuilds = Array.isArray(state.player.savedBeyBuilds)
+      ? state.player.savedBeyBuilds.slice(0, 3).map(build => ({
+          ...INITIAL_STATE.player.activeCombo,
+          ...(build && typeof build === 'object' ? build : {}),
+          name: typeof build?.name === 'string' && build.name.trim()
+            ? build.name.trim().slice(0, 24)
+            : INITIAL_STATE.player.activeCombo.name
+        }))
+      : [];
     Object.keys(state.player.characterProgress).forEach(characterId => {
       const progress = state.player.characterProgress[characterId] || {};
       state.player.characterProgress[characterId] = {
@@ -533,6 +548,13 @@ class ProgressService {
   static normalizeActiveTowerBattle(rawBattle) {
     if (!rawBattle || typeof rawBattle !== 'object' || Array.isArray(rawBattle)) return null;
     const floor = Math.max(1, Math.min(50, parseInt(rawBattle.floor, 10) || 1));
+    const questionBank = Array.isArray(rawBattle.questionBank) ? rawBattle.questionBank.filter(item => item && typeof item === 'object').slice(0, 80) : [];
+    const rounds = Array.isArray(rawBattle.rounds) ? rawBattle.rounds.filter(item => item && typeof item === 'object').slice(0, 12) : [];
+    const playerHP = Number(rawBattle.playerHP);
+    const rivalHP = Number(rawBattle.rivalHP);
+    if (!Number.isFinite(playerHP) || !Number.isFinite(rivalHP) || playerHP <= 0 || rivalHP <= 0 || questionBank.length === 0 || rounds.length === 0) {
+      return null;
+    }
     return {
       key: typeof rawBattle.key === 'string' ? rawBattle.key : `tower-floor-${floor}`,
       floor,
@@ -540,8 +562,8 @@ class ProgressService {
       questionIndex: Math.max(0, parseInt(rawBattle.questionIndex, 10) || 0),
       usedQuestionIds: Array.isArray(rawBattle.usedQuestionIds) ? [...new Set(rawBattle.usedQuestionIds.filter(Boolean))] : [],
       usedQuestionSignatures: Array.isArray(rawBattle.usedQuestionSignatures) ? [...new Set(rawBattle.usedQuestionSignatures.filter(Boolean))] : [],
-      playerHP: Math.max(0, Number(rawBattle.playerHP) || 0),
-      rivalHP: Math.max(0, Number(rawBattle.rivalHP) || 0),
+      playerHP: Math.max(1, playerHP),
+      rivalHP: Math.max(1, rivalHP),
       correctStreak: Math.max(0, parseInt(rawBattle.correctStreak, 10) || 0),
       sessionCorrect: Math.max(0, parseInt(rawBattle.sessionCorrect, 10) || 0),
       sessionIncorrect: Math.max(0, parseInt(rawBattle.sessionIncorrect, 10) || 0),
@@ -570,8 +592,8 @@ class ProgressService {
         : { spin: 0, over: 0, burst: 0, xtreme: 0 },
       xtremeDashUses: Math.max(0, parseInt(rawBattle.xtremeDashUses, 10) || 0),
       xtremeDashRisks: Math.max(0, parseInt(rawBattle.xtremeDashRisks, 10) || 0),
-      questionBank: Array.isArray(rawBattle.questionBank) ? rawBattle.questionBank.filter(item => item && typeof item === 'object').slice(0, 80) : [],
-      rounds: Array.isArray(rawBattle.rounds) ? rawBattle.rounds.filter(item => item && typeof item === 'object').slice(0, 12) : [],
+      questionBank,
+      rounds,
       savedAt: typeof rawBattle.savedAt === 'string' ? rawBattle.savedAt : StorageService.todayKey()
     };
   }
