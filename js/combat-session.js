@@ -816,6 +816,15 @@ class CombatSession {
     setTimeout(() => arena.classList.remove(cameraClass), duration);
   }
 
+  triggerSlowMotionClash(duration = 360) {
+    const arena = document.getElementById('battle-field');
+    if (!arena) return;
+    arena.classList.remove('slowmo-clash');
+    void arena.offsetWidth;
+    arena.classList.add('slowmo-clash');
+    setTimeout(() => arena.classList.remove('slowmo-clash'), duration);
+  }
+
   scheduleCombatFrame(callback) {
     const scheduleFrame = typeof requestAnimationFrame === 'function'
       ? requestAnimationFrame
@@ -2515,6 +2524,7 @@ class CombatSession {
         overlay.setAttribute('aria-hidden', 'true');
         button.onclick = null;
         if (timeoutId) clearTimeout(timeoutId);
+        this.showBlockResultPulse(timing.quality);
 
         if (damage > 0) {
           this.playerHP = Math.max(0, this.playerHP - damage);
@@ -2541,6 +2551,23 @@ class CombatSession {
       button.onclick = () => finish(false);
       timeoutId = setTimeout(() => finish(true), durationMs + 180);
     });
+  }
+
+  showBlockResultPulse(quality = 'miss') {
+    const arena = document.getElementById('battle-field');
+    const playerTop = document.getElementById('player-top');
+    if (arena) {
+      arena.classList.remove('block-perfect-pulse', 'block-partial-pulse', 'block-miss-pulse');
+      void arena.offsetWidth;
+      arena.classList.add(`block-${quality === 'perfect' ? 'perfect' : quality === 'partial' ? 'partial' : 'miss'}-pulse`);
+      setTimeout(() => arena.classList.remove('block-perfect-pulse', 'block-partial-pulse', 'block-miss-pulse'), 720);
+    }
+    if (playerTop) {
+      playerTop.classList.remove('block-perfect-top', 'block-partial-top', 'block-miss-top');
+      void playerTop.offsetWidth;
+      playerTop.classList.add(`block-${quality === 'perfect' ? 'perfect' : quality === 'partial' ? 'partial' : 'miss'}-top`);
+      setTimeout(() => playerTop.classList.remove('block-perfect-top', 'block-partial-top', 'block-miss-top'), 720);
+    }
   }
 
   applyTurnOutcome(outcome, isCorrect) {
@@ -2903,9 +2930,29 @@ class CombatSession {
     };
     const zone = zones[finish.type] || zones.spin;
     this.pulseFinishPocket(finish.type);
+    this.playFinishTopReaction(finish.type, attackerId);
     if (finish.type !== 'spin') this.spawnShockwave(zone.x, zone.y, zone.color, zone.special, `finish-${finish.type}`);
     this.spawnParticles(zone.x, zone.y, zone.color, finish.type === 'xtreme' ? 22 : 14);
     if (finish.type === 'xtreme') this.triggerScreenFlash('xtreme');
+  }
+
+  playFinishTopReaction(type = 'spin', attackerId = 'player') {
+    const defenderId = attackerId === 'player' ? 'rival' : 'player';
+    const defenderTop = document.getElementById(`${defenderId}-top`);
+    const attackerTop = document.getElementById(`${attackerId}-top`);
+    const className = `finish-reaction-${type}`;
+    if (defenderTop) {
+      defenderTop.classList.remove('finish-reaction-spin', 'finish-reaction-over', 'finish-reaction-burst', 'finish-reaction-xtreme');
+      void defenderTop.offsetWidth;
+      defenderTop.classList.add(className);
+      setTimeout(() => defenderTop.classList.remove(className), type === 'xtreme' ? 980 : 760);
+    }
+    if (attackerTop && (type === 'burst' || type === 'xtreme')) {
+      attackerTop.classList.remove('finish-attacker-surge');
+      void attackerTop.offsetWidth;
+      attackerTop.classList.add('finish-attacker-surge');
+      setTimeout(() => attackerTop.classList.remove('finish-attacker-surge'), 760);
+    }
   }
 
   playFinishFeedback(finish) {
@@ -2998,6 +3045,7 @@ class CombatSession {
     const impactX = (attacker.x * 0.35) + (defender.x * 0.65);
     const impactY = (attacker.y * 0.35) + (defender.y * 0.65);
     setTimeout(() => {
+      if (isSpecial || damage >= 30) this.triggerSlowMotionClash(isSpecial ? 460 : 340);
       this.triggerClashVisual(impactX, impactY, isSpecial);
       if (action === 'attack' || action === 'counter') {
         this.spawnShockwave(impactX, impactY, attackerId === 'rival' ? '#ff0055' : '#33f5ff', false);
@@ -3172,6 +3220,7 @@ class CombatSession {
         // 6) Flash y choque visual en el punto de impacto
         const impactX = (attacker.x * 0.3) + (defender.x * 0.7);
         const impactY = (attacker.y * 0.3) + (defender.y * 0.7);
+        this.triggerSlowMotionClash(520);
         this.triggerClashVisual(impactX, impactY, true);
         this.spawnShockwave(impactX, impactY, '#fff35a', true, 'finish-xtreme');
         this.spawnParticles(impactX, impactY, '#fff35a', 26);
