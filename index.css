@@ -7261,6 +7261,22 @@ button,
   animation: combat-camera-heavy 620ms cubic-bezier(0.12, 1.35, 0.2, 1) both;
 }
 
+.battlefield-arena.slowmo-clash {
+  animation: combat-slowmo-clash 420ms cubic-bezier(0.12, 1, 0.24, 1) both;
+}
+
+.battlefield-arena.block-perfect-pulse::before {
+  animation: block-perfect-arena 620ms ease-out both;
+}
+
+.battlefield-arena.block-partial-pulse::before {
+  animation: block-partial-arena 620ms ease-out both;
+}
+
+.battlefield-arena.block-miss-pulse {
+  animation: block-miss-arena 520ms linear both;
+}
+
 .battlefield-arena.xtreme-armed .xtreme-rail-entry,
 .battlefield-arena.xtreme-dash-active .xtreme-rail-entry {
   border-color: rgba(255, 234, 0, 0.75);
@@ -7547,6 +7563,13 @@ button,
 
 .screen-flash-layer.active.xtreme {
   animation: xtreme-screen-flash 620ms ease-out both;
+}
+
+.screen-flash-layer.active.special {
+  background:
+    radial-gradient(circle at 50% 48%, rgba(255, 255, 255, 0.72), rgba(255, 234, 0, 0.34) 18%, transparent 42%),
+    linear-gradient(120deg, transparent 0 36%, rgba(255, 234, 0, 0.32) 48%, rgba(0, 240, 255, 0.2) 60%, transparent 72% 100%);
+  animation: special-screen-flash 520ms ease-out both;
 }
 
 .xtreme-cutin[hidden] {
@@ -8497,6 +8520,38 @@ button,
   animation: top-xtreme-impact 360ms cubic-bezier(0.12, 1.45, 0.2, 1) both;
 }
 
+.top-sprite.finish-reaction-spin {
+  animation: finish-spin-wobble 720ms ease-out both;
+}
+
+.top-sprite.finish-reaction-over {
+  animation: finish-over-kick 760ms cubic-bezier(0.2, 1, 0.3, 1) both;
+}
+
+.top-sprite.finish-reaction-burst {
+  animation: finish-burst-break 760ms cubic-bezier(0.18, 1.35, 0.28, 1) both;
+}
+
+.top-sprite.finish-reaction-xtreme {
+  animation: finish-xtreme-launch 980ms cubic-bezier(0.14, 1, 0.24, 1) both;
+}
+
+.top-sprite.finish-attacker-surge {
+  animation: finish-attacker-surge 760ms ease-out both;
+}
+
+.top-sprite.block-perfect-top::before {
+  animation: block-perfect-shield 640ms ease-out both;
+}
+
+.top-sprite.block-partial-top::before {
+  animation: block-partial-shield 640ms ease-out both;
+}
+
+.top-sprite.block-miss-top {
+  animation: block-miss-hit 520ms linear both;
+}
+
 .top-sprite.spinning.boosting {
   animation: spin 0.2s infinite linear, top-boost-jitter 220ms linear infinite;
 }
@@ -8887,6 +8942,84 @@ button,
   66% { transform: translate3d(-2px, 2px, 0); }
 }
 
+@keyframes combat-slowmo-clash {
+  0%, 100% { transform: scale(1); filter: brightness(1) saturate(1); }
+  18% { transform: scale(1.018); filter: brightness(1.22) saturate(1.3) contrast(1.06); }
+  42% { transform: scale(1.012); filter: brightness(0.9) saturate(0.92) contrast(1.15); }
+  66% { transform: scale(1.026); filter: brightness(1.26) saturate(1.38) contrast(1.04); }
+}
+
+@keyframes block-perfect-arena {
+  0% { box-shadow: inset 0 0 0 rgba(77, 255, 145, 0), inset 0 0 40px rgba(0,240,255,0.2); }
+  42% { box-shadow: inset 0 0 80px rgba(77, 255, 145, 0.45), inset 0 0 26px rgba(255,255,255,0.28); }
+  100% { box-shadow: inset 0 0 40px rgba(0,240,255,0.16); }
+}
+
+@keyframes block-partial-arena {
+  0% { box-shadow: inset 0 0 0 rgba(255, 234, 0, 0), inset 0 0 40px rgba(0,240,255,0.2); }
+  46% { box-shadow: inset 0 0 58px rgba(255, 234, 0, 0.34), inset 0 0 18px rgba(255,255,255,0.18); }
+  100% { box-shadow: inset 0 0 40px rgba(0,240,255,0.16); }
+}
+
+@keyframes block-miss-arena {
+  0%, 100% { transform: translate3d(0, 0, 0); filter: brightness(1); }
+  18% { transform: translate3d(-5px, 2px, 0); filter: brightness(1.16) saturate(1.22); }
+  36% { transform: translate3d(5px, -2px, 0); }
+  54% { transform: translate3d(-3px, -1px, 0); }
+}
+
+@keyframes block-perfect-shield {
+  0% { opacity: 0; transform: scale(0.72); }
+  34% { opacity: 1; transform: scale(1.12); background: radial-gradient(circle, rgba(77, 255, 145, 0.42), rgba(0, 240, 255, 0.22) 50%, transparent 72%); }
+  100% { opacity: 0; transform: scale(1.46); }
+}
+
+@keyframes block-partial-shield {
+  0% { opacity: 0; transform: scale(0.74); }
+  42% { opacity: 0.8; transform: scale(1.06); background: radial-gradient(circle, rgba(255, 234, 0, 0.32), rgba(0, 240, 255, 0.12) 50%, transparent 72%); }
+  100% { opacity: 0; transform: scale(1.3); }
+}
+
+@keyframes block-miss-hit {
+  0%, 100% { transform: translate(-50%, -50%) scale(var(--top-scale, 1)); }
+  18% { transform: translate(calc(-50% - 6px), calc(-50% + 2px)) scale(0.96); filter: drop-shadow(0 0 24px rgba(255, 0, 85, 0.88)); }
+  38% { transform: translate(calc(-50% + 5px), calc(-50% - 3px)) scale(1.03); }
+  58% { transform: translate(calc(-50% - 2px), -50%) scale(0.99); }
+}
+
+@keyframes finish-spin-wobble {
+  0% { transform: translate(-50%, -50%) scale(var(--top-scale, 1)); filter: saturate(1); }
+  32% { transform: translate(-50%, -50%) scale(0.94) rotate(-10deg); filter: saturate(0.8) brightness(0.9); }
+  64% { transform: translate(-50%, -50%) scale(0.88) rotate(12deg); }
+  100% { transform: translate(-50%, -50%) scale(var(--top-scale, 1)); filter: saturate(1); }
+}
+
+@keyframes finish-over-kick {
+  0% { transform: translate(-50%, -50%) scale(var(--top-scale, 1)); opacity: 1; }
+  42% { transform: translate(calc(-50% + 34px), calc(-50% - 10px)) scale(0.9) rotate(18deg); opacity: 0.82; }
+  100% { transform: translate(-50%, -50%) scale(var(--top-scale, 1)); opacity: 1; }
+}
+
+@keyframes finish-burst-break {
+  0% { transform: translate(-50%, -50%) scale(var(--top-scale, 1)); filter: brightness(1); }
+  30% { transform: translate(-50%, -50%) scale(1.18) rotate(16deg); filter: brightness(1.6) saturate(1.4); }
+  52% { transform: translate(calc(-50% - 8px), calc(-50% + 4px)) scale(0.78) rotate(-22deg); opacity: 0.58; }
+  100% { transform: translate(-50%, -50%) scale(var(--top-scale, 1)); opacity: 1; filter: brightness(1); }
+}
+
+@keyframes finish-xtreme-launch {
+  0% { transform: translate(-50%, -50%) scale(var(--top-scale, 1)); opacity: 1; filter: brightness(1); }
+  28% { transform: translate(calc(-50% + 56px), calc(-50% - 22px)) scale(1.18) rotate(28deg); filter: brightness(1.9) saturate(1.55); }
+  58% { transform: translate(calc(-50% + 96px), calc(-50% - 48px)) scale(0.54) rotate(120deg); opacity: 0.28; }
+  100% { transform: translate(-50%, -50%) scale(var(--top-scale, 1)); opacity: 1; filter: brightness(1); }
+}
+
+@keyframes finish-attacker-surge {
+  0% { filter: brightness(1); transform: translate(-50%, -50%) scale(var(--top-scale, 1)); }
+  34% { filter: brightness(1.55) saturate(1.35) drop-shadow(0 0 28px rgba(255,234,0,0.86)); transform: translate(-50%, -50%) scale(1.12); }
+  100% { filter: brightness(1); transform: translate(-50%, -50%) scale(var(--top-scale, 1)); }
+}
+
 @keyframes action-streak-out {
   0% { opacity: 0; transform: translateX(-22%) rotate(-18deg) scaleX(0.3); }
   20% { opacity: 1; }
@@ -8942,6 +9075,12 @@ button,
   12% { opacity: 0.92; }
   34% { opacity: 0.28; }
   52% { opacity: 0.58; }
+}
+
+@keyframes special-screen-flash {
+  0%, 100% { opacity: 0; }
+  18% { opacity: 0.72; }
+  48% { opacity: 0.24; }
 }
 
 @keyframes rival-block-scan {
@@ -9131,7 +9270,11 @@ button,
   .battlefield-arena.camera-guard,
   .battlefield-arena.camera-charge,
   .battlefield-arena.camera-heavy,
+  .battlefield-arena.slowmo-clash,
   .battlefield-arena.xtreme-camera,
+  .battlefield-arena.block-perfect-pulse::before,
+  .battlefield-arena.block-partial-pulse::before,
+  .battlefield-arena.block-miss-pulse,
   .top-sprite.aura::before,
   .top-sprite.boosting::before,
   .top-sprite.special-ready::before,
@@ -9150,6 +9293,14 @@ button,
   .top-sprite.xtreme-dashing::before,
   .top-sprite.xtreme-rail-riding::after,
   .top-sprite.xtreme-impact,
+  .top-sprite.finish-reaction-spin,
+  .top-sprite.finish-reaction-over,
+  .top-sprite.finish-reaction-burst,
+  .top-sprite.finish-reaction-xtreme,
+  .top-sprite.finish-attacker-surge,
+  .top-sprite.block-perfect-top::before,
+  .top-sprite.block-partial-top::before,
+  .top-sprite.block-miss-top,
   .top-sprite.damaged,
   .top-sprite.deck-switching,
   .top-sprite.deck-entering,
