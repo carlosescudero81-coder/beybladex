@@ -82,6 +82,18 @@ class CombatSession {
     this.finishStats = { spin: 0, over: 0, burst: 0, xtreme: 0 };
     this.xtremeDashUses = 0;
     this.xtremeDashRisks = 0;
+    this.playerSpin = 100;
+    this.rivalSpin = 100;
+    this.playerMaxSpin = 100;
+    this.rivalMaxSpin = 100;
+    this.playerBurstRisk = 0;
+    this.rivalBurstRisk = 0;
+    this.playerZone = 'center';
+    this.rivalZone = 'center';
+    this.manualSwitchUsedThisRound = false;
+    this.manualSwitches = 0;
+    this.companionAssistUsed = false;
+    this.styleRewards = { perfectRounds: 0, comebackWins: 0, blockPerfects: 0, xtremeFinishes: 0 };
     this.lastTurnSummary = null;
     this.tutorialFlags = {};
   }
@@ -108,6 +120,14 @@ class CombatSession {
     this.roundsWonFirstTry = 0;
     this.roundsRepeated = 0;
     this.lightningDamageBonus = 0;
+    this.playerBurstRisk = 0;
+    this.rivalBurstRisk = 0;
+    this.playerZone = 'center';
+    this.rivalZone = 'center';
+    this.manualSwitchUsedThisRound = false;
+    this.manualSwitches = 0;
+    this.companionAssistUsed = false;
+    this.styleRewards = { perfectRounds: 0, comebackWins: 0, blockPerfects: 0, xtremeFinishes: 0 };
     this.companionPassiveUsed = {};
     this.companionStartMessage = '';
 
@@ -130,6 +150,8 @@ class CombatSession {
       ? getEffectiveCharacterStats(playerCharacter, this.state, true)
       : { attack: 55, defense: 55, stamina: 55, speed: 55, focus: 55, level: 1 };
     this.playerMaxHP = this.getPlayerMaxHP();
+    this.playerMaxSpin = this.getMaxSpin(this.playerBey, this.playerCharacterStats);
+    this.playerSpin = this.playerMaxSpin;
     this.applySavedTowerBattle(savedBattle);
     this.configureActiveRoundOpponent(savedBattle);
     document.getElementById('hud-player').querySelector('.avatar-mini').innerHTML = renderAssetImage(playerCharacter.image, playerCharacter.nombre, 'asset-image header-character-avatar');
@@ -415,8 +437,12 @@ class CombatSession {
     const baseHp = this.getRivalMaxHP();
     this.playerMaxHP = this.getPlayerMaxHP();
     this.rivalMaxHP = Math.max(38, Math.round(baseHp * (round?.hpScale || 1)));
+    this.playerMaxSpin = this.getMaxSpin(this.playerBey, this.playerCharacterStats);
+    this.rivalMaxSpin = this.getMaxSpin(this.rivalBey, this.rivalCharacterStats);
     this.rivalHP = savedBattle ? Math.min(this.rivalMaxHP, Math.max(1, Number(savedBattle.rivalHP) || this.rivalMaxHP)) : this.rivalMaxHP;
     this.playerHP = savedBattle ? Math.min(this.playerMaxHP, Math.max(1, Number(savedBattle.playerHP) || this.playerMaxHP)) : this.playerMaxHP;
+    this.rivalSpin = savedBattle ? Math.min(this.rivalMaxSpin, Math.max(1, Number(savedBattle.rivalSpin) || this.rivalMaxSpin)) : this.rivalMaxSpin;
+    this.playerSpin = savedBattle ? Math.min(this.playerMaxSpin, Math.max(1, Number(savedBattle.playerSpin) || this.playerMaxSpin)) : this.playerMaxSpin;
 
     const rivalImg = document.getElementById('combat-rival-img');
     const rivalName = document.getElementById('combat-rival-name');
@@ -448,22 +474,26 @@ class CombatSession {
     const speed = Number(stats.speed) || 55;
     const focus = Number(stats.focus) || 55;
     const name = rival?.nombre || 'Rival';
+    const isTowerBoss = this.floorData?.type === 'tower-rival' || this.floorData?.type === 'ascension' || this.floorData?.type === 'final' || this.isBoss;
+    const bossBoost = isTowerBoss ? { boss: true } : {};
+    const bossDamageBonus = isTowerBoss ? (this.floorData?.type === 'final' ? 7 : 4) : 0;
+    const bossBlockSpeedBonus = isTowerBoss ? 160 : 0;
     if (attack >= defense + 8 || type === 'ataque') {
-      return { id: 'pressure', name: `${name} presiona`, preferredIntent: 'attack', damageBonus: 4, blockSpeedBonus: 180, hint: 'Ataca fuerte: defiende o bloquea fino.' };
+      return { id: 'pressure', name: `${name} presiona`, preferredIntent: 'attack', damageBonus: 4 + bossDamageBonus, blockSpeedBonus: 180 + bossBlockSpeedBonus, hint: isTowerBoss ? 'Jefe agresivo: defiende y no falles bloqueos.' : 'Ataca fuerte: defiende o bloquea fino.', ...bossBoost };
     }
     if (defense >= attack + 8 || type === 'defensa') {
-      return { id: 'wall', name: `${name} se cierra`, preferredIntent: 'defense', damageBonus: 1, blockSpeedBonus: -80, hint: 'Se cubre: carga energia y no te precipites.' };
+      return { id: 'wall', name: `${name} se cierra`, preferredIntent: 'defense', damageBonus: 1 + bossDamageBonus, blockSpeedBonus: -80 + bossBlockSpeedBonus, hint: isTowerBoss ? 'Jefe muro: carga Energia X y gana por giro.' : 'Se cubre: carga energia y no te precipites.', ...bossBoost };
     }
     if (stamina >= attack + 7 || type === 'estamina') {
-      return { id: 'stamina', name: `${name} alarga el giro`, preferredIntent: 'charge', damageBonus: 2, blockSpeedBonus: 80, hint: 'Carga giro: cortalo con ataque.' };
+      return { id: 'stamina', name: `${name} alarga el giro`, preferredIntent: 'charge', damageBonus: 2 + bossDamageBonus, blockSpeedBonus: 80 + bossBlockSpeedBonus, hint: isTowerBoss ? 'Jefe de resistencia: si tardas, te gana por Spin Finish.' : 'Carga giro: cortalo con ataque.', ...bossBoost };
     }
     if (speed >= 64) {
-      return { id: 'sprinter', name: `${name} cambia de carril`, preferredIntent: 'attack', damageBonus: 3, blockSpeedBonus: 260, hint: 'Muy rapido: mira el bloqueo.' };
+      return { id: 'sprinter', name: `${name} cambia de carril`, preferredIntent: 'attack', damageBonus: 3 + bossDamageBonus, blockSpeedBonus: 260 + bossBlockSpeedBonus, hint: isTowerBoss ? 'Jefe veloz: prepara bloqueos muy rapidos.' : 'Muy rapido: mira el bloqueo.', ...bossBoost };
     }
     if (focus >= 64) {
-      return { id: 'tactician', name: `${name} lee tus rachas`, preferredIntent: 'defense', damageBonus: 2, blockSpeedBonus: 120, hint: 'Si haces combo, se defendera.' };
+      return { id: 'tactician', name: `${name} lee tus rachas`, preferredIntent: 'defense', damageBonus: 2 + bossDamageBonus, blockSpeedBonus: 120 + bossBlockSpeedBonus, hint: isTowerBoss ? 'Jefe tecnico: si repites accion, te castiga.' : 'Si haces combo, se defendera.', ...bossBoost };
     }
-    return { id: 'balanced', name: `${name} adapta su plan`, preferredIntent: 'charge', damageBonus: 2, blockSpeedBonus: 0, hint: 'Balanceado: observa su intencion.' };
+    return { id: 'balanced', name: `${name} adapta su plan`, preferredIntent: 'charge', damageBonus: 2 + bossDamageBonus, blockSpeedBonus: bossBlockSpeedBonus, hint: isTowerBoss ? 'Jefe adaptable: cambia de Bey si te contrarresta.' : 'Balanceado: observa su intencion.', ...bossBoost };
   }
 
   applySavedTowerBattle(savedBattle) {
@@ -497,6 +527,23 @@ class CombatSession {
     };
     this.xtremeDashUses = Math.max(0, parseInt(savedBattle.xtremeDashUses, 10) || 0);
     this.xtremeDashRisks = Math.max(0, parseInt(savedBattle.xtremeDashRisks, 10) || 0);
+    this.playerSpin = Math.max(1, parseInt(savedBattle.playerSpin, 10) || this.playerSpin || 100);
+    this.rivalSpin = Math.max(1, parseInt(savedBattle.rivalSpin, 10) || this.rivalSpin || 100);
+    this.playerBurstRisk = Math.max(0, Math.min(100, parseInt(savedBattle.playerBurstRisk, 10) || 0));
+    this.rivalBurstRisk = Math.max(0, Math.min(100, parseInt(savedBattle.rivalBurstRisk, 10) || 0));
+    this.playerZone = ['center', 'edge', 'rail'].includes(savedBattle.playerZone) ? savedBattle.playerZone : 'center';
+    this.rivalZone = ['center', 'edge', 'rail'].includes(savedBattle.rivalZone) ? savedBattle.rivalZone : 'center';
+    this.manualSwitchUsedThisRound = !!savedBattle.manualSwitchUsedThisRound;
+    this.manualSwitches = Math.max(0, parseInt(savedBattle.manualSwitches, 10) || 0);
+    this.companionAssistUsed = !!savedBattle.companionAssistUsed;
+    this.styleRewards = savedBattle.styleRewards && typeof savedBattle.styleRewards === 'object'
+      ? {
+          perfectRounds: Math.max(0, parseInt(savedBattle.styleRewards.perfectRounds, 10) || 0),
+          comebackWins: Math.max(0, parseInt(savedBattle.styleRewards.comebackWins, 10) || 0),
+          blockPerfects: Math.max(0, parseInt(savedBattle.styleRewards.blockPerfects, 10) || 0),
+          xtremeFinishes: Math.max(0, parseInt(savedBattle.styleRewards.xtremeFinishes, 10) || 0)
+        }
+      : this.styleRewards;
     this.savedPlayerCharge = Math.max(0, Math.min(3, parseInt(savedBattle.playerCharge, 10) || 0));
     this.savedRivalCharge = Math.max(0, Math.min(3, parseInt(savedBattle.rivalCharge, 10) || 0));
     this.usedTowerQuestionIds = new Set(savedBattle.usedQuestionIds || []);
@@ -566,6 +613,16 @@ class CombatSession {
       finishStats: this.finishStats,
       xtremeDashUses: this.xtremeDashUses,
       xtremeDashRisks: this.xtremeDashRisks,
+      playerSpin: Math.round(this.playerSpin),
+      rivalSpin: Math.round(this.rivalSpin),
+      playerBurstRisk: Math.round(this.playerBurstRisk),
+      rivalBurstRisk: Math.round(this.rivalBurstRisk),
+      playerZone: this.playerZone,
+      rivalZone: this.rivalZone,
+      manualSwitchUsedThisRound: this.manualSwitchUsedThisRound,
+      manualSwitches: this.manualSwitches,
+      companionAssistUsed: this.companionAssistUsed,
+      styleRewards: this.styleRewards,
       questionBank: this.questionsList.map(question => ({ ...question, options: Array.isArray(question.options) ? [...question.options] : [] })),
       rounds: this.rounds,
       savedAt: StorageService.todayKey()
@@ -719,6 +776,14 @@ class CombatSession {
     return Math.max(82, Math.min(145, 100 + characterBonus + beyBonus));
   }
 
+  getMaxSpin(bey, stats = {}) {
+    const stamina = bey?.estamina || 70;
+    const defense = bey?.defensa || 65;
+    const focus = stats?.focus || 55;
+    const characterStamina = stats?.stamina || 55;
+    return Math.max(72, Math.min(140, Math.round(92 + (stamina - 70) * 0.35 + (defense - 65) * 0.12 + (focus + characterStamina - 110) * 0.18)));
+  }
+
   getDifficultyDamageBonus() {
     return Math.max(0, Math.ceil(this.difficulty / 2) - 1);
   }
@@ -859,7 +924,50 @@ class CombatSession {
     if (specialBtn) specialBtn.onclick = () => this.armSpecialAttack();
     const xtremeBtn = document.getElementById('btn-xtreme-dash');
     if (xtremeBtn) xtremeBtn.onclick = () => this.armXtremeDash();
+    const switchBtn = document.getElementById('btn-switch-bey');
+    if (switchBtn) switchBtn.onclick = () => this.switchPlayerBeyManually();
     this.selectCombatAction(this.selectedAction || 'attack', false);
+  }
+
+  switchPlayerBeyManually() {
+    if (this.actionLocked || this.manualSwitchUsedThisRound || !Array.isArray(this.playerDeck) || this.playerDeck.length < 2) return;
+    const previous = this.playerBey;
+    const charge = this.playerCombatant?.charge || 0;
+    this.activeDeckIndex = (this.activeDeckIndex + 1) % this.playerDeck.length;
+    this.playerBey = this.playerDeck[this.activeDeckIndex];
+    this.playerMaxSpin = this.getMaxSpin(this.playerBey, this.playerCharacterStats);
+    this.playerSpin = Math.max(18, Math.min(this.playerMaxSpin, this.playerSpin - (charge >= 1 ? 0 : 8)));
+    if (charge >= 1 && this.playerCombatant) {
+      this.playerCombatant.charge = Math.max(0, charge - 1);
+      this.syncPersistentXGauge();
+    }
+    this.manualSwitchUsedThisRound = true;
+    this.manualSwitches += 1;
+    this.deckSwitches += 1;
+    this.initCombatants();
+    const top = document.getElementById('player-top');
+    if (top) {
+      top.innerHTML = this.playerBey?.isCustom && this.playerBey.combo
+        ? generateTopSVG(this.playerBey.combo.core, this.playerBey.combo.ring, this.playerBey.combo.driver, this.playerBey.combo.color)
+        : renderAssetImage(this.playerBey.image, this.playerBey.nombre, 'asset-image battle-bey player');
+      top.classList.remove('deck-entering');
+      void top.offsetWidth;
+      top.classList.add('deck-entering');
+      setTimeout(() => top.classList.remove('deck-entering'), 720);
+    }
+    const playerBeyName = document.getElementById('combat-player-bey-name');
+    if (playerBeyName) playerBeyName.innerText = `Tu Bey: ${this.playerBey.nombre}`;
+    const playerTopLabel = document.querySelector('.top-label-player');
+    if (playerTopLabel) {
+      playerTopLabel.dataset.baseName = this.playerBey.nombre;
+      playerTopLabel.innerText = this.playerBey.nombre;
+    }
+    this.decorateTopSprites();
+    this.updateHpBars();
+    this.updateXGauge();
+    this.showAttackBanner('Cambio de Bey', `${previous?.nombre || 'Bey'} -> ${this.playerBey.nombre}${charge >= 1 ? ' · -1 Energia X' : ' · -8 Giro'}`, 'player', 'round-cleared');
+    this.persistTowerBattleState();
+    this.app.saveState();
   }
 
   canUseSpecialAttack() {
@@ -2160,6 +2268,103 @@ class CombatSession {
     return this.currentQuestion?.isLightning || difficulty >= 3 || (this.playerBey?.velocidad || 70) >= 86;
   }
 
+  getZoneLabel(zone) {
+    return zone === 'rail' ? 'Rail X' : zone === 'edge' ? 'Borde' : 'Centro';
+  }
+
+  updateBattleZone(action, isCorrect, isFastAnswer, outcome = {}) {
+    if (outcome.xtremeDash) {
+      this.playerZone = 'rail';
+      this.rivalZone = 'edge';
+      return;
+    }
+    if (action === 'defense') this.playerZone = 'center';
+    else if (action === 'charge') this.playerZone = isCorrect ? 'rail' : 'edge';
+    else this.playerZone = isFastAnswer && isCorrect ? 'rail' : 'edge';
+
+    if (outcome.rivalDamage > 0 || !isCorrect) this.rivalZone = 'rail';
+    else if (outcome.playerDamage > 0) this.rivalZone = 'edge';
+    else this.rivalZone = 'center';
+  }
+
+  getZoneDamageModifier(targetZone) {
+    if (targetZone === 'edge') return 1.16;
+    if (targetZone === 'rail') return 1.08;
+    return 0.92;
+  }
+
+  applyBattleOptionEffects(outcome, isCorrect, isFastAnswer) {
+    const action = outcome.action || this.selectedAction || 'attack';
+    this.updateBattleZone(action, isCorrect, isFastAnswer, outcome);
+    let rivalSpinLoss = 0;
+    let playerSpinLoss = 0;
+
+    if (outcome.playerDamage > 0) {
+      rivalSpinLoss = Math.max(2, Math.round((outcome.playerDamage * 0.28 + (isFastAnswer ? 3 : 0)) * this.getZoneDamageModifier(this.rivalZone)));
+      if (outcome.finish?.type === 'spin') rivalSpinLoss += 5;
+      if (outcome.finish?.type === 'over') rivalSpinLoss += 4;
+      if (outcome.finish?.type === 'burst') rivalSpinLoss += 7;
+      if (outcome.finish?.type === 'xtreme') rivalSpinLoss += 10;
+    }
+    if (outcome.rivalDamage > 0) {
+      playerSpinLoss = Math.max(2, Math.round((outcome.rivalDamage * 0.32 + (!isCorrect ? 4 : 0)) * this.getZoneDamageModifier(this.playerZone)));
+    } else if (!isCorrect) {
+      playerSpinLoss = 5;
+    }
+    if (action === 'defense' && isCorrect) playerSpinLoss = Math.max(0, playerSpinLoss - 3);
+    if (action === 'charge' && isCorrect) this.playerSpin = Math.min(this.playerMaxSpin, this.playerSpin + 4);
+
+    this.rivalSpin = Math.max(0, this.rivalSpin - rivalSpinLoss);
+    this.playerSpin = Math.max(0, this.playerSpin - playerSpinLoss);
+
+    const attackRisk = action === 'attack' ? (isCorrect ? 9 : 18) : action === 'charge' ? (isCorrect ? 4 : 12) : -10;
+    const railRisk = this.playerZone === 'rail' ? 6 : this.playerZone === 'edge' ? 9 : -4;
+    this.playerBurstRisk = Math.max(0, Math.min(100, this.playerBurstRisk + attackRisk + railRisk));
+    if (outcome.playerDamage > 0) {
+      this.rivalBurstRisk = Math.max(0, Math.min(100, this.rivalBurstRisk + Math.round(outcome.playerDamage * 0.42) + (outcome.finish?.type === 'burst' ? 16 : 0)));
+    } else {
+      this.rivalBurstRisk = Math.max(0, this.rivalBurstRisk - 5);
+    }
+
+    if (this.playerBurstRisk >= 100) {
+      const burstDamage = Math.max(18, Math.round(this.playerMaxHP * 0.24));
+      this.playerHP = Math.max(0, this.playerHP - burstDamage);
+      this.playerSpin = Math.max(0, this.playerSpin - 16);
+      this.playerBurstRisk = 34;
+      this.showAttackBanner('Burst propio', `Demasiado riesgo: -${burstDamage} HP`, 'rival', 'finish-burst');
+      this.triggerFinishVisual({ type: 'burst' }, 'rival');
+    }
+    if (this.rivalBurstRisk >= 100) {
+      const burstDamage = Math.max(20, Math.round(this.rivalMaxHP * 0.28));
+      this.rivalHP = Math.max(0, this.rivalHP - burstDamage);
+      this.rivalSpin = Math.max(0, this.rivalSpin - 18);
+      this.rivalBurstRisk = 25;
+      this.showAttackBanner('Burst Finish', `La peonza rival estalla: -${burstDamage} HP`, 'player', 'finish-burst');
+      this.triggerFinishVisual({ type: 'burst' }, 'player');
+    }
+
+    if (this.rivalSpin <= 0 && this.rivalHP > 0) {
+      this.rivalHP = 0;
+      this.finishStats.spin = (this.finishStats.spin || 0) + 1;
+      this.finishPoints += 1;
+      this.showAttackBanner('Spin Finish', 'El rival se queda sin giro', 'player', 'finish-spin');
+      this.triggerFinishVisual({ type: 'spin' }, 'player');
+    }
+    if (this.playerSpin <= 0 && this.playerHP > 0) {
+      this.playerHP = 0;
+      this.showAttackBanner('Sin giro', 'Tu peonza se detiene', 'rival', 'finish-spin');
+      this.triggerFinishVisual({ type: 'spin' }, 'rival');
+    }
+
+    if (!this.companionAssistUsed && this.playerHP > 0 && this.playerHP <= this.playerMaxHP * 0.22) {
+      this.companionAssistUsed = true;
+      this.playerSpin = Math.min(this.playerMaxSpin, this.playerSpin + 12);
+      if (this.playerCombatant) this.playerCombatant.charge = Math.min(3, (this.playerCombatant.charge || 0) + 1);
+      this.syncPersistentXGauge();
+      this.showAttackBanner('Compañero al rescate', `${this.companionCharacter?.nombre || 'Compañero'} recupera giro y Energia X`, 'player', 'round-cleared');
+    }
+  }
+
   resolveTurnOutcome(action, isCorrect, isFastAnswer) {
     const normalizedAction = ['attack', 'defense', 'charge'].includes(action) ? action : 'attack';
     const rivalIntent = this.rivalIntent?.type || 'attack';
@@ -2322,6 +2527,7 @@ class CombatSession {
     return {
       action: normalizedAction,
       isCorrect,
+      isFastAnswer,
       specialTriggered,
       playerDamage: Math.max(0, Math.round(playerDamage)),
       rivalDamage: Math.max(0, Math.round(rivalDamage)),
@@ -2388,6 +2594,22 @@ class CombatSession {
     const attackBias = this.rivalIntent?.type === 'attack' || this.rivalPattern?.id === 'sprinter' || this.rivalPattern?.id === 'pressure';
     const specialReady = charge >= 3;
     const xtremeReady = this.canRivalUseXtremeDash();
+    const bossFinalPhase = this.rivalPattern?.boss && this.rivalHP <= this.rivalMaxHP * 0.45;
+    if (bossFinalPhase && charge >= 1 && Math.random() < 0.62) {
+      return {
+        type: 'xtreme',
+        title: '¡Fase jefe: Rail X!',
+        hint: 'El jefe acelera. Bloquea perfecto o cambia de Bey.',
+        banner: 'Fase jefe X',
+        variant: 'xtreme-dash',
+        baseAction: 'attack',
+        attackAction: 'special',
+        multiplier: 1.5,
+        flatBonus: 7,
+        chargeDelta: -1,
+        blockDurationMod: -360
+      };
+    }
     if (specialReady && (this.difficulty >= 4 || this.playerHP <= this.playerMaxHP * 0.55)) {
       return {
         type: 'special',
@@ -2516,6 +2738,7 @@ class CombatSession {
         if (settled) return;
         settled = true;
         const timing = timedOut ? { quality: 'miss', reduction: 0 } : this.getBlockTimingResult(startedAt, durationMs);
+        if (timing.quality === 'perfect') this.styleRewards.blockPerfects += 1;
         let damage = Math.max(0, Math.round(fullDamage * (1 - timing.reduction)));
         const companionBlock = this.applyCompanionRivalDamageReduction(damage, 'block');
         damage = companionBlock.damage;
@@ -2528,6 +2751,9 @@ class CombatSession {
 
         if (damage > 0) {
           this.playerHP = Math.max(0, this.playerHP - damage);
+          this.playerZone = plan.type === 'xtreme' ? 'edge' : 'rail';
+          this.playerSpin = Math.max(0, this.playerSpin - Math.max(3, Math.round(damage * (plan.type === 'xtreme' ? 0.48 : 0.34))));
+          this.playerBurstRisk = Math.max(0, Math.min(100, this.playerBurstRisk + (plan.type === 'xtreme' ? 18 : plan.type === 'special' ? 14 : 9)));
           this.applyLastSpinIfNeeded();
           this.updateHpBars();
           this.showAttackBanner(
@@ -2540,7 +2766,16 @@ class CombatSession {
           );
           this.performAttackSequence('rival', timing.quality === 'miss' ? plan.attackAction : 'counter', damage, { xtremeDash: plan.type === 'xtreme' && timing.quality === 'miss' });
         } else {
+          this.playerZone = 'center';
+          this.playerSpin = Math.min(this.playerMaxSpin, this.playerSpin + 4);
+          this.playerBurstRisk = Math.max(0, this.playerBurstRisk - 12);
           this.showAttackBanner('¡Bloqueo perfecto!', 'Sin daño', 'player', 'round-cleared');
+        }
+        if (this.playerSpin <= 0 && this.playerHP > 0) {
+          this.playerHP = 0;
+          this.showAttackBanner('Spin Finish rival', 'Tu peonza se queda sin giro', 'rival', 'finish-spin');
+          this.triggerFinishVisual({ type: 'spin' }, 'rival');
+          this.updateHpBars();
         }
 
         this.persistTowerBattleState();
@@ -2589,6 +2824,7 @@ class CombatSession {
     if (outcome.finish) {
       this.finishPoints += outcome.finish.points;
       this.finishStats[outcome.finish.type] = (this.finishStats[outcome.finish.type] || 0) + 1;
+      if (outcome.finish.type === 'xtreme') this.styleRewards.xtremeFinishes += 1;
       this.playFinishFeedback(outcome.finish);
       this.triggerFinishVisual(outcome.finish, 'player');
     }
@@ -2608,6 +2844,7 @@ class CombatSession {
 
     this.rivalHP = Math.max(0, this.rivalHP - outcome.playerDamage);
     this.playerHP = Math.max(0, this.playerHP - outcome.rivalDamage);
+    this.applyBattleOptionEffects(outcome, isCorrect, outcome.isFastAnswer === true);
     this.applyLastSpinIfNeeded();
     this.updateHpBars();
     this.updateXGauge();
@@ -2660,7 +2897,10 @@ class CombatSession {
   completeRound() {
     const round = this.getCurrentRound();
     const attempt = this.roundAttempts[this.currentRoundIndex] || 1;
-    if (attempt === 1) this.roundsWonFirstTry += 1;
+    if (attempt === 1) {
+      this.roundsWonFirstTry += 1;
+      this.styleRewards.perfectRounds += 1;
+    }
     else this.roundsRepeated += 1;
 
     if (!round || round.isFinal || this.currentRoundIndex >= this.rounds.length - 1) {
@@ -2684,6 +2924,11 @@ class CombatSession {
       }
       this.currentRoundIndex += 1;
       this.roundAttempts[this.currentRoundIndex] = this.roundAttempts[this.currentRoundIndex] || 1;
+      this.manualSwitchUsedThisRound = false;
+      this.playerBurstRisk = Math.max(0, this.playerBurstRisk - 18);
+      this.rivalBurstRisk = 0;
+      this.playerZone = 'center';
+      this.rivalZone = 'center';
       const nextRound = this.getCurrentRound();
       this.currentQuestionIdx = nextRound.start;
       this.lastSpinUsed = false;
@@ -2848,6 +3093,13 @@ class CombatSession {
     this.roundsRepeated += 1;
     this.selectDeckBeyForRound(round, true);
     this.playerHP = this.playerMaxHP;
+    this.playerSpin = this.playerMaxSpin;
+    this.rivalSpin = this.rivalMaxSpin;
+    this.playerBurstRisk = 0;
+    this.rivalBurstRisk = 0;
+    this.playerZone = 'center';
+    this.rivalZone = 'center';
+    this.manualSwitchUsedThisRound = false;
     this.correctStreak = 0;
     this.fastAnswerStreak = 0;
     this.lastSpinUsed = false;
@@ -3387,6 +3639,31 @@ class CombatSession {
     const rivalTop = document.getElementById('rival-top');
     if (playerTop) playerTop.classList.toggle('damaged', this.playerHP <= this.playerMaxHP * 0.35);
     if (rivalTop) rivalTop.classList.toggle('damaged', this.rivalHP <= this.rivalMaxHP * 0.35);
+    this.updateCombatDepthHud();
+  }
+
+  updateCombatDepthHud() {
+    const spin = document.getElementById('combat-spin-status');
+    const zone = document.getElementById('combat-zone-status');
+    const burst = document.getElementById('combat-burst-status');
+    const switchBtn = document.getElementById('btn-switch-bey');
+    if (spin) {
+      spin.innerText = `Giro ${Math.round(this.playerSpin)}/${Math.round(this.playerMaxSpin)}`;
+      spin.classList.toggle('is-danger', this.playerSpin <= this.playerMaxSpin * 0.28);
+    }
+    if (zone) {
+      zone.innerText = `Zona: ${this.getZoneLabel(this.playerZone)}`;
+      zone.dataset.zone = this.playerZone;
+    }
+    if (burst) {
+      burst.innerText = `Burst ${Math.round(this.playerBurstRisk)}%`;
+      burst.classList.toggle('is-danger', this.playerBurstRisk >= 70);
+    }
+    if (switchBtn) {
+      const canSwitch = !this.actionLocked && !this.manualSwitchUsedThisRound && Array.isArray(this.playerDeck) && this.playerDeck.length > 1;
+      switchBtn.disabled = !canSwitch;
+      switchBtn.innerText = this.manualSwitchUsedThisRound ? 'Bey cambiado' : `Cambiar Bey (${(this.activeDeckIndex || 0) + 1}/${Math.max(1, this.playerDeck?.length || 1)})`;
+    }
   }
 
   updateComboDots() {
@@ -3508,6 +3785,7 @@ class CombatSession {
     document.querySelectorAll('[data-combat-action="attack"]').forEach(button => {
       button.classList.toggle('dash-ready', dashReady);
     });
+    this.updateCombatDepthHud();
 
     // ── MEJORA 4: daño predicho en los botones de acción ──────────────
     this._updateActionDamagePreview();
@@ -3628,6 +3906,7 @@ class CombatSession {
     
     if (playerWon) {
       this.clearTowerBattleState();
+      if (this.lastSpinUsed || this.playerHP <= this.playerMaxHP * 0.3) this.styleRewards.comebackWins += 1;
       // Record game history session
       const ped = this.state.pedagogy.math;
       const totalSessionAnswers = this.sessionCorrect + this.sessionIncorrect;
@@ -3747,7 +4026,11 @@ class CombatSession {
       finishStats: this.finishStats,
       xtremeDashUses: this.xtremeDashUses,
       xtremeDashRisks: this.xtremeDashRisks,
-      deckSwitches: this.deckSwitches
+      deckSwitches: this.deckSwitches,
+      manualSwitches: this.manualSwitches,
+      spinLeft: Math.round(this.playerSpin),
+      burstRisk: Math.round(this.playerBurstRisk),
+      styleRewards: this.styleRewards
     };
   }
 
@@ -3807,9 +4090,15 @@ class CombatSession {
 
   getTowerBattleReward(sessionAccuracy) {
     const objectiveBonus = this.didCompleteSecondaryObjective(sessionAccuracy) ? 10 : 0;
-    const xp = Math.max(24, (this.floorData?.rewardXP || this.floorData?.reward?.xp || 30) + objectiveBonus);
-    const coins = Math.max(10, (this.floorData?.rewardCoins || this.floorData?.reward?.coins || 14) + objectiveBonus);
-    return { xp, coins };
+    const styleBonus =
+      (this.styleRewards.perfectRounds || 0) * 2 +
+      (this.styleRewards.blockPerfects || 0) * 2 +
+      (this.styleRewards.xtremeFinishes || 0) * 4 +
+      (this.styleRewards.comebackWins || 0) * 5 +
+      Math.min(6, (this.manualSwitches || 0) * 2);
+    const xp = Math.max(24, (this.floorData?.rewardXP || this.floorData?.reward?.xp || 30) + objectiveBonus + styleBonus);
+    const coins = Math.max(10, (this.floorData?.rewardCoins || this.floorData?.reward?.coins || 14) + objectiveBonus + Math.ceil(styleBonus / 2));
+    return { xp, coins, styleBonus };
   }
 
   didCompleteSecondaryObjective(sessionAccuracy) {
