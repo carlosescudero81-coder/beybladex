@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tablet Responsive Audit</title>
+  <link rel="stylesheet" href="../index.css">
+  <style>
+    body { background: #050916; }
+    #app-container { min-height: 100dvh; }
+    #app-header { display: none; }
+    #screen-container { height: 100dvh; }
+    .audit-stack { display: grid; gap: 18px; }
+    .audit-label { color: #fff; font: 800 14px system-ui; }
+  </style>
+</head>
+<body>
+<div id="app-container">
+  <main id="screen-container">
+    <section id="screen-combat" class="screen active">
+      <div class="arena-left-pane">
+        <div class="combat-hud">
+          <div class="hud-player-block" id="hud-player">
+            <div class="avatar-mini"></div>
+            <div style="min-width:0;flex:1">
+              <div class="hud-name">Carlos Xtreme Campeon</div>
+              <div class="hud-hp-container"><div class="hud-hp-bar" style="width:74%"></div></div>
+            </div>
+          </div>
+          <div class="vs-badge">VS</div>
+          <div class="hud-player-block rival" id="hud-rival">
+            <div class="avatar-mini"></div>
+            <div style="min-width:0;flex:1">
+              <div class="hud-name">Rival de prueba con nombre largo</div>
+              <div class="hud-hp-container"><div class="hud-hp-bar" style="width:82%"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="battle-context-strip">
+          <span>Ronda 3/4</span><span>Deck: Ataque</span><span>Rail X listo</span><span>Estadio Xtreme</span>
+        </div>
+        <div class="stadium-wrapper">
+          <div class="battlefield-arena">
+            <div class="arena-energy-layer"></div>
+            <div class="xtreme-stadium-layer">
+              <div class="xtreme-rail-track"></div>
+            </div>
+            <div class="top-sprite spinning" id="player-top" data-bey-type="attack" style="left:19%;top:52%"></div>
+            <div class="top-sprite spinning" id="rival-top" data-bey-type="defense" style="left:68%;top:37%"></div>
+            <div class="attack-banner-layer active"><div class="attack-banner player finish-xtreme"><strong>Xtreme Finish</strong><span>Energia guardada: 3/3</span></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="arena-right-pane">
+        <div class="question-card">
+          <div class="question-meta">Reto 12 de 38 · Matematicas</div>
+          <div class="question-text is-very-long">Lee el problema: Carlos tiene varias peonzas y quiere repartirlas en grupos iguales sin usar divisiones. ¿Que operacion de multiplicacion o suma repetida le ayuda a saber cuantos grupos completos puede formar?</div>
+        </div>
+        <div class="answer-grid">
+          <button class="btn-answer">Sumar el mismo numero varias veces hasta completar los grupos</button>
+          <button class="btn-answer">Elegir una respuesta al azar porque parece mas corta</button>
+          <button class="btn-answer">Restar todos los numeros sin pensar en los grupos</button>
+        </div>
+        <div class="combat-tactic-card">
+          <div class="combat-tactic-head"><strong>Consejo</strong></div>
+          <div class="combat-tactic-grid"><span>Rival prepara ataque</span><span>Defensa recomendada</span></div>
+        </div>
+        <div class="combat-action-panel">
+          <button class="combat-action-btn recommended"><span class="combat-action-title">Ataque</span><span class="combat-action-copy">Golpe rapido</span></button>
+          <button class="combat-action-btn"><span class="combat-action-title">Defensa</span><span class="combat-action-copy">Aguanta el choque</span></button>
+          <button class="combat-action-btn dash-ready"><span class="combat-action-title">Carga</span><span class="combat-action-copy">Sube el giro</span></button>
+        </div>
+        <div class="combat-action-readout">Consejo claro antes de elegir: si el rival ataca, Defensa reduce mucho el daño.</div>
+        <div class="x-gauge-panel dash-ready">
+          <div class="x-gauge-label">Especial/Dash listo</div>
+          <div class="x-gauge-track"><div class="x-gauge-fill ready" style="width:100%"></div></div>
+          <div class="special-command-row">
+            <button class="special-command-btn">Ataque especial</button>
+            <button class="special-command-btn xtreme armed">Xtreme Dash</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<script>
+  window.addEventListener('load', () => {
+    const selectors = [
+      '#screen-combat',
+      '.arena-left-pane',
+      '.arena-right-pane',
+      '.stadium-wrapper',
+      '.question-card',
+      '.question-text',
+      '.answer-grid',
+      '.btn-answer',
+      '.combat-action-btn',
+      '.special-command-btn',
+      '.combat-action-readout',
+      '.x-gauge-panel',
+      '.attack-banner'
+    ];
+    const issues = [];
+    selectors.forEach(selector => {
+      document.querySelectorAll(selector).forEach((el, index) => {
+        const rect = el.getBoundingClientRect();
+        const style = getComputedStyle(el);
+        const overflowX = el.scrollWidth - el.clientWidth;
+        const overflowY = el.scrollHeight - el.clientHeight;
+        const permitsOverflow = style.overflow === 'visible' || style.overflowY === 'visible' || style.overflowX === 'visible';
+        if (!permitsOverflow && (overflowX > 2 || overflowY > 2)) {
+          issues.push(`${selector}[${index}] overflow ${overflowX}x${overflowY}`);
+        }
+        if ((el.matches('button') || el.classList.contains('btn-answer')) && rect.height < 44) {
+          issues.push(`${selector}[${index}] touch ${Math.round(rect.height)}px`);
+        }
+        if ((style.wordBreak === 'break-all' || style.overflowWrap === 'anywhere') && /[A-Za-zÁÉÍÓÚáéíóúÑñ]{6,}/.test(el.textContent || '')) {
+          issues.push(`${selector}[${index}] aggressive-wrap`);
+        }
+      });
+    });
+    const report = document.createElement('pre');
+    report.id = 'audit-report';
+    report.textContent = issues.length ? issues.join('\n') : 'OK: sin desbordes detectados';
+    document.body.appendChild(report);
+  });
+</script>
+</body>
+</html>
