@@ -484,45 +484,38 @@ class App {
       this.currentScreen = screenId;
     }
 
+    const shell = window.AppShellConfig || {};
+
     // Header visibility rules
     const header = document.getElementById('app-header');
-    if (screenId === 'start' || screenId === 'avatar') {
+    const headerHiddenScreens = shell.headerHiddenScreens || ['start', 'avatar'];
+    if (headerHiddenScreens.includes(screenId)) {
       header.style.display = 'none';
     } else {
       header.style.display = '';
     }
 
-    const navigationTargets = {
-      map: 'btn-goto-map',
-      language: 'btn-goto-language',
-      workshop: 'btn-goto-workshop',
-      cards: 'btn-goto-cards',
-      parents: 'btn-goto-parents',
-      modules: 'btn-goto-modules'
-    };
     document.querySelectorAll('.btn-header').forEach(button => button.removeAttribute('aria-current'));
-    const activeNavigationId = navigationTargets[screenId];
+    const activeNavigationId = shell.navigationTargets?.[screenId];
     const activeNavigation = activeNavigationId ? document.getElementById(activeNavigationId) : null;
     if (activeNavigation) activeNavigation.setAttribute('aria-current', 'page');
 
     // Refresh screens data when showing them
-    if (screenId === 'avatar') this.renderAvatarCustomizer();
-    if (screenId === 'diagnostic') this.renderDiagnosticPlacement();
-    if (screenId === 'map') {
-      this.renderMap();
-      this.renderSummerPlanner();
-    }
-    if (screenId === 'language') this.renderLanguageMission();
-    if (screenId === 'subject') this.renderSubjectMission();
-    if (screenId === 'offline') this.renderOfflineMission();
-    if (screenId === 'workshop') this.renderWorkshop();
-    if (screenId === 'cards') this.renderCards();
-    if (screenId === 'parents') this.renderParentsPanel();
+    const renderers = shell.screenRenderers?.[screenId] || [];
+    renderers.forEach(methodName => {
+      if (typeof this[methodName] === 'function') this[methodName]();
+    });
   }
 
   // Event handlers
   bindEvents() {
-    // Navigation buttons
+    this.bindNavigationEvents();
+    this.bindParentEvents();
+    this.bindAvatarEvents();
+    this.bindWorkshopEvents();
+  }
+
+  bindNavigationEvents() {
     document.getElementById('btn-start-game').onclick = () => {
       // If first launch, go to avatar selection, otherwise go to map
       if (this.state.player.xp === 0 && this.state.player.name === 'Carlitos') {
@@ -592,8 +585,9 @@ class App {
     document.getElementById('btn-language-complete').onclick = () => this.completeLanguageMission();
     document.getElementById('btn-subject-complete').onclick = () => this.completeSubjectMission();
     document.getElementById('btn-offline-submit').onclick = () => this.submitOfflineEvidence();
+  }
 
-    // Parents Panel events
+  bindParentEvents() {
     document.getElementById('btn-parent-generate-reinforcement').onclick = () => {
       sounds.playClick();
       if (!this.requireParentSession()) return;
@@ -682,8 +676,9 @@ class App {
       this.saveState();
       this.renderParentsPanel();
     };
+  }
 
-    // Avatar customizer tabs
+  bindAvatarEvents() {
     const avatarTabs = document.getElementById('avatar-customizer-tabs');
     if (avatarTabs) {
       avatarTabs.addEventListener('click', (e) => {
@@ -705,8 +700,9 @@ class App {
         this.saveState();
       };
     }
+  }
 
-    // Parts workshop clicking tabs
+  bindWorkshopEvents() {
     document.querySelectorAll('.workshop-tab').forEach(tab => {
       // Avoid binding if it's the avatar customizer tabs
       if (tab.parentElement.id === 'avatar-customizer-tabs') return;
@@ -3380,6 +3376,7 @@ class App {
 // Instantiate App
 window.__SpinAcademyCore = {
   SoundFX,
+  AppShellConfig,
   CurriculumData,
   LearningEngine,
   StorageService,

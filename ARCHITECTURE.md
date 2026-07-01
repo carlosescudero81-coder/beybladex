@@ -21,9 +21,12 @@ The app is still a static browser application with no build step. `index.html` l
 4. `js/learning-engine.js`
 5. `js/services.js`
 6. `js/combat-session.js`
-7. `index.js`
+7. `js/app-shell.js`
+8. `index.js`
 
 This keeps compatibility with existing inline HTML handlers such as `onclick="app.showScreen('map')"`.
+
+`js/app-shell.js` owns the classic-script screen shell registry: header visibility, active header button mapping, and the render hooks that run when a screen is shown. `index.js` still owns the stateful `App` controller, but route metadata no longer lives inline inside `showScreen()`.
 
 ## Core Services
 
@@ -34,6 +37,7 @@ This keeps compatibility with existing inline HTML handlers such as `onclick="ap
 - `LearningEngine`: owns learning profile normalization, daily mission selection, question selection, mixed weekly boss question selection, post-boss review planning, post-boss spaced review scheduling, spaced review streaks, overdue spaced review alerts, post-recovery notes, skill mastery, review queue scheduling, diagnostics, guided weekly planning, weak-skill recommendations, parent evidence reports, weekly boss readiness, and saved weekly boss summaries.
 - `CombatSession`: owns battle flow and now receives the app controller through its constructor instead of reading the global `app`.
 - `SoundFX`: owns synthesized browser audio and now receives an enabled-state callback instead of reading the app singleton directly.
+- `AppShellConfig`: owns screen shell metadata for `App.showScreen()` without depending on `App` instance state.
 
 These classes are exposed at `window.__SpinAcademyCore` so smoke tests and browser diagnostics can access the stable core without starting the full UI.
 
