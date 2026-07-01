@@ -268,10 +268,12 @@ class LearningEngine {
         /\bdivision\b/,
         /\bdividir\b/,
         /\bdivide\b/,
+        /\bdividen?\b/,
         /\bcociente\b/,
         /\brepart(?:e|en|ir|ido|idos|idas|iendo)?\b.*\bentre\b/,
         /\bentre\b.*\bgrupos?\b/,
         /\bcuantas?\s+(?:van|recibe|tocan|hay)\s+en\s+cada\b/,
+        /\bcuantas?\b.*\bhay\s+en\s+cada\b/,
         /\bcuantas?\s+veces\s+mas\b/,
         /\bpartes?\s+iguales\b/
       ].some(pattern => pattern.test(text));
@@ -1775,7 +1777,7 @@ class LearningEngine {
 
   static getSkillSummary(state) {
     const profile = this.getProfile(state);
-    return Object.values(profile.skills).map(progress => {
+    return Object.values(profile.skills).filter(progress => this.isSkillAllowed(progress.id)).map(progress => {
       const skill = CurriculumData.getSkill(progress.id);
       return {
         id: progress.id,
@@ -1792,7 +1794,7 @@ class LearningEngine {
   static getSubjectSummary(state) {
     const profile = this.getProfile(state);
     return Object.values(CurriculumData.subjects).map(subject => {
-      const subjectSkills = CurriculumData.skills[subject.id] || [];
+      const subjectSkills = (CurriculumData.skills[subject.id] || []).filter(skill => this.isSkillAllowed(skill.id));
       const progressItems = subjectSkills.map(skill => profile.skills[skill.id]).filter(Boolean);
       const attempts = progressItems.reduce((sum, item) => sum + item.attempts, 0);
       const correct = progressItems.reduce((sum, item) => sum + item.correct, 0);
