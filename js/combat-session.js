@@ -28,6 +28,7 @@ class CombatSession {
       ? appController.getCurriculumMissionForCombat(weekNum, isBoss)
       : null;
     this.isTowerBattle = appController?.activeTowerBattle === true;
+    this.curriculumCombatMode = false;
     
     // Physics positions & motion state
     this.playerX = 30;
@@ -57,6 +58,7 @@ class CombatSession {
     this.actionLocked = false;
     this.specialArmed = false;
     this.xtremeDashArmed = false;
+    this.xtremeDashArmedAt = 0;
     this.lastSpinUsed = false;
     this.fastAnswerStreak = 0;
     this.questionStartedAt = 0;
@@ -109,9 +111,11 @@ class CombatSession {
     this.sessionCorrect = 0;
     this.sessionIncorrect = 0;
     this.curriculumAnswerLog = [];
+    this.curriculumCombatMode = false;
     this.selectedAction = 'attack';
     this.specialArmed = false;
     this.xtremeDashArmed = false;
+    this.xtremeDashArmedAt = 0;
     this.lastSpinUsed = false;
     this.fastAnswerStreak = 0;
     this.bestCombo = 0;
@@ -164,6 +168,7 @@ class CombatSession {
     if (stadiumName) stadiumName.innerText = stadium.nombre;
     if (playerBeyName) playerBeyName.innerText = `Tu Bey: ${this.playerBey.nombre}`;
     if (rivalBeyName) rivalBeyName.innerText = `Rival: ${this.rivalBey.nombre}`;
+    this.renderCompanionPanel();
     const playerTopLabel = document.querySelector('.top-label-player');
     const rivalTopLabel = document.querySelector('.top-label-rival');
     if (playerTopLabel) {
@@ -188,11 +193,7 @@ class CombatSession {
     this.setRivalIntent(this.chooseRivalIntent());
 
     // Render Custom Tops in Combat
-    document.getElementById('player-top').innerHTML = this.playerBey?.isCustom && this.playerBey.combo
-      ? generateTopSVG(this.playerBey.combo.core, this.playerBey.combo.ring, this.playerBey.combo.driver, this.playerBey.combo.color)
-      : renderAssetImage(this.playerBey.image, this.playerBey.nombre, 'asset-image battle-bey player');
-    
-    document.getElementById('rival-top').innerHTML = renderAssetImage(this.rivalBey.image, this.rivalBey.nombre, 'asset-image battle-bey rival');
+    this.renderBattleTopSprites();
     this.decorateTopSprites();
     this.renderCombatants();
     this.updateXGauge();
@@ -304,6 +305,102 @@ class CombatSession {
     return deck.slice(0, 3);
   }
 
+  getCompanionBey() {
+    const associatedName = this.companionCharacter?.beyAsociado;
+    const associated = associatedName
+      ? BEYBLADE_X_BEYS.find(bey => bey.nombre === associatedName)
+      : null;
+    return associated || this.playerBey || getEquippedBey(this.state);
+  }
+
+  renderCompanionPanel() {
+    const panel = document.getElementById('combat-companion-panel');
+    if (!panel || !this.companionCharacter) return;
+
+    const companionBey = this.getCompanionBey();
+    const avatar = document.getElementById('combat-companion-avatar');
+    const name = document.getElementById('combat-companion-name');
+    const passive = document.getElementById('combat-companion-passive');
+    const beyImage = document.getElementById('combat-companion-bey-img');
+    const beyName = document.getElementById('combat-companion-bey-name');
+    const passiveLabel = this.companionPassive?.label || this.companionCharacter.rol || 'Apoyo listo';
+
+    panel.hidden = false;
+    if (panel.style && typeof panel.style.setProperty === 'function') {
+      panel.style.setProperty('--companion-accent', this.companionCharacter.colorPrincipal || '#00f0ff');
+    }
+    if (avatar) {
+      avatar.innerHTML = renderAssetImage(
+        this.companionCharacter.image,
+        this.companionCharacter.nombre,
+        'asset-image combat-companion-character'
+      );
+    }
+    if (name) name.innerText = this.companionCharacter.nombre;
+    if (passive) passive.innerText = passiveLabel;
+    if (beyImage && companionBey) {
+      beyImage.innerHTML = renderAssetImage(
+        companionBey.image,
+        companionBey.nombre,
+        'asset-image combat-companion-bey-art'
+      );
+    }
+    if (beyName) beyName.innerText = companionBey ? companionBey.nombre : 'Bey aliado';
+  }
+
+  playCompanionCutin(title = 'Apoyo de companero', detail = '', variant = 'support') {
+    const overlay = document.getElementById('companion-cutin');
+    if (!overlay || !this.companionCharacter) return;
+    const companionBey = this.getCompanionBey();
+    const characterImg = document.getElementById('companion-cutin-character');
+    const beyImg = document.getElementById('companion-cutin-bey');
+    const nameEl = document.getElementById('companion-cutin-name');
+    const titleEl = document.getElementById('companion-cutin-title');
+    const detailEl = document.getElementById('companion-cutin-detail');
+    if (characterImg) {
+      characterImg.src = this.companionCharacter.image || '';
+      characterImg.alt = this.companionCharacter.nombre || 'Companero';
+    }
+    if (beyImg) {
+      beyImg.src = companionBey?.image || '';
+      beyImg.alt = companionBey?.nombre || 'Bey aliado';
+    }
+    if (nameEl) nameEl.innerText = this.companionCharacter.nombre || 'Companero';
+    if (titleEl) titleEl.innerText = title;
+    if (detailEl) detailEl.innerText = detail || this.companionPassive?.label || 'Te cubre en el duelo';
+    overlay.hidden = false;
+    overlay.setAttribute('aria-hidden', 'false');
+    overlay.classList.remove('is-active', 'is-exiting', 'is-strike', 'is-dash', 'is-guard', 'is-focus', 'is-rescue');
+    overlay.classList.add(`is-${variant || 'support'}`);
+    this.pulseCompanionAssist(variant);
+    void overlay.offsetWidth;
+    overlay.classList.add('is-active');
+    setTimeout(() => {
+      overlay.classList.remove('is-active');
+      overlay.classList.add('is-exiting');
+      setTimeout(() => {
+        overlay.hidden = true;
+        overlay.setAttribute('aria-hidden', 'true');
+        overlay.classList.remove('is-exiting');
+      }, 220);
+    }, 920);
+  }
+
+  pulseCompanionAssist(variant = 'support') {
+    const panel = document.getElementById('combat-companion-panel');
+    const arena = document.getElementById('battle-field');
+    const classes = ['assist-active', 'assist-strike', 'assist-dash', 'assist-guard', 'assist-focus', 'assist-rescue'];
+    const variantClass = `assist-${variant || 'support'}`;
+    [panel, arena].forEach(element => {
+      if (!element) return;
+      classes.forEach(className => element.classList.remove(className));
+      void element.offsetWidth;
+      element.classList.add('assist-active');
+      element.classList.add(variantClass);
+      setTimeout(() => element.classList.remove('assist-active'), 980);
+    });
+  }
+
   getBeyType(bey) {
     const type = (bey?.tipo || 'balance').toLowerCase();
     if (type === 'ataque' || type === 'attack') return 'ataque';
@@ -353,6 +450,7 @@ class CombatSession {
     const passive = this.companionPassive;
     if (passive.type === 'strike' && !this.companionPassiveUsed.strike) {
       this.companionPassiveUsed.strike = true;
+      this.playCompanionCutin('Ataque de apoyo', passive.label, 'strike');
       return {
         damage: damage + Math.round(passive.value || 7),
         message: `${passive.characterName}: ${passive.label}`
@@ -360,6 +458,7 @@ class CombatSession {
     }
     if (passive.type === 'dash' && isFastAnswer && !this.companionPassiveUsed.dash) {
       this.companionPassiveUsed.dash = true;
+      this.playCompanionCutin('Dash compartido', passive.label, 'dash');
       if (this.playerCombatant) {
         this.playerCombatant.charge = Math.min(3, (this.playerCombatant.charge || 0) + 1);
         this.syncPersistentXGauge();
@@ -377,6 +476,7 @@ class CombatSession {
     const passive = this.companionPassive;
     if (passive.type === 'guard' && !this.companionPassiveUsed.guard) {
       this.companionPassiveUsed.guard = true;
+      this.playCompanionCutin('Guardia de apoyo', passive.label, 'guard');
       const reduction = Math.max(0.2, Math.min(0.48, passive.value || 0.34));
       return {
         damage: Math.max(1, Math.round(damage * (1 - reduction))),
@@ -385,6 +485,7 @@ class CombatSession {
     }
     if (passive.type === 'focus' && context === 'mistake' && !this.companionPassiveUsed.focus) {
       this.companionPassiveUsed.focus = true;
+      this.playCompanionCutin('Concentracion extra', passive.label, 'focus');
       const reduction = Math.max(0.18, Math.min(0.44, passive.value || 0.28));
       return {
         damage: Math.max(1, Math.round(damage * (1 - reduction))),
@@ -635,7 +736,7 @@ class CombatSession {
     }
   }
 
-  playBattleIntro(details, onComplete) {
+  playBattleIntro(details, onComplete, options = {}) {
     const overlay = document.getElementById('battle-intro');
     if (!overlay) {
       onComplete();
@@ -657,7 +758,7 @@ class CombatSession {
     };
 
     const playerDisplayName = this.state?.player?.name || details.playerCharacter?.nombre || 'Blader';
-    const rivalDisplayName = details.floorData?.rivalName || details.rivalCharacter?.nombre || 'Rival';
+    const rivalDisplayName = details.rivalName || details.floorData?.rivalName || details.rivalCharacter?.nombre || 'Rival';
     setImage('battle-intro-player-character', details.playerCharacter?.image, playerDisplayName);
     setImage('battle-intro-rival-character', details.rivalCharacter?.image, rivalDisplayName);
     setImage('battle-intro-player-bey', details.playerBey?.image, details.playerBey?.nombre);
@@ -666,15 +767,32 @@ class CombatSession {
     setText('battle-intro-rival-name', rivalDisplayName);
     setText('battle-intro-player-bey-name', details.playerBey?.nombre || 'Bey equipado');
     setText('battle-intro-rival-bey-name', details.rivalBey?.nombre || 'Bey rival');
-    setText('battle-intro-floor', `Planta ${details.towerFloor || 1}`);
+    const introMode = options.mode || details.mode || 'full';
+    const introDuration = Number(options.durationMs || details.durationMs || (introMode === 'round' ? 1580 : 2850));
+    const flavor = details.roundFlavor || this.getRoundIntroFlavor(details);
+    const companionBey = this.getCompanionBey();
+    const companionText = this.companionCharacter
+      ? `${this.companionCharacter.nombre}: apoyo listo`
+      : 'Companero listo';
+
+    setText('battle-intro-floor', details.floorLabel || `Planta ${details.towerFloor || 1}`);
     setText('battle-intro-stadium', details.stadium?.nombre || 'Estadio X');
+    setText('battle-intro-round-flavor', flavor);
+    setText('battle-intro-companion', companionText);
+    setImage('battle-intro-companion-character', this.companionCharacter?.image, this.companionCharacter?.nombre || 'Companero');
+    setImage('battle-intro-companion-bey', companionBey?.image, companionBey?.nombre || 'Bey aliado');
+    setText('battle-intro-companion-name', this.companionCharacter?.nombre || 'Companero');
+    setText('battle-intro-companion-role', this.companionPassive?.label || this.companionCharacter?.rol || 'Listo para ayudar');
     this.renderBattleIntroStats('battle-intro-player-stats', this.getBattleIntroStats(details.playerBey, this.playerCharacterStats));
     this.renderBattleIntroStats('battle-intro-rival-stats', this.getBattleIntroStats(details.rivalBey, this.rivalCharacterStats));
 
     overlay.hidden = false;
     overlay.setAttribute('aria-hidden', 'false');
     overlay.style.display = 'grid';
-    overlay.classList.remove('is-exiting');
+    overlay.classList.remove('is-exiting', 'is-round-intro', 'is-retry-intro', 'is-final-intro');
+    overlay.classList.toggle('is-round-intro', introMode === 'round');
+    overlay.classList.toggle('is-retry-intro', introMode === 'retry');
+    overlay.classList.toggle('is-final-intro', details.roundStage === 'topCut' || details.isFinal === true);
     overlay.classList.add('is-active');
 
     const finish = () => {
@@ -699,7 +817,79 @@ class CombatSession {
     overlay.onclick = event => {
       if (event.target === overlay) finish();
     };
-    this.battleIntroTimer = setTimeout(finish, 2850);
+    this.battleIntroTimer = setTimeout(finish, introDuration);
+  }
+
+  getRoundIntroFlavor(details = {}) {
+    if (details.roundStage === 'topCut' || details.isFinal) return 'Top Cut: duelo decisivo';
+    if (details.mode === 'retry') return 'Revancha: ajusta la estrategia';
+    if (details.mode === 'round') return 'Nuevo rival: lee su tipo de Bey';
+    return 'Combate X Tower';
+  }
+
+  getBattleIntroDetails(label = '') {
+    const round = this.getCurrentRound();
+    const stadium = getFloorStadium(this.towerFloor);
+    const stage = round?.stage === 'topCut' ? 'Top Cut' : 'Swiss';
+    const roundLabel = this.rounds.length > 1
+      ? `${label || stage} ${this.currentRoundIndex + 1}/${this.rounds.length}`
+      : (label || 'Duelo');
+    return {
+      playerCharacter: this.playerCharacter,
+      rivalCharacter: this.rivalCharacter,
+      playerBey: this.playerBey,
+      rivalBey: this.rivalBey,
+      stadium,
+      floorData: this.floorData,
+      rivalName: round?.rivalName || this.rivalCharacter?.nombre,
+      floorLabel: `Planta ${this.towerFloor} · ${roundLabel}`,
+      towerFloor: this.towerFloor,
+      roundStage: round?.stage,
+      isFinal: round?.isFinal === true,
+      roundFlavor: round?.isFinal
+        ? 'Top Cut: ultimo rival de la planta'
+        : label === 'Revancha'
+          ? 'Revancha: cambia el plan y responde con calma'
+          : label
+            ? 'Nuevo rival: observa su Bey y prepara la tactica'
+            : 'Combate X Tower',
+      mode: label === 'Revancha' ? 'retry' : label ? 'round' : 'full'
+    };
+  }
+
+  renderBattleTopSprites() {
+    const playerTop = document.getElementById('player-top');
+    const rivalTop = document.getElementById('rival-top');
+    if (playerTop && this.playerBey) {
+      playerTop.innerHTML = this.playerBey?.isCustom && this.playerBey.combo
+        ? generateTopSVG(this.playerBey.combo.core, this.playerBey.combo.ring, this.playerBey.combo.driver, this.playerBey.combo.color)
+        : renderAssetImage(this.playerBey.image, this.playerBey.nombre, 'asset-image battle-bey player');
+    }
+    if (rivalTop && this.rivalBey) {
+      rivalTop.innerHTML = renderAssetImage(this.rivalBey.image, this.rivalBey.nombre, 'asset-image battle-bey rival');
+    }
+  }
+
+  animateCombatantEntrance() {
+    const playerTop = document.getElementById('player-top');
+    const rivalTop = document.getElementById('rival-top');
+    const arena = document.getElementById('battle-field');
+    if (arena) {
+      arena.classList.remove('combatants-entering');
+      void arena.offsetWidth;
+      arena.classList.add('combatants-entering');
+      setTimeout(() => arena.classList.remove('combatants-entering'), 980);
+    }
+    [
+      [playerTop, 'combatant-enter-player'],
+      [rivalTop, 'combatant-enter-rival']
+    ].forEach(([element, className]) => {
+      if (!element) return;
+      element.classList.remove('deck-switching', 'deck-entering', 'combatant-enter-player', 'combatant-enter-rival');
+      void element.offsetWidth;
+      element.classList.add(className);
+      setTimeout(() => element.classList.remove(className), 880);
+    });
   }
 
   getBattleIntroStats(bey, characterStats) {
@@ -991,7 +1181,7 @@ class CombatSession {
     if (this.actionLocked || !this.canUseSpecialAttack()) return;
     sounds.playSpecial();
     this.specialArmed = !this.specialArmed;
-    if (this.specialArmed) this.xtremeDashArmed = false;
+    if (this.specialArmed && this.xtremeDashArmed) this.clearXtremeDashArmedState('ring-failed');
     this.showAttackBanner(
       this.specialArmed ? 'Especial preparado' : 'Especial reservado',
       this.specialArmed ? 'Acierta para lanzarlo ahora' : 'No se gastara en esta pregunta',
@@ -1001,11 +1191,23 @@ class CombatSession {
     this.updateXGauge();
   }
 
+  clearXtremeDashArmedState(resultClass = '') {
+    this.xtremeDashArmed = false;
+    this.xtremeDashArmedAt = 0;
+    this._cancelXtremeRingCountdown(resultClass);
+    const playerTop = document.getElementById('player-top');
+    if (playerTop) playerTop.classList.remove('xtreme-dashing', 'xtreme-arming', 'xtreme-rail-riding', 'xtreme-impact', 'special-ready');
+    if (this.playerCombatant?.status === 'special' || this.playerCombatant?.status === 'xtreme-dash') {
+      this.playerCombatant.status = 'orbiting';
+    }
+  }
+
   armXtremeDash() {
     if (this.actionLocked || !this.canUseXtremeDash()) return;
     sounds.playClick();
     this.xtremeDashArmed = !this.xtremeDashArmed;
     if (this.xtremeDashArmed) {
+      this.xtremeDashArmedAt = Date.now();
       this.specialArmed = false;
       this.selectCombatAction('attack', false);
       this.previewXtremeDashArming('player');
@@ -1013,10 +1215,7 @@ class CombatSession {
       this._startXtremeRingCountdown();
     } else {
       // Desarmado manualmente
-      this._cancelXtremeRingCountdown('');
-      if (this.playerCombatant?.status === 'special' || this.playerCombatant?.status === 'xtreme-dash') {
-        this.playerCombatant.status = 'orbiting';
-      }
+      this.clearXtremeDashArmedState('');
     }
     this.showAttackBanner(
       this.xtremeDashArmed ? 'Xtreme Dash preparado' : 'Dash reservado',
@@ -1099,11 +1298,7 @@ class CombatSession {
     // Si el tiempo expira sin respuesta: el dash se cancela automáticamente
     this._xtremeRingTimer = setTimeout(() => {
       if (!this.xtremeDashArmed) return;
-      this._cancelXtremeRingCountdown('ring-failed');
-      this.xtremeDashArmed = false;
-      if (this.playerCombatant?.status === 'special' || this.playerCombatant?.status === 'xtreme-dash') {
-        this.playerCombatant.status = 'orbiting';
-      }
+      this.clearXtremeDashArmedState('ring-failed');
       this.showAttackBanner('Dash cancelado', 'Tiempo agotado: el rail se cerró', 'rival', 'xtreme-risk');
       this.updateXGauge();
     }, fastWindow);
@@ -1137,6 +1332,10 @@ class CombatSession {
   selectCombatAction(action, playSound = true) {
     if (this.actionLocked) return;
     const validAction = ['attack', 'defense', 'charge'].includes(action) ? action : 'attack';
+    if (this.xtremeDashArmed && validAction !== 'attack') {
+      this.clearXtremeDashArmedState('');
+      this.showAttackBanner('Dash reservado', 'Elige Ataque para usar el Rail X', 'player');
+    }
     this.selectedAction = validAction;
     if (playSound) sounds.playClick();
     document.querySelectorAll('[data-combat-action]').forEach(button => {
@@ -1611,7 +1810,7 @@ class CombatSession {
       }
     }
 
-    if (this.floorData && typeof LearningEngine.selectQuestionsForTowerFloor === 'function') {
+    if (this.isTowerBattle && this.floorData && typeof LearningEngine.selectQuestionsForTowerFloor === 'function') {
       const towerQuestions = LearningEngine.selectQuestionsForTowerFloor(this.state, this.floorData, this.questionCount);
       if (towerQuestions.length > 0) {
         towerQuestions.slice(0, this.questionCount).forEach(question => {
@@ -1622,13 +1821,14 @@ class CombatSession {
       }
     }
 
-    if (this.curriculumMission && this.curriculumMission.subject.id === 'math') {
+    if (this.curriculumMission && !this.isTowerBattle && !this.isBoss) {
       const curriculumQuestions = LearningEngine.selectQuestionsForMission(this.state, this.curriculumMission, this.questionCount);
       if (curriculumQuestions.length > 0) {
         curriculumQuestions.slice(0, this.questionCount).forEach(question => {
-          this.questionsList.push(this.adaptCurriculumQuestion(question, 'curriculum-math'));
+          this.questionsList.push(this.adaptCurriculumQuestion(question, `curriculum-${question.subject || 'mission'}`));
         });
         this.questionCount = this.questionsList.length;
+        this.curriculumCombatMode = true;
         return;
       }
     }
@@ -1756,6 +1956,10 @@ class CombatSession {
       options: question.options,
       hint: question.explanation || 'Piensa en los datos importantes y elige el procedimiento antes de responder.',
       explanation: question.explanation || '',
+      remediation: question.remediation || '',
+      errorTags: question.errorTags || null,
+      skillName: CurriculumData.getSkill(question.skill)?.name || question.skill,
+      subjectName: CurriculumData.subjects[question.subject]?.shortName || question.subject,
       difficulty: question.difficulty || 1,
       isGuidedIntro: question.isGuidedIntro === true,
       guidedIntro: question.guidedIntro || null
@@ -2142,8 +2346,12 @@ class CombatSession {
       ? (this.currentQuestion.lightningWindowMs || 3200)
       : Math.max(4500, 8500 - (this.difficulty * 420));
     const isFastAnswer = answerMs <= fastWindow;
+    const xtremeAnswerMs = this.xtremeDashArmed
+      ? Date.now() - (this.xtremeDashArmedAt || this.questionStartedAt || Date.now())
+      : answerMs;
+    const isXtremeAnswerFast = xtremeAnswerMs <= fastWindow;
     const isCorrect = selectedAnswer === this.currentQuestion.answer;
-    const outcome = this.resolveTurnOutcome(action, isCorrect, isFastAnswer);
+    const outcome = this.resolveTurnOutcome(action, isCorrect, isFastAnswer, { isXtremeAnswerFast });
 
     if (isCorrect) {
       sounds.playCorrect();
@@ -2153,7 +2361,9 @@ class CombatSession {
       if (isFastAnswer) this.fastCorrect += 1;
       else this.assistedCorrect += 1;
       this.sessionCorrect += 1;
-      this.state.pedagogy.math.correctAnswers += 1;
+      if (!this.currentQuestion.subject || this.currentQuestion.subject === 'math') {
+        this.state.pedagogy.math.correctAnswers += 1;
+      }
       if (this.currentQuestion?.isLightning && isFastAnswer && this.playerCombatant) {
         this.playerCombatant.charge = Math.min(3, this.playerCombatant.charge + 1);
         this.syncPersistentXGauge();
@@ -2161,7 +2371,7 @@ class CombatSession {
         this.showAttackBanner('Relampago X', '+1 Energia X y golpe reforzado');
       }
       ProgressService.recordAnswer(this.state, this.currentQuestion, true);
-      this.recordCurriculumAnswer(true);
+      this.recordCurriculumAnswer(true, selectedAnswer);
       const todayStats = this.app.getTodayStats();
       todayStats.answers += 1;
       todayStats.correct += 1;
@@ -2173,10 +2383,12 @@ class CombatSession {
         this.state.pedagogy.math.troublesomeOperations.push(errorKey);
       }
       this.sessionIncorrect += 1;
-      this.state.pedagogy.math.incorrectAnswers += 1;
-      this.state.pedagogy.math.dailyStreak = 0; // reset streak
+      if (!this.currentQuestion.subject || this.currentQuestion.subject === 'math') {
+        this.state.pedagogy.math.incorrectAnswers += 1;
+        this.state.pedagogy.math.dailyStreak = 0; // reset streak
+      }
       ProgressService.recordAnswer(this.state, this.currentQuestion, false);
-      this.recordCurriculumAnswer(false);
+      this.recordCurriculumAnswer(false, selectedAnswer);
       const todayStats = this.app.getTodayStats();
       todayStats.answers += 1;
       todayStats.incorrect += 1;
@@ -2188,6 +2400,7 @@ class CombatSession {
     }
     this.specialArmed = false;
     this.xtremeDashArmed = false;
+    this.xtremeDashArmedAt = 0;
     // MEJORA 3: si el dash no se activó (outcome.xtremeDash es false), cancelar el anillo aquí
     if (!outcome.xtremeDash && !outcome.xtremeRisk) this._cancelXtremeRingCountdown('');
     this.applyTurnOutcome(outcome, isCorrect);
@@ -2361,15 +2574,19 @@ class CombatSession {
       this.playerSpin = Math.min(this.playerMaxSpin, this.playerSpin + 12);
       if (this.playerCombatant) this.playerCombatant.charge = Math.min(3, (this.playerCombatant.charge || 0) + 1);
       this.syncPersistentXGauge();
+      this.playCompanionCutin('Companero al rescate', '+giro y Energia X', 'rescue');
       this.showAttackBanner('Compañero al rescate', `${this.companionCharacter?.nombre || 'Compañero'} recupera giro y Energia X`, 'player', 'round-cleared');
     }
   }
 
-  resolveTurnOutcome(action, isCorrect, isFastAnswer) {
+  resolveTurnOutcome(action, isCorrect, isFastAnswer, timing = {}) {
     const normalizedAction = ['attack', 'defense', 'charge'].includes(action) ? action : 'attack';
     const rivalIntent = this.rivalIntent?.type || 'attack';
     const gaugeReady = (this.playerCombatant?.charge || 0) >= 3;
     const specialTriggered = isCorrect && this.specialArmed && (gaugeReady || this.correctStreak >= 2);
+    const isXtremeAnswerFast = Object.prototype.hasOwnProperty.call(timing, 'isXtremeAnswerFast')
+      ? timing.isXtremeAnswerFast === true
+      : isFastAnswer;
 
     // Determina si la accion elegida es la recomendada (contrarrestar: defense>attack, charge>defense, attack>charge)
     const recommended = this.getRecommendedAction();
@@ -2399,7 +2616,7 @@ class CombatSession {
     let playerAttackAction = specialTriggered ? 'special' : normalizedAction;
     let rivalAttackAction = rivalIntent === 'charge' ? 'special' : 'counter';
     let showExplanation = !isCorrect;
-    const xtremeDash = this.shouldTriggerXtremeDash(normalizedAction, isCorrect, isFastAnswer);
+    const xtremeDash = this.shouldTriggerXtremeDash(normalizedAction, isCorrect, this.xtremeDashArmed ? isXtremeAnswerFast : isFastAnswer);
     if (xtremeDash && playerDamage > 0) {
       const multiplier = (this.xtremeDashArmed ? 1.32 : 1.2) * this.getStadiumXtremeModifier();
       playerDamage = Math.round(playerDamage * multiplier) + 4;
@@ -2935,23 +3152,18 @@ class CombatSession {
       this.rivalHP = 0;
       this.configureActiveRoundOpponent();
       this.initCombatants();
-      document.getElementById('rival-top').innerHTML = renderAssetImage(this.rivalBey.image, this.rivalBey.nombre, 'asset-image battle-bey rival');
+      this.renderBattleTopSprites();
       this.decorateTopSprites();
-      const playerTop2 = document.getElementById('player-top');
-      if (playerTop2) {
-        playerTop2.classList.remove('deck-switching');
-        playerTop2.classList.add('deck-entering');
-        setTimeout(() => playerTop2.classList.remove('deck-entering'), 720);
-      }
+      this.animateCombatantEntrance();
       this.updateHpBars();
       this.showAttackBanner('Ronda superada', `+3 monedas · +6 XP · siguiente rival`, 'player', 'round-cleared');
       this.persistTowerBattleState();
       this.app.saveState();
 
-      // ANIMACION 2: inicio del siguiente reto
-      this.playRoundStartAnimation(this.rivalCharacter?.nombre || 'Nuevo rival').then(() => {
+      // Presentacion real del nuevo enfrentamiento: personaje + peonza de ambos combatientes.
+      this.playBattleIntro(this.getBattleIntroDetails('Nuevo rival'), () => {
         this.nextQuestion();
-      });
+      }, { mode: 'round', durationMs: 1580 });
     });
   }
 
@@ -3107,13 +3319,14 @@ class CombatSession {
     this.currentQuestionIdx = round.start;
     this.configureActiveRoundOpponent();
     this.initCombatants();
-    document.getElementById('rival-top').innerHTML = renderAssetImage(this.rivalBey.image, this.rivalBey.nombre, 'asset-image battle-bey rival');
+    this.renderBattleTopSprites();
     this.decorateTopSprites();
+    this.animateCombatantEntrance();
     this.updateHpBars();
     this.showAttackBanner('Reintento de ronda', reason, 'rival', 'round-retry');
     this.persistTowerBattleState();
     this.app.saveState();
-    setTimeout(() => this.nextQuestion(), 700);
+    this.playBattleIntro(this.getBattleIntroDetails('Revancha'), () => this.nextQuestion(), { mode: 'retry', durationMs: 1500 });
   }
 
   getMaxRoundAttempts() {
@@ -3562,18 +3775,39 @@ class CombatSession {
     setTimeout(() => pop.remove(), 900);
   }
 
-  recordCurriculumAnswer(isCorrect) {
+  escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  recordCurriculumAnswer(isCorrect, selectedAnswer = null) {
     if (!this.currentQuestion || !this.currentQuestion.curriculumId) return;
     LearningEngine.recordAnswer(this.state, {
       id: this.currentQuestion.curriculumId,
       subject: this.currentQuestion.subject,
       skill: this.currentQuestion.skill,
+      prompt: this.currentQuestion.text,
+      explanation: this.currentQuestion.explanation,
+      remediation: this.currentQuestion.remediation,
+      errorTags: this.currentQuestion.errorTags,
+      selectedAnswer,
+      correctAnswer: this.currentQuestion.answer,
       isGuidedIntro: this.currentQuestion.isGuidedIntro === true
     }, isCorrect);
     this.curriculumAnswerLog.push({
       id: this.currentQuestion.curriculumId,
       subject: this.currentQuestion.subject,
       skill: this.currentQuestion.skill,
+      skillName: this.currentQuestion.skillName,
+      subjectName: this.currentQuestion.subjectName,
+      selectedAnswer,
+      correctAnswer: this.currentQuestion.answer,
+      remediation: this.currentQuestion.remediation,
+      errorTags: this.currentQuestion.errorTags,
       correct: isCorrect === true
     });
   }
@@ -3606,14 +3840,27 @@ class CombatSession {
       const sumTerms = Array(a).fill(b);
       aid = `${sumTerms.join(' + ')} = ${a * b}`;
     } else if (this.currentQuestion.type === 'blank') {
-      expl = `Piensalo de este modo: cuantas veces tienes que sumar el primer numero para llegar al resultado?`;
+      expl = `Piensalo de este modo: busca que factor falta en la multiplicacion.`;
       aid = `El factor que falta es ${this.currentQuestion.answer}`;
     } else if (this.currentQuestion.type === 'sum') {
       expl = `Sumar dobles es como multiplicar por 2.`;
       aid = `${this.currentQuestion.answer / 2} + ${this.currentQuestion.answer / 2} = ${this.currentQuestion.answer}`;
-    } else if (this.currentQuestion.type === 'curriculum-math' || this.currentQuestion.type === 'curriculum-boss' || this.currentQuestion.type === 'curriculum-review' || this.currentQuestion.type === 'curriculum-tower' || this.currentQuestion.type === 'curriculum') {
-      expl = this.currentQuestion.explanation || 'Repasa el enunciado: busca los datos y decide que operacion necesitas.';
-      aid = `Respuesta correcta: ${this.currentQuestion.answer}`;
+    } else if (String(this.currentQuestion.type || '').startsWith('curriculum')) {
+      const microLesson = typeof LearningEngine.buildMicroLesson === 'function'
+        ? LearningEngine.buildMicroLesson(this.state, {
+            id: this.currentQuestion.curriculumId,
+            subject: this.currentQuestion.subject,
+            skill: this.currentQuestion.skill,
+            prompt: this.currentQuestion.text,
+            explanation: this.currentQuestion.explanation,
+            remediation: this.currentQuestion.remediation,
+            errorTags: this.currentQuestion.errorTags
+          })
+        : null;
+      expl = microLesson
+        ? `<strong>${this.escapeHtml(microLesson.title)}</strong><br>${microLesson.steps.map(step => this.escapeHtml(step)).join('<br>')}`
+        : this.currentQuestion.explanation || 'Repasa el enunciado: busca los datos importantes antes de responder.';
+      aid = `Respuesta correcta: ${this.escapeHtml(this.currentQuestion.answer)}${microLesson ? `<br>Dominio actual: ${microLesson.mastery}% / meta ${microLesson.target}%` : ''}`;
     } else {
       expl = `Vuelve a intentarlo con calma. Fíjate en el patrón y la serie numérica.`;
       aid = `La respuesta correcta era ${this.currentQuestion.answer}`;
@@ -3758,13 +4005,13 @@ class CombatSession {
 
     if (specialBtn) {
       const ready = this.canUseSpecialAttack();
-      specialBtn.disabled = this.actionLocked || !ready;
+      specialBtn.disabled = !this.specialArmed && (this.actionLocked || !ready);
       specialBtn.classList.toggle('armed', this.specialArmed);
       specialBtn.innerText = this.specialArmed ? 'Especial armado' : ready ? 'Usar especial' : 'Especial no listo';
     }
     if (xtremeBtn) {
       const ready = this.canUseXtremeDash();
-      xtremeBtn.disabled = this.actionLocked || !ready;
+      xtremeBtn.disabled = !this.xtremeDashArmed && (this.actionLocked || !ready);
       xtremeBtn.classList.toggle('armed', this.xtremeDashArmed);
       // Actualizar label dentro del span, no el innerText del botón (que tiene el SVG del anillo)
       const lbl = xtremeBtn.querySelector('.xtreme-btn-label');
@@ -3929,7 +4176,7 @@ class CombatSession {
         : null;
       let learningCompletion = null;
       let bossSummary = null;
-      if (this.curriculumMission && this.curriculumMission.subject.id === 'math') {
+      if (this.curriculumCombatMode && this.curriculumMission) {
         const currentLearningMission = LearningEngine.getCurrentMission(this.state);
         learningCompletion = currentLearningMission && currentLearningMission.key === this.curriculumMission.key
           ? LearningEngine.recordMissionCompletion(this.state, this.curriculumMission, {
@@ -3941,6 +4188,9 @@ class CombatSession {
               answers: totalSessionAnswers
             });
       }
+      const academicSummary = typeof LearningEngine.buildAcademicRewardSummary === 'function'
+        ? LearningEngine.buildAcademicRewardSummary(this.state, this.curriculumAnswerLog, this.curriculumMission)
+        : null;
       if (this.isBoss && typeof this.weekNum === 'number') {
         bossSummary = LearningEngine.recordWeeklyBossSummary(this.state, this.weekNum, {
           accuracy: sessionAccuracy,
@@ -3979,7 +4229,9 @@ class CombatSession {
         correct: this.sessionCorrect,
         incorrect: this.sessionIncorrect
       });
-      this.state.pedagogy.math.dailyStreak += 1;
+      if (!this.curriculumMission || this.curriculumMission.subject.id === 'math') {
+        this.state.pedagogy.math.dailyStreak += 1;
+      }
       this.app.saveState();
 
       // Show rewards chest overlay
@@ -3989,6 +4241,7 @@ class CombatSession {
         sessionKey: completion.key,
         rewardAlreadyClaimed: !!completion.session.rewardClaimedAt,
         bossSummary,
+        academicSummary,
         towerFloor: this.towerFloor,
         matchSummary: this.buildMatchSummary(),
         characterGrowth: this.buildCharacterGrowthSummary(characterStatsBefore, characterStatsAfter, characterProgress),

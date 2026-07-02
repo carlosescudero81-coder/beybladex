@@ -1014,7 +1014,73 @@ class LearningEngine {
       skillId: question.skill,
       mastery: progress.mastery,
       status: progress.status,
+      remediation: this.getQuestionRemediation(question),
+      microLesson: this.buildMicroLesson(state, question),
       dueReviews: this.getDueReviewItems(state).length
+    };
+  }
+
+  static getQuestionRemediation(question) {
+    if (!question) return '';
+    if (typeof question.remediation === 'string' && question.remediation.trim()) return question.remediation.trim();
+    const tags = this.getQuestionErrorTags(question);
+    if (tags.includes('question_meaning')) return 'Lee primero que te estan preguntando: name, age, place, color, number o likes.';
+    if (tags.includes('grammar_pattern')) return 'Repite el patron correcto en voz alta y cambia solo una palabra cada vez.';
+    if (tags.includes('reading_comprehension')) return 'Vuelve al texto, subraya la pista y responde con una palabra del texto.';
+    if (tags.includes('phonics') || tags.includes('phonics_initial_sound')) return 'Di la palabra despacio y escucha el primer sonido antes de elegir.';
+    if (tags.includes('preposition_place')) return 'Coloca un objeto real y di si esta on, in, under, next to, behind o in front of.';
+    if (tags.includes('classroom_instruction')) return 'Haz la accion con el cuerpo mientras dices la instruccion en ingles.';
+    if (question.explanation) return question.explanation;
+    return 'Relee el enunciado, elimina una opcion imposible y prueba otra vez con calma.';
+  }
+
+  static getQuestionErrorTags(question) {
+    if (!question || !question.errorTags) return [];
+    if (Array.isArray(question.errorTags)) return question.errorTags.filter(Boolean);
+    if (Array.isArray(question.errorTags.default)) return question.errorTags.default.filter(Boolean);
+    return [];
+  }
+
+  static buildMicroLesson(state, questionOrSkillId) {
+    const question = typeof questionOrSkillId === 'object' ? questionOrSkillId : null;
+    const skillId = question ? question.skill : questionOrSkillId;
+    const skill = CurriculumData.getSkill(skillId);
+    if (!skill) return null;
+    const subjectId = this.getSubjectIdForSkill(skill.id);
+    const subject = subjectId ? CurriculumData.subjects[subjectId] : null;
+    const profile = this.getProfile(state);
+    const progress = profile.skills[skill.id] || this.createSkillProgress(skill);
+    const tags = this.getQuestionErrorTags(question);
+    const remediation = this.getQuestionRemediation(question);
+    const examples = this.selectLeastRepeatedQuestions(
+      this.getAllowedQuestionsBySkill(skill.id).filter(item => !question || item.id !== question.id),
+      profile,
+      3,
+      `micro-${skill.id}-${this.todayKey()}`
+    );
+
+    const intro = question && question.explanation
+      ? question.explanation
+      : progress.attempts > 0
+        ? `Ahora mismo esta habilidad esta en ${progress.mastery}% de dominio.`
+        : 'Es una habilidad nueva: primero entendemos el patron y luego practicamos.';
+
+    return {
+      skillId: skill.id,
+      skillName: skill.name,
+      subjectId,
+      subjectName: subject ? subject.shortName : '',
+      mastery: progress.mastery,
+      target: skill.masteryTarget,
+      title: `Microclase: ${skill.name}`,
+      tags,
+      steps: [
+        intro,
+        remediation,
+        examples.length > 0
+          ? `Practica despues: ${examples.map(item => item.prompt || item.text).slice(0, 2).join(' / ')}`
+          : 'Haz dos ejemplos parecidos antes de volver al duelo.'
+      ]
     };
   }
 
@@ -2015,6 +2081,52 @@ class LearningEngine {
         .slice(-5),
       weakSkills,
       nextMission: plan.days.find(day => !day.completed && (day.status === 'today' || day.status === 'upcoming'))?.mission || this.getCurrentMission(state)
+    };
+  }
+
+  static buildAcademicRewardSummary(state, answerLog = [], mission = null) {
+    const profile = this.getProfile(state);
+    const log = Array.isArray(answerLog) ? answerLog.filter(item => item && item.skill) : [];
+    const grouped = log.reduce((acc, item) => {
+      if (!acc[item.skill]) acc[item.skill] = { skillId: item.skill, subjectId: item.subject, correct: 0, total: 0 };
+      acc[item.skill].total += 1;
+      if (item.correct === true) acc[item.skill].correct += 1;
+      return acc;
+    }, {});
+    const skills = Object.values(grouped).map(item => {
+      const skill = CurriculumData.getSkill(item.skillId);
+      const subjectId = item.subjectId || this.getSubjectIdForSkill(item.skillId);
+      const subject = subjectId ? CurriculumData.subjects[subjectId] : null;
+      const progress = profile.skills[item.skillId] || this.createSkillProgress(skill || { id: item.skillId, masteryTarget: 70 });
+      return {
+        id: item.skillId,
+        name: skill ? skill.name : item.skillId,
+        subject: subject ? subject.shortName : subjectId || '',
+        correct: item.correct,
+        total: item.total,
+        accuracy: item.total ? Math.round((item.correct / item.total) * 100) : 0,
+        mastery: progress.mastery,
+        target: skill ? skill.masteryTarget : 70,
+        status: progress.status
+      };
+    }).sort((a, b) => b.total - a.total || a.mastery - b.mastery);
+
+    const total = skills.reduce((sum, item) => sum + item.total, 0);
+    const correct = skills.reduce((sum, item) => sum + item.correct, 0);
+    const weak = skills.filter(item => item.mastery < item.target || item.accuracy < 70).slice(0, 3);
+    const improved = skills.filter(item => item.correct > 0).slice(0, 3);
+    return {
+      missionKey: mission ? mission.key : null,
+      missionTitle: mission && mission.subject && mission.skill ? `${mission.subject.shortName}: ${mission.skill.name}` : '',
+      total,
+      correct,
+      accuracy: total ? Math.round((correct / total) * 100) : 0,
+      skills,
+      improved,
+      review: weak,
+      headline: total
+        ? `${correct}/${total} retos curriculares correctos`
+        : 'Combate completado sin retos curriculares registrados'
     };
   }
 
