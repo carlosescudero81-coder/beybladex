@@ -520,6 +520,18 @@
             <span id="combat-player-bey-name">Sword Dran</span>
             <span id="combat-rival-bey-name">Scythe Incendio</span>
           </div>
+          <div class="combat-companion-panel" id="combat-companion-panel" aria-label="Companero de combate">
+            <div class="combat-companion-avatar" id="combat-companion-avatar"></div>
+            <div class="combat-companion-copy">
+              <span class="combat-companion-kicker">Companero</span>
+              <strong id="combat-companion-name">Apoyo listo</strong>
+              <span id="combat-companion-passive">Ayuda durante el duelo</span>
+            </div>
+            <div class="combat-companion-bey">
+              <div class="combat-companion-bey-img" id="combat-companion-bey-img"></div>
+              <span id="combat-companion-bey-name">Bey aliado</span>
+            </div>
+          </div>
 
           <!-- The Arena Stadium -->
           <div class="stadium-wrapper">
@@ -621,6 +633,16 @@
               <div class="rival-intent-badge" id="rival-intent-badge" data-rival-intent>
                 <span class="intent-kicker">Rival</span>
                 <strong class="intent-text">Preparando ataque</strong>
+              </div>
+
+              <div class="companion-cutin" id="companion-cutin" hidden aria-hidden="true">
+                <img id="companion-cutin-character" class="companion-cutin__character" src="" alt="">
+                <img id="companion-cutin-bey" class="companion-cutin__bey" src="" alt="">
+                <div class="companion-cutin__copy">
+                  <span id="companion-cutin-name">Companero</span>
+                  <strong id="companion-cutin-title">Apoyo listo</strong>
+                  <small id="companion-cutin-detail">Te cubre en el duelo</small>
+                </div>
               </div>
 
               <div class="rival-block-overlay" id="rival-block-overlay" aria-live="polite" aria-hidden="true">
@@ -786,7 +808,18 @@
             <span id="battle-intro-floor" class="battle-intro__eyebrow">X Tower</span>
             <strong class="battle-intro__vs">VS</strong>
             <span id="battle-intro-stadium" class="battle-intro__stadium">Estadio</span>
+            <span id="battle-intro-round-flavor" class="battle-intro__round-flavor">Nuevo combate</span>
+            <span id="battle-intro-companion" class="battle-intro__companion">Companero listo</span>
           </div>
+          <aside class="battle-intro__companion-card" aria-label="Companero de apoyo">
+            <img id="battle-intro-companion-character" class="battle-intro__companion-character" src="" alt="">
+            <img id="battle-intro-companion-bey" class="battle-intro__companion-bey" src="" alt="">
+            <div>
+              <span>Apoyo</span>
+              <strong id="battle-intro-companion-name">Companero</strong>
+              <small id="battle-intro-companion-role">Listo para ayudar</small>
+            </div>
+          </aside>
           <article class="battle-intro__fighter battle-intro__fighter--rival">
             <img id="battle-intro-rival-character" class="battle-intro__character" src="" alt="">
             <img id="battle-intro-rival-bey" class="battle-intro__bey" src="" alt="">
