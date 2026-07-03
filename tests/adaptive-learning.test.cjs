@@ -11,6 +11,7 @@ const scriptFiles = [
   'js/learning-engine.js',
   'js/services.js',
   'js/combat-session.js',
+  'js/app-shell.js',
   'index.js'
 ];
 const source = scriptFiles
@@ -190,6 +191,28 @@ async function run() {
   const resolvedCustom = LearningEngine.resolveDynamicQuestion(qLang, state);
   assert.ok(resolvedCustom.prompt.includes('Dragoon'), 'Custom name from parental setting should be used');
   assert.ok(resolvedCustom.prompt.includes('Driger'), 'Custom bey from parental setting should be used');
+
+  // 7. Test companion tutor planning and generic writing-question deduplication
+  const writingSignatureA = LearningEngine.questionSignature({ skill: 'lang_writing_story', prompt: '¿Que debe tener una buena redaccion?' });
+  const writingSignatureB = LearningEngine.questionSignature({ skill: 'lang_writing_story', prompt: 'Que debe tener una buena redaccion clara?' });
+  assert.equal(writingSignatureA, writingSignatureB, 'Generic writing prompts should collapse to one rotation signature');
+
+  const tutorPlan = LearningEngine.getCompanionTutorPlan(state, BEYBLADE_X_CHARACTERS[0], 'eng_short_dialogue');
+  assert.equal(tutorPlan.skillId, 'eng_short_dialogue', 'Companion tutor plan targets the requested weak skill');
+  assert.ok(tutorPlan.preHint.length > 0, 'Companion tutor plan includes a usable pre-answer hint');
+  const remediationQuestions = LearningEngine.selectQuestionsForRemediation(state, { skillId: 'eng_short_dialogue' }, 5);
+  assert.ok(remediationQuestions.length > 0, 'Companion remediation session can select questions');
+  assert.equal(new Set(remediationQuestions.map(question => LearningEngine.questionSignature(question))).size, remediationQuestions.length, 'Remediation questions avoid repeated prompt families');
+
+  LearningEngine.recordAnswer(state, {
+    id: 'writing-error-test',
+    subject: 'language',
+    skill: 'lang_writing_story',
+    prompt: '¿Que debe tener una buena redaccion?',
+    answer: 'ideas claras',
+    errorTags: { default: ['writing_structure'] }
+  }, false);
+  assert.ok(LearningEngine.getProfile(state).errorTagHistory.writing_structure.incorrect >= 1, 'Error tags are tracked for companion remediation');
 
   console.log('All Adaptive Learning tests passed successfully!');
 })();
