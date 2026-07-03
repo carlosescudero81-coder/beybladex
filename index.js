@@ -35,6 +35,18 @@ class App {
     this.restorePendingReward();
   }
 
+  registerPerformanceServiceWorker() {
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator) || location.protocol === 'file:') return;
+    const register = () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    };
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      window.requestIdleCallback(register, { timeout: 2500 });
+    } else {
+      setTimeout(register, 1800);
+    }
+  }
+
   // Load from localStorage or use default state
   loadState() {
     this.state = StorageService.load();
@@ -1303,9 +1315,24 @@ class App {
       return;
     }
 
+    if (['mission', 'reinforcement', 'review'].includes(action?.type)) {
+      if (action.type === 'reinforcement' && action.skillId) {
+        this.startCompanionTraining(action.skillId);
+        return;
+      }
+      const mission = action.type === 'mission'
+        ? currentMission
+        : LearningEngine.getNextMissionBySubject(this.state, subjectId);
+      if (this.isCombatReadyMission(mission)) {
+        this.startCurriculumCombat(mission);
+        return;
+      }
+    }
+
     if (subjectId === 'math') {
       const mission = LearningEngine.getCurrentMission(this.state);
-      this.showDailyMissions(mission ? mission.week : this.state.player.currentWeek);
+      if (this.isCombatReadyMission(mission)) this.startCurriculumCombat(mission);
+      else this.showDailyMissions(mission ? mission.week : this.state.player.currentWeek);
       return;
     }
     if (subjectId === 'language') {
@@ -2096,6 +2123,9 @@ class App {
     const isEquipped = (this.state?.player?.companionCharacterId || this.state?.player?.characterAvatarId || 'jaxonCross') === character.id;
     const bond = typeof getCompanionBond === 'function' ? getCompanionBond(this.state, character.id) : { bondLevel: 0, wins: 0 };
     const passive = typeof getCompanionPassive === 'function' ? getCompanionPassive(character, this.state) : null;
+    const tutorPlan = selectable && typeof LearningEngine.getCompanionTutorPlan === 'function'
+      ? LearningEngine.getCompanionTutorPlan(this.state, character)
+      : null;
     const stats = typeof getCharacterBaseStats === 'function' ? getCharacterBaseStats(character) : character.stats || {};
     const card = document.createElement('article');
     card.className = `character-card ${isEquipped && selectable ? 'equipped' : ''}`;
@@ -2119,6 +2149,13 @@ class App {
           <span>${passive ? passive.description : 'Ayuda en combate.'}</span>
           <em>Vinculo ${bond.bondLevel || 0} · ${bond.wins || 0} victorias juntos</em>
         </div>
+        ${tutorPlan ? `
+          <div class="companion-passive-box companion-tutor-box">
+            <strong>${this.escapeReportText(tutorPlan.mission.label)}</strong>
+            <span>${this.escapeReportText(tutorPlan.preHint)}</span>
+            <em>${this.escapeReportText(tutorPlan.nextStep)}</em>
+          </div>
+        ` : ''}
         <div class="companion-stat-row">
           <span>Ataque ${stats.attack || 0}</span>
           <span>Defensa ${stats.defense || 0}</span>
@@ -2127,6 +2164,7 @@ class App {
         </div>
         <div class="collection-card-actions">
           ${actionBtn}
+          ${selectable && isEquipped && tutorPlan ? '<button class="btn-action companion-train-btn" type="button">Entrenar juntos</button>' : ''}
           <button class="collection-icon-btn ${favorite ? 'active' : ''}" type="button" data-favorite-character="${character.id}" title="Favorito"></button>
         </div>
       </div>
@@ -2143,6 +2181,10 @@ class App {
           this.renderCards();
           this.showNotice(`${character.nombre} sera tu compañero en la proxima batalla.`, 'Compañero elegido');
         };
+      }
+      const trainBtn = card.querySelector('.companion-train-btn');
+      if (trainBtn && tutorPlan) {
+        trainBtn.onclick = () => this.startCompanionTraining(tutorPlan.skillId);
       }
     } else {
       card.querySelector('.collection-info').onclick = () => this.showNotice(`${character.nombre}\n\nEquipo: ${character.equipo}\nRol: ${character.rol}\nBey: ${character.beyAsociado}\nPara vencerle, practica: ${character.materiaRecomendada}.`, 'Ficha rival');
@@ -2349,11 +2391,66 @@ class App {
   }
 
   // -------------------- COMBAT ARENA GAMEPLAY --------------------
+  isCombatReadyMission(mission) {
+    if (!mission || !mission.subject || !mission.missionType || !mission.skill) return false;
+    if (!LearningEngine.isSkillAllowed(mission.skill.id)) return false;
+    return ['quiz', 'practice'].includes(mission.missionType.id);
+  }
+
   getCurriculumMissionForCombat() {
     if (this.selectedWeekNum === 'post-boss-review') return null;
+    if (this.curriculumCombatMission && this.isCombatReadyMission(this.curriculumCombatMission)) {
+      return this.curriculumCombatMission;
+    }
     const currentMission = LearningEngine.getCurrentMission(this.state);
-    if (currentMission && currentMission.subject.id === 'math') return currentMission;
-    return LearningEngine.getNextMissionBySubject(this.state, 'math');
+    if (this.isCombatReadyMission(currentMission)) return currentMission;
+    return null;
+  }
+
+  startCurriculumCombat(mission = null) {
+    const targetMission = mission || this.getCurriculumMissionForCombat();
+    if (!this.isCombatReadyMission(targetMission)) {
+      this.showNotice('Esta mision necesita lectura, escritura o validacion familiar. Abro su pantalla especifica.', 'Mision especial');
+      if (targetMission && targetMission.subject.id === 'language') this.showScreen('language');
+      else if (targetMission && (targetMission.missionType.id === 'offline' || targetMission.missionType.id === 'project')) this.openOfflineMission(targetMission);
+      else if (targetMission) this.openSubjectMission(targetMission.subject.id);
+      return;
+    }
+    sounds.playClick();
+    this.companionTrainingPlan = null;
+    this.curriculumCombatMission = targetMission;
+    this.selectedWeekNum = targetMission.week;
+    this.pendingTowerBattle = false;
+    this.activeTowerBattle = false;
+    document.getElementById('daily-mission-modal').style.display = 'none';
+    this.showScreen('combat');
+    if (this.combatSession && typeof this.combatSession.dispose === 'function') this.combatSession.dispose();
+    this.combatSession = new CombatSession(targetMission.week, false, this.state, this);
+    this.combatSession.start();
+  }
+
+  startCompanionTraining(skillId = null) {
+    const companion = this.getSelectedCompanionCharacter();
+    const plan = typeof LearningEngine.getCompanionTutorPlan === 'function'
+      ? LearningEngine.getCompanionTutorPlan(this.state, companion, skillId)
+      : null;
+    if (!plan || !plan.skillId) {
+      this.showDailyMissions(this.state.player.currentWeek);
+      return;
+    }
+    sounds.playClick();
+    this.companionTrainingPlan = plan;
+    this.curriculumCombatMission = null;
+    this.selectedWeekNum = 'companion-training';
+    this.pendingTowerBattle = false;
+    this.activeTowerBattle = false;
+    const modal = document.getElementById('daily-mission-modal');
+    if (modal) modal.style.display = 'none';
+    this.showNotice(`${plan.companionName} prepara ${plan.skillName}.\n\n${plan.preHint}`, 'Entrenamiento de compañero');
+    this.showScreen('combat');
+    if (this.combatSession && typeof this.combatSession.dispose === 'function') this.combatSession.dispose();
+    this.combatSession = new CombatSession('companion-training', false, this.state, this);
+    this.combatSession.start();
   }
 
   startPostBossReview(week = null) {
@@ -2771,6 +2868,8 @@ class App {
     this.rewardAlreadyClaimed = stats?.rewardAlreadyClaimed || false;
     this.rewardBossSummary = stats?.bossSummary || (isBoss ? LearningEngine.getWeeklyBossSummary(this.state, weekNum) : null);
     this.rewardMatchSummary = stats?.matchSummary || null;
+    this.rewardAcademicSummary = stats?.academicSummary || null;
+    this.rewardCompanionBond = stats?.companionBond || null;
     this.rewardTowerFloor = Math.max(1, Math.min(50, parseInt(stats?.towerFloor || this.currentTowerFloor || getCurrentTowerFloor(this.state), 10) || 1));
     const floorRewardForModal = getTowerFloorData(this.rewardTowerFloor)?.reward || {};
     this.rewardCoins = Math.max(0, parseInt(stats?.coins ?? floorRewardForModal.coins ?? (isBoss ? 100 : 25), 10) || 0);
@@ -2808,7 +2907,7 @@ class App {
     const container = document.getElementById('reward-boss-summary');
     if (!container) return;
     if (this.rewardMatchSummary) {
-      container.innerHTML = this.renderMatchSummaryMarkup(this.rewardMatchSummary);
+      container.innerHTML = `${this.renderMatchSummaryMarkup(this.rewardMatchSummary)}${this.renderAcademicSummaryMarkup(this.rewardAcademicSummary)}`;
       container.style.display = 'block';
       return;
     }
@@ -2819,6 +2918,42 @@ class App {
     }
     container.innerHTML = this.renderBossSummaryMarkup(this.rewardBossSummary);
     container.style.display = 'block';
+  }
+
+  renderAcademicSummaryMarkup(summary) {
+    if (!summary || !summary.total) return '';
+    const improved = summary.improved && summary.improved.length > 0
+      ? summary.improved.slice(0, 3).map(item => `<span class="boss-summary-pill">${this.escapeReportText(item.subject)}: ${this.escapeReportText(item.name)} ${item.mastery}%</span>`).join('')
+      : '<span class="boss-summary-pill">Sin avances medidos</span>';
+    const review = summary.review && summary.review.length > 0
+      ? summary.review.slice(0, 3).map(item => `<span class="boss-summary-pill">${this.escapeReportText(item.subject)}: ${this.escapeReportText(item.name)} ${item.accuracy}% acierto</span>`).join('')
+      : '<span class="boss-summary-pill">Sin refuerzo urgente</span>';
+    const companion = this.getSelectedCompanionCharacter();
+    const bond = this.rewardCompanionBond;
+    const companionLine = companion
+      ? `<div class="boss-summary-block companion-reward-block">
+          <div class="boss-summary-label">${this.escapeReportText(companion.nombre)} recomienda</div>
+          <div class="boss-summary-list"><span class="boss-summary-pill">${this.escapeReportText(summary.nextStep || 'Mantener repaso espaciado.')}</span></div>
+          ${bond ? `<small>Vinculo ${bond.bondLevel || 0} · ${bond.wins || 0} victorias juntos</small>` : ''}
+        </div>`
+      : '';
+    return `
+      <div class="boss-summary-head">
+        <strong>Combo de conocimiento</strong>
+        <span class="boss-summary-score">${summary.accuracy}%</span>
+      </div>
+      <div class="boss-summary-grid">
+        <div class="boss-summary-block">
+          <div class="boss-summary-label">Entrenado</div>
+          <div class="boss-summary-list">${improved}</div>
+        </div>
+        <div class="boss-summary-block">
+          <div class="boss-summary-label">Siguiente repaso</div>
+          <div class="boss-summary-list">${review}</div>
+        </div>
+        ${companionLine}
+      </div>
+    `;
   }
 
   renderMatchSummaryMarkup(summary) {
@@ -3386,7 +3521,16 @@ window.__SpinAcademyCore = {
 };
 
 const app = new App();
-window.onload = () => {
+function bootSpinAcademy() {
   app.init();
-};
+  app.registerPerformanceServiceWorker?.();
+}
+
+if (typeof document !== 'undefined' && typeof document.readyState === 'string') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootSpinAcademy, { once: true });
+  } else {
+    bootSpinAcademy();
+  }
+}
 window.app = app; // Bind globally for HTML access

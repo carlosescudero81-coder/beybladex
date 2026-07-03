@@ -210,7 +210,7 @@
     <header id="app-header" style="display: none;">
       <div class="header-left">
         <button class="avatar-mini" id="header-avatar-btn" type="button" aria-label="Editar mi avatar">
-          <img id="header-avatar-img" src="" alt="Avatar">
+          <img id="header-avatar-img" alt="Avatar" decoding="async">
         </button>
         <div class="profile-info">
           <span class="player-name" id="header-player-name">cargando...</span>
@@ -245,7 +245,7 @@
       <section id="screen-start" class="screen active">
 
         <div class="hero-bg">
-          <img src="PORTADA.png" alt="" class="hero-bg-img" aria-hidden="true">
+          <img src="assets/optimized/portada-1280.jpg" width="1280" height="720" alt="" class="hero-bg-img" aria-hidden="true" fetchpriority="high" decoding="async">
           <div class="hero-overlay-bottom"></div>
           <div class="hero-overlay-top"></div>
           <div class="hero-scan-lines" aria-hidden="true"></div>
@@ -398,7 +398,7 @@
               <button class="btn-action tower-main-action" id="btn-tower-enter" type="button">Empezar mi reto</button>
             </div>
             <figure class="tower-command-art">
-              <img class="tower-image" src="assets/torre/torre_x_del_conocimiento.png" alt="X Tower del Conocimiento" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/torre/torre_x_del_conocimiento.png'}))">
+              <img class="tower-image" src="assets/optimized/torre-x-900.jpg" width="900" height="1125" alt="X Tower del Conocimiento" loading="lazy" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/optimized/torre-x-900.jpg'}))">
             </figure>
           </section>
 
@@ -490,7 +490,7 @@
           <div class="combat-hud">
             <div class="hud-player-block" id="hud-player">
               <div class="avatar-mini" style="width: 40px; height: 40px;">
-                <img id="combat-player-img" src="" alt="Jugador">
+                <img id="combat-player-img" alt="Jugador" decoding="async">
               </div>
               <div style="flex: 1;">
                 <div class="hud-name" id="combat-player-name">Jugador</div>
@@ -504,7 +504,7 @@
 
             <div class="hud-player-block rival" id="hud-rival">
               <div class="avatar-mini" style="width: 40px; height: 40px; border-color: var(--pink); box-shadow: var(--glow-pink);">
-                <img id="combat-rival-img" src="" alt="Rival">
+                <img id="combat-rival-img" alt="Rival" decoding="async">
               </div>
               <div style="flex: 1;">
                 <div class="hud-name" id="combat-rival-name">Rival</div>
@@ -535,7 +535,7 @@
 
           <!-- The Arena Stadium -->
           <div class="stadium-wrapper">
-            <img class="battle-stadium-img" src="assets/estadios/01_estadio_de_entrenamiento.png" alt="Estadio de Entrenamiento" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/estadios/01_estadio_de_entrenamiento.png'}))">
+            <img class="battle-stadium-img" src="assets/estadios/01_estadio_de_entrenamiento.png" alt="Estadio de Entrenamiento" loading="lazy" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/estadios/01_estadio_de_entrenamiento.png'}))">
             <!-- Perfect Launch Overlay -->
             <div class="launch-gauge-overlay" id="launch-overlay">
               <h2 style="font-family: var(--font-display); font-size: 3rem; color: var(--cyan); margin-bottom: 24px; text-shadow: var(--glow-cyan);">LANZAMIENTO PERFECTO</h2>
@@ -617,10 +617,10 @@
                 <div class="xtreme-cutin__speedlines" aria-hidden="true"></div>
                 <div class="xtreme-cutin__rail" aria-hidden="true"></div>
                 <div class="xtreme-cutin__character-wrap">
-                  <img id="xtreme-cutin-character" class="xtreme-cutin__character" src="" alt="">
+                  <img id="xtreme-cutin-character" class="xtreme-cutin__character" alt="" loading="lazy" decoding="async">
                 </div>
                 <div class="xtreme-cutin__bey-wrap">
-                  <img id="xtreme-cutin-bey" class="xtreme-cutin__bey" src="" alt="">
+                  <img id="xtreme-cutin-bey" class="xtreme-cutin__bey" alt="" loading="lazy" decoding="async">
                 </div>
                 <div class="xtreme-cutin__copy">
                   <span id="xtreme-cutin-name" class="xtreme-cutin__name">Blader</span>
@@ -636,8 +636,8 @@
               </div>
 
               <div class="companion-cutin" id="companion-cutin" hidden aria-hidden="true">
-                <img id="companion-cutin-character" class="companion-cutin__character" src="" alt="">
-                <img id="companion-cutin-bey" class="companion-cutin__bey" src="" alt="">
+                <img id="companion-cutin-character" class="companion-cutin__character" alt="" loading="lazy" decoding="async">
+                <img id="companion-cutin-bey" class="companion-cutin__bey" alt="" loading="lazy" decoding="async">
                 <div class="companion-cutin__copy">
                   <span id="companion-cutin-name">Companero</span>
                   <strong id="companion-cutin-title">Apoyo listo</strong>
@@ -776,7 +776,7 @@
         <div class="feedback-overlay" id="combat-feedback" style="display: none;">
           <div class="feedback-card">
             <div class="feedback-avatar">
-              <img id="feedback-coach-img" class="feedback-avatar-img" src="" alt="Coach">
+              <img id="feedback-coach-img" class="feedback-avatar-img" alt="Coach" loading="lazy" decoding="async">
             </div>
             <div class="feedback-content">
               <div>
@@ -795,8 +795,8 @@
           <div class="battle-intro__speedlines" aria-hidden="true"></div>
           <div class="battle-intro__flash" aria-hidden="true"></div>
           <article class="battle-intro__fighter battle-intro__fighter--player">
-            <img id="battle-intro-player-character" class="battle-intro__character" src="" alt="">
-            <img id="battle-intro-player-bey" class="battle-intro__bey" src="" alt="">
+            <img id="battle-intro-player-character" class="battle-intro__character" alt="" loading="lazy" decoding="async">
+            <img id="battle-intro-player-bey" class="battle-intro__bey" alt="" loading="lazy" decoding="async">
             <div class="battle-intro__nameplate">
               <span class="battle-intro__side-label">TU EQUIPO</span>
               <strong id="battle-intro-player-name">Blader</strong>
@@ -812,8 +812,8 @@
             <span id="battle-intro-companion" class="battle-intro__companion">Companero listo</span>
           </div>
           <aside class="battle-intro__companion-card" aria-label="Companero de apoyo">
-            <img id="battle-intro-companion-character" class="battle-intro__companion-character" src="" alt="">
-            <img id="battle-intro-companion-bey" class="battle-intro__companion-bey" src="" alt="">
+            <img id="battle-intro-companion-character" class="battle-intro__companion-character" alt="" loading="lazy" decoding="async">
+            <img id="battle-intro-companion-bey" class="battle-intro__companion-bey" alt="" loading="lazy" decoding="async">
             <div>
               <span>Apoyo</span>
               <strong id="battle-intro-companion-name">Companero</strong>
@@ -821,8 +821,8 @@
             </div>
           </aside>
           <article class="battle-intro__fighter battle-intro__fighter--rival">
-            <img id="battle-intro-rival-character" class="battle-intro__character" src="" alt="">
-            <img id="battle-intro-rival-bey" class="battle-intro__bey" src="" alt="">
+            <img id="battle-intro-rival-character" class="battle-intro__character" alt="" loading="lazy" decoding="async">
+            <img id="battle-intro-rival-bey" class="battle-intro__bey" alt="" loading="lazy" decoding="async">
             <div class="battle-intro__nameplate">
               <span class="battle-intro__side-label">RIVAL</span>
               <strong id="battle-intro-rival-name">Rival</strong>
@@ -841,7 +841,7 @@
           <h2 class="screen-title" style="margin-bottom: 8px;">Taller de Beys</h2>
           <p style="color: var(--cyan); font-weight: 600; margin-bottom: 20px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px;">Equipa tu energia de giro</p>
           <div class="visual-reference-panel compact">
-            <img src="assets/peonzas/04_scythe_incendio.png" alt="Scythe Incendio" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/peonzas/04_scythe_incendio.png'}))">
+            <img src="assets/peonzas/04_scythe_incendio.png" alt="Scythe Incendio" loading="lazy" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/peonzas/04_scythe_incendio.png'}))">
           </div>
           
           <div class="workshop-top-viewer">
@@ -1015,15 +1015,15 @@
         <div class="collection-reference-grid">
           <div class="visual-reference-panel compact">
             <h3>Personajes / Rivales</h3>
-            <img src="assets/personajes/02_robin_kazami.png" alt="Robin Kazami" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/personajes/02_robin_kazami.png'}))">
+            <img src="assets/personajes/02_robin_kazami.png" alt="Robin Kazami" loading="lazy" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/personajes/02_robin_kazami.png'}))">
           </div>
           <div class="visual-reference-panel compact">
             <h3>Coleccion de Beys</h3>
-            <img src="assets/peonzas/01_sword_dran.png" alt="Sword Dran" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/peonzas/01_sword_dran.png'}))">
+            <img src="assets/peonzas/01_sword_dran.png" alt="Sword Dran" loading="lazy" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/peonzas/01_sword_dran.png'}))">
           </div>
           <div class="visual-reference-panel compact">
             <h3>Estadios de Combate</h3>
-            <img src="assets/estadios/01_estadio_de_entrenamiento.png" alt="Estadio de Entrenamiento" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/estadios/01_estadio_de_entrenamiento.png'}))">
+            <img src="assets/estadios/01_estadio_de_entrenamiento.png" alt="Estadio de Entrenamiento" loading="lazy" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/estadios/01_estadio_de_entrenamiento.png'}))">
           </div>
         </div>
         <div id="bey-type-grid" class="bey-type-grid"></div>
