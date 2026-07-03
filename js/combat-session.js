@@ -27,6 +27,7 @@ class CombatSession {
     this.curriculumMission = appController && typeof appController.getCurriculumMissionForCombat === 'function'
       ? appController.getCurriculumMissionForCombat(weekNum, isBoss)
       : null;
+    this.companionTutorPlan = appController?.companionTrainingPlan || null;
     this.isTowerBattle = appController?.activeTowerBattle === true;
     this.curriculumCombatMode = false;
     
@@ -323,7 +324,9 @@ class CombatSession {
     const passive = document.getElementById('combat-companion-passive');
     const beyImage = document.getElementById('combat-companion-bey-img');
     const beyName = document.getElementById('combat-companion-bey-name');
-    const passiveLabel = this.companionPassive?.label || this.companionCharacter.rol || 'Apoyo listo';
+    const passiveLabel = this.companionTutorPlan
+      ? `Tutor: ${this.companionTutorPlan.skillName} (${this.companionTutorPlan.mastery}% dominio)`
+      : this.companionPassive?.label || this.companionCharacter.rol || 'Apoyo listo';
 
     panel.hidden = false;
     if (panel.style && typeof panel.style.setProperty === 'function') {
@@ -680,6 +683,13 @@ class CombatSession {
 
   questionSignature(question) {
     if (!question) return '';
+    if (typeof LearningEngine !== 'undefined' && typeof LearningEngine.questionSignature === 'function') {
+      return LearningEngine.questionSignature({
+        id: question.curriculumId || question.id,
+        skill: question.skill || question.type,
+        prompt: question.text || question.prompt || question.curriculumId || question.id
+      });
+    }
     return `${question.skill || question.type || 'q'}:${String(question.text || question.curriculumId || question.id || '').toLowerCase().replace(/\d+/g, '#')}`;
   }
 
@@ -1788,6 +1798,24 @@ class CombatSession {
   generateQuestionsList() {
     this.questionsList = [];
 
+    if (this.weekNum === 'companion-training') {
+      const skillId = this.companionTutorPlan?.skillId;
+      const remediationQuestions = typeof LearningEngine.selectQuestionsForRemediation === 'function'
+        ? LearningEngine.selectQuestionsForRemediation(this.state, {
+            skillId,
+            errorTags: this.companionTutorPlan?.errorTags || []
+          }, this.questionCount)
+        : [];
+      if (remediationQuestions.length > 0) {
+        remediationQuestions.slice(0, this.questionCount).forEach(question => {
+          this.questionsList.push(this.adaptCurriculumQuestion(question, `curriculum-${question.subject || 'companion'}`));
+        });
+        this.questionCount = this.questionsList.length;
+        this.curriculumCombatMode = true;
+        return;
+      }
+    }
+
     if (this.isBoss && typeof this.weekNum === 'number') {
       const bossQuestions = LearningEngine.selectQuestionsForWeeklyBoss(this.state, this.weekNum, this.questionCount);
       if (bossQuestions.length > 0) {
@@ -2167,6 +2195,7 @@ class CombatSession {
     this.setRivalIntent(this.chooseRivalIntent());
     this.selectCombatAction(this.selectedAction || 'attack', false);
     this.showCombatTutorialNudge();
+    this.showCompanionQuestionCoach();
     
     // Update combat text indicators
     const roundQuestionNumber = Math.max(1, this.currentQuestionIdx - (round?.start || 0) + 1);
@@ -2216,6 +2245,32 @@ class CombatSession {
 
     // MEJORA 3: Rival acumula carga visiblemente si su intencion es 'charge'
     this.startRivalChargeBuildup();
+  }
+
+  showCompanionQuestionCoach() {
+    if (!this.currentQuestion || !this.companionCharacter) return;
+    const isCurriculum = String(this.currentQuestion.type || '').startsWith('curriculum');
+    if (!isCurriculum) return;
+    const hint = this.companionTutorPlan?.skillId === this.currentQuestion.skill
+      ? this.companionTutorPlan.preHint
+      : typeof LearningEngine.buildCompanionHintForSkill === 'function'
+        ? LearningEngine.buildCompanionHintForSkill(
+            CurriculumData.getSkill(this.currentQuestion.skill),
+            CurriculumData.subjects[this.currentQuestion.subject],
+            LearningEngine.inferQuestionErrorTags({
+              skill: this.currentQuestion.skill,
+              prompt: this.currentQuestion.text,
+              explanation: this.currentQuestion.explanation,
+              remediation: this.currentQuestion.remediation,
+              errorTags: this.currentQuestion.errorTags
+            })
+          )
+        : this.currentQuestion.hint;
+    if (!hint) return;
+    const localIndex = this.currentQuestionIdx - (this.getCurrentRound()?.start || 0);
+    if (localIndex === 0 || this.currentQuestion.isGuidedIntro || this.companionTutorPlan) {
+      this.showAttackBanner(`${this.companionCharacter.nombre} observa`, hint, 'player');
+    }
   }
 
   showCombatTutorialNudge() {
@@ -3797,7 +3852,19 @@ class CombatSession {
       selectedAnswer,
       correctAnswer: this.currentQuestion.answer,
       isGuidedIntro: this.currentQuestion.isGuidedIntro === true
-    }, isCorrect);
+    }, isCorrect, {
+      selectedAnswer,
+      correctAnswer: this.currentQuestion.answer,
+      errorTags: typeof LearningEngine.inferQuestionErrorTags === 'function'
+        ? LearningEngine.inferQuestionErrorTags({
+            skill: this.currentQuestion.skill,
+            prompt: this.currentQuestion.text,
+            explanation: this.currentQuestion.explanation,
+            remediation: this.currentQuestion.remediation,
+            errorTags: this.currentQuestion.errorTags
+          })
+        : []
+    });
     this.curriculumAnswerLog.push({
       id: this.currentQuestion.curriculumId,
       subject: this.currentQuestion.subject,
@@ -3808,6 +3875,7 @@ class CombatSession {
       correctAnswer: this.currentQuestion.answer,
       remediation: this.currentQuestion.remediation,
       errorTags: this.currentQuestion.errorTags,
+      explanation: this.currentQuestion.explanation,
       correct: isCorrect === true
     });
   }
@@ -3866,8 +3934,14 @@ class CombatSession {
       aid = `La respuesta correcta era ${this.currentQuestion.answer}`;
     }
 
-    document.getElementById('feedback-coach-img').src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="70" x="15" font-size="65">👩‍🏫</text></svg>`;
-    document.getElementById('feedback-coach-title').innerText = "Recalibra y vuelve a intentarlo";
+    const coachImg = document.getElementById('feedback-coach-img');
+    if (coachImg) {
+      coachImg.src = this.companionCharacter?.image || `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="70" x="15" font-size="65">T</text></svg>`;
+      coachImg.alt = this.companionCharacter?.nombre || 'Tutor';
+    }
+    document.getElementById('feedback-coach-title').innerText = this.companionCharacter
+      ? `${this.companionCharacter.nombre} recalibra`
+      : "Recalibra y vuelve a intentarlo";
     document.getElementById('feedback-coach-text').innerHTML = expl;
     document.getElementById('feedback-coach-visual').innerHTML = aid;
 
@@ -3876,7 +3950,15 @@ class CombatSession {
 
   showHint() {
     sounds.playClick();
-    this.app.showNotice(`PISTA DEL ENTRENADOR:\n\n${this.currentQuestion.hint}`, "Pista");
+    const hint = this.companionTutorPlan?.skillId === this.currentQuestion?.skill
+      ? this.companionTutorPlan.preHint
+      : this.currentQuestion?.hint;
+    if (this.companionCharacter) {
+      this.playCompanionCutin('Pista de companero', hint || 'Lee con calma y descarta una opcion imposible.', 'focus');
+      this.app.showNotice(`${this.companionCharacter.nombre}:\n\n${hint || 'Lee con calma y descarta una opcion imposible.'}`, "Pista");
+      return;
+    }
+    this.app.showNotice(`PISTA DEL ENTRENADOR:\n\n${hint || 'Lee con calma.'}`, "Pista");
   }
 
   updateHpBars() {
@@ -4171,6 +4253,15 @@ class CombatSession {
       const companionBond = typeof recordCompanionBattleResult === 'function'
         ? recordCompanionBattleResult(this.state, this.state.player.companionCharacterId || this.state.player.characterAvatarId, true)
         : null;
+      if (this.weekNum === 'companion-training' && this.companionTutorPlan?.mission?.id && this.state.progress) {
+        if (!this.state.progress.companionMissions || typeof this.state.progress.companionMissions !== 'object') {
+          this.state.progress.companionMissions = {};
+        }
+        this.state.progress.companionMissions[this.companionTutorPlan.mission.id] = {
+          completed: true,
+          completedAt: StorageService.todayKey()
+        };
+      }
       const characterStatsAfter = typeof getEffectiveCharacterStats === 'function'
         ? getEffectiveCharacterStats(this.playerCharacter, this.state, true)
         : null;
@@ -4229,7 +4320,8 @@ class CombatSession {
         correct: this.sessionCorrect,
         incorrect: this.sessionIncorrect
       });
-      if (!this.curriculumMission || this.curriculumMission.subject.id === 'math') {
+      const sessionSubject = this.curriculumMission?.subject?.id || this.currentQuestion?.subject || this.questionsList.find(question => question?.subject)?.subject || null;
+      if (!sessionSubject || sessionSubject === 'math') {
         this.state.pedagogy.math.dailyStreak += 1;
       }
       this.app.saveState();

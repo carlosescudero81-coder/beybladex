@@ -606,7 +606,7 @@ const ATTACK_NAMES = [
 ];
 
 const BEYBLADE_ASSETS = {
-  torre: "assets/torre/torre_x_del_conocimiento.png",
+  torre: "assets/optimized/torre-x-900.jpg",
   personajesDir: "assets/personajes/",
   peonzasDir: "assets/peonzas/",
   estadiosDir: "assets/estadios/",
@@ -618,11 +618,11 @@ function renderAssetFallback(type, expectedPath) {
 }
 
 function renderManagedAsset(path, altText, className) {
-  return `<img class="${className || "managed-asset"}" src="${path}" alt="${altText || ""}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca ${path}'}))">`;
+  return `<img class="${className || "managed-asset"}" src="${path}" alt="${altText || ""}" loading="lazy" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca ${path}'}))">`;
 }
 
 function renderAssetImage(path, altText, className = "asset-image") {
-  return `<img class="${className}" src="${path}" alt="${altText || ""}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca ${path}'}))">`;
+  return `<img class="${className}" src="${path}" alt="${altText || ""}" loading="lazy" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca ${path}'}))">`;
 }
 
 const BEYBLADE_CHARACTERS = [

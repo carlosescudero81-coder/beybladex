@@ -43,6 +43,7 @@ class LearningEngine {
       postBossReviewHistory: {},
       spacedReviewPlans: {},
       questionHistory: {},
+      errorTagHistory: {},
       readingHistory: {},
       spacedReviewStreak: {
         current: 0,
@@ -97,6 +98,18 @@ class LearningEngine {
       ? raw.spacedReviewPlans
       : {};
     profile.questionHistory = this.normalizeQuestionHistory(raw.questionHistory);
+    profile.errorTagHistory = raw.errorTagHistory && typeof raw.errorTagHistory === 'object' && !Array.isArray(raw.errorTagHistory)
+      ? Object.entries(raw.errorTagHistory).reduce((acc, [tag, item]) => {
+          const source = item && typeof item === 'object' ? item : {};
+          acc[tag] = {
+            tag,
+            attempts: Math.max(0, parseInt(source.attempts, 10) || 0),
+            incorrect: Math.max(0, parseInt(source.incorrect, 10) || 0),
+            lastSeenAt: typeof source.lastSeenAt === 'string' ? source.lastSeenAt : null
+          };
+          return acc;
+        }, {})
+      : {};
     profile.readingHistory = raw.readingHistory && typeof raw.readingHistory === 'object' && !Array.isArray(raw.readingHistory)
       ? Object.entries(raw.readingHistory).reduce((acc, [readingId, item]) => {
           if (!item || typeof item !== 'object') return acc;
@@ -863,17 +876,28 @@ class LearningEngine {
   static questionSignature(question) {
     const prompt = typeof question === 'string' ? question : question?.prompt;
     const skill = typeof question === 'object' && question ? question.skill || 'skill' : 'skill';
-    return `${skill}:${String(prompt || '')
+    const normalizedPrompt = String(prompt || '')
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/\d+/g, '#')
       .replace(/"[^"]+"/g, '"..."')
+      .replace(/[¿?¡!.,;:()]/g, ' ')
       .replace(/\b(leo|marta|carlitos|sara|nico|luna|pablo|iris|carla|dani|ana)\b/g, 'nombre')
       .replace(/\b(peonzas|cartas|piezas|pegatinas|canicas|monedas|libros|lapices|cromos|puntos|objetos)\b/g, 'objeto')
       .replace(/\b(taller|parque|clase|biblioteca|arena|casa|patio|museo|rio)\b/g, 'lugar')
       .replace(/\s+/g, ' ')
-      .trim()}`;
+      .trim();
+    const genericFamilies = [
+      [/que debe tener una buena redaccion|buena redaccion|texto bien escrito|redaccion clara/, 'writing-quality'],
+      [/como se ordena un texto|principio desarrollo final|inicio nudo desenlace|orden.*texto/, 'text-order'],
+      [/elige la frase correcta|frase correcta|palabra bien escrita|palabra correcta/, 'spelling-choice'],
+      [/idea principal|de que trata principalmente/, 'main-idea'],
+      [/como dices|how do you say|best answer/, 'english-translation-pattern'],
+      [/i like|i do not like|my favorite|do you like/, 'english-like-pattern']
+    ];
+    const family = genericFamilies.find(([pattern]) => pattern.test(normalizedPrompt));
+    return `${skill}:${family ? family[1] : normalizedPrompt}`;
   }
 
   static uniqueQuestionsBySignature(questions) {
@@ -976,6 +1000,7 @@ class LearningEngine {
       return { ok: false, reason: 'Pregunta sin habilidad curricular valida.' };
     }
 
+    this.recordErrorTags(profile, question, isCorrect, meta);
     const skill = CurriculumData.getSkill(question.skill);
     const progress = profile.skills[question.skill];
     if (question.isGuidedIntro === true) {
@@ -1041,6 +1066,36 @@ class LearningEngine {
     return [];
   }
 
+  static inferQuestionErrorTags(question) {
+    const tags = new Set(this.getQuestionErrorTags(question));
+    const text = `${question?.prompt || question?.text || ''} ${question?.explanation || ''} ${question?.remediation || ''}`
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+    if (/redaccion|escribir|texto|cuento|frase|parrafo|opinion/.test(text)) tags.add('writing_structure');
+    if (/orden|principio|despues|final|first|then|finally/.test(text)) tags.add('sequence_order');
+    if (/like|do not like|favorite|rutina|routine|greetings|hello|name|old/.test(text)) tags.add('english_pattern');
+    if (/vocabulario|word|meaning|color|animal|food|school/.test(text)) tags.add('vocabulary');
+    if (/texto|leer|biblioteca|idea principal|infer/.test(text)) tags.add('reading_comprehension');
+    return [...tags];
+  }
+
+  static recordErrorTags(profile, question, isCorrect, meta = {}) {
+    if (!profile) return;
+    if (!profile.errorTagHistory || typeof profile.errorTagHistory !== 'object') profile.errorTagHistory = {};
+    const tags = [...new Set([...(this.inferQuestionErrorTags(question) || []), ...((Array.isArray(meta.errorTags) && meta.errorTags) || [])])];
+    tags.forEach(tag => {
+      if (!tag) return;
+      const current = profile.errorTagHistory[tag] || { tag, attempts: 0, incorrect: 0, lastSeenAt: null };
+      profile.errorTagHistory[tag] = {
+        tag,
+        attempts: current.attempts + 1,
+        incorrect: current.incorrect + (isCorrect ? 0 : 1),
+        lastSeenAt: this.todayKey()
+      };
+    });
+  }
+
   static buildMicroLesson(state, questionOrSkillId) {
     const question = typeof questionOrSkillId === 'object' ? questionOrSkillId : null;
     const skillId = question ? question.skill : questionOrSkillId;
@@ -1082,6 +1137,92 @@ class LearningEngine {
           : 'Haz dos ejemplos parecidos antes de volver al duelo.'
       ]
     };
+  }
+
+  static selectQuestionsForRemediation(state, options = {}, count = 6) {
+    const profile = this.getProfile(state);
+    const skillId = options.skillId || this.getWeakSkillRecommendations(state, 1)[0]?.skill?.id;
+    if (!skillId) return [];
+    const skill = CurriculumData.getSkill(skillId);
+    if (!skill || !this.isSkillAllowed(skill.id)) return [];
+    const questions = this.getAllowedQuestionsBySkill(skill.id);
+    const tags = new Set(Array.isArray(options.errorTags) ? options.errorTags.filter(Boolean) : []);
+    const tagged = tags.size > 0
+      ? questions.filter(question => this.inferQuestionErrorTags(question).some(tag => tags.has(tag)))
+      : [];
+    const pool = tagged.length >= Math.min(3, count) ? tagged : questions;
+    return this.selectLeastRepeatedQuestions(pool, profile, count, `companion-remediation-${skill.id}`, [], 'skill');
+  }
+
+  static getCompanionTutorPlan(state, character = null, skillId = null) {
+    const profile = this.getProfile(state);
+    const weak = skillId
+      ? {
+          skill: CurriculumData.getSkill(skillId),
+          subject: CurriculumData.subjects[this.getSubjectIdForSkill(skillId)],
+          progress: profile.skills[skillId],
+          reason: 'Entrenamiento elegido'
+        }
+      : this.getWeakSkillRecommendations(state, 1)[0];
+    const skill = weak?.skill;
+    if (!skill) return null;
+    const subjectId = weak.subject?.id || this.getSubjectIdForSkill(skill.id);
+    const subject = subjectId ? CurriculumData.subjects[subjectId] : null;
+    const progress = profile.skills[skill.id] || this.createSkillProgress(skill);
+    const errorTags = Object.values(profile.errorTagHistory || {})
+      .filter(item => item && item.incorrect > 0)
+      .sort((a, b) => b.incorrect - a.incorrect || b.attempts - a.attempts)
+      .slice(0, 2)
+      .map(item => item.tag);
+    const examples = this.selectQuestionsForRemediation(state, { skillId: skill.id, errorTags }, 3);
+    const companionName = character?.nombre || 'Companero';
+    const specialty = character?.materiaRecomendada || (subject ? subject.shortName : 'repaso');
+    return {
+      skillId: skill.id,
+      skillName: skill.name,
+      subjectId,
+      subjectName: subject ? subject.shortName : '',
+      companionName,
+      specialty,
+      mastery: progress.mastery,
+      target: skill.masteryTarget,
+      reason: weak.reason || `Dominio ${progress.mastery}%`,
+      errorTags,
+      title: `${companionName} entrena ${skill.name}`,
+      preHint: this.buildCompanionHintForSkill(skill, subject, errorTags),
+      nextStep: progress.mastery < 40
+        ? 'Primero despacio: entender el patron vale mas que responder rapido.'
+        : progress.mastery < skill.masteryTarget
+          ? 'Practica tres ejemplos variados y evita repetir el mismo tipo de pregunta.'
+          : 'Mantener con repaso espaciado para que no se olvide.',
+      mission: {
+        id: `companion-${skill.id}-${this.todayKey()}`,
+        label: `Vinculo: ${skill.name}`,
+        detail: `Acierta 4 retos de ${subject ? subject.shortName : 'repaso'} con ${companionName}.`
+      },
+      examples: examples.map(question => ({
+        id: question.id,
+        prompt: question.prompt || question.text || '',
+        answer: question.answer
+      }))
+    };
+  }
+
+  static buildCompanionHintForSkill(skill, subject = null, errorTags = []) {
+    const text = `${skill?.id || ''} ${skill?.name || ''} ${(subject && subject.id) || ''}`.toLowerCase();
+    if (errorTags.includes('writing_structure') || /writing|redaccion|escritura|story/.test(text)) {
+      return 'Antes de elegir, comprueba si la respuesta habla de orden, claridad, mayusculas, punto e ideas completas.';
+    }
+    if (errorTags.includes('english_pattern') || /english|eng_|ingles/.test(text)) {
+      return 'Mira la palabra clave: name, old, like, can o favorite. La respuesta debe seguir ese patron.';
+    }
+    if (errorTags.includes('reading_comprehension') || /literal|infer|idea|read|lectura/.test(text)) {
+      return 'Vuelve al texto y busca la pista exacta antes de decidir.';
+    }
+    if (/math|suma|resta|problema/.test(text)) {
+      return 'Primero decide que operacion pide el problema; despues calcula.';
+    }
+    return 'Lee el enunciado dos veces y elimina una opcion que no encaja.';
   }
 
   static recordQuestionHistory(profile, question, isCorrect) {
@@ -2017,6 +2158,7 @@ class LearningEngine {
         type: 'reinforcement',
         label: 'Refuerzo recomendado',
         detail: item.skill.name,
+        skillId: item.skill.id,
         subjectId: item.subject ? item.subject.id : null,
         priority: item.priority
       });
@@ -2115,6 +2257,7 @@ class LearningEngine {
     const correct = skills.reduce((sum, item) => sum + item.correct, 0);
     const weak = skills.filter(item => item.mastery < item.target || item.accuracy < 70).slice(0, 3);
     const improved = skills.filter(item => item.correct > 0).slice(0, 3);
+    const nextReview = weak[0] || skills.find(item => item.mastery < item.target) || null;
     return {
       missionKey: mission ? mission.key : null,
       missionTitle: mission && mission.subject && mission.skill ? `${mission.subject.shortName}: ${mission.skill.name}` : '',
@@ -2124,6 +2267,9 @@ class LearningEngine {
       skills,
       improved,
       review: weak,
+      nextStep: nextReview
+        ? `Repasar ${nextReview.name}: ${nextReview.accuracy}% de acierto y ${nextReview.mastery}% de dominio.`
+        : 'Mantener con repaso espaciado: hoy no hay una debilidad urgente.',
       headline: total
         ? `${correct}/${total} retos curriculares correctos`
         : 'Combate completado sin retos curriculares registrados'

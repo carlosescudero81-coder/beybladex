@@ -670,9 +670,14 @@ class ProgressService {
     return `post-boss-review-${StorageService.todayKey()}`;
   }
 
+  static companionTrainingKey() {
+    return `companion-training-${StorageService.todayKey()}`;
+  }
+
   static sessionKey(week, isBoss, day) {
     if (week === 'reinforce') return this.reinforceKey();
     if (week === 'post-boss-review') return this.postBossReviewKey();
+    if (week === 'companion-training') return this.companionTrainingKey();
     return isBoss ? this.bossKey(week) : this.trainingKey(week, day);
   }
 
@@ -718,6 +723,7 @@ class ProgressService {
   static canStart(state, week, isBoss) {
     if (week === 'reinforce') return { ok: true };
     if (week === 'post-boss-review') return { ok: true };
+    if (week === 'companion-training') return { ok: true };
     if (week !== state.player.currentWeek) {
       return { ok: false, reason: 'Solo se puede avanzar desde la semana actual.' };
     }
@@ -757,21 +763,21 @@ class ProgressService {
   }
 
   static recordCompletion(state, week, isBoss, stats = {}) {
-    const day = (week === 'reinforce' || week === 'post-boss-review') ? null : (isBoss ? null : this.nextTrainingDay(state, week));
+    const day = (week === 'reinforce' || week === 'post-boss-review' || week === 'companion-training') ? null : (isBoss ? null : this.nextTrainingDay(state, week));
     const key = this.sessionKey(week, isBoss, day);
     const session = this.getSession(state, key);
     const today = StorageService.todayKey();
 
-    session.week = (week === 'reinforce' || week === 'post-boss-review') ? state.player.currentWeek : week;
+    session.week = (week === 'reinforce' || week === 'post-boss-review' || week === 'companion-training') ? state.player.currentWeek : week;
     session.day = day;
-    session.type = week === 'post-boss-review' ? 'review' : (isBoss ? 'boss' : 'training');
+    session.type = week === 'post-boss-review' || week === 'companion-training' ? 'review' : (isBoss ? 'boss' : 'training');
     session.attempts += 1;
     session.bestAccuracy = Math.max(session.bestAccuracy || 0, stats.accuracy || 0);
 
     const firstCompletion = !session.completedAt;
     if (firstCompletion) {
       session.completedAt = today;
-      if (week !== 'post-boss-review') this.advancePlayer(state, week, isBoss);
+      if (week !== 'post-boss-review' && week !== 'companion-training') this.advancePlayer(state, week, isBoss);
     }
 
     return { key, session, firstCompletion };
