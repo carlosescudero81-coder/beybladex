@@ -658,6 +658,18 @@ const BEYBLADE_CHARACTERS = [
   beyAsociado, materiaRecomendada, colorPrincipal, image
 }));
 
+const LEGACY_BEYBLADE_CHARACTERS = BEYBLADE_CHARACTERS.map(character => ({ ...character }));
+const LEGACY_CHARACTER_FALLBACK_IDS = ['jaxonCross', 'burnFujiwara', 'yuniNanase', 'meiden', 'kadovar', 'niko'];
+const LEGACY_CHARACTER_BEY_OVERRIDES = {
+  jaxonCross: 'Dransword',
+  bladerX: 'Dransword',
+  burnFujiwara: 'Phenixrudder',
+  yuniNanase: 'Rhinohorn',
+  meiden: 'Wizardrod',
+  kadovar: 'Cobaltdragon',
+  niko: 'Wizardarrow'
+};
+
 const BEYBLADE_X_CHARACTERS = BEYBLADE_CHARACTERS;
 
 const BEYBLADE_BEYS = [
@@ -709,7 +721,7 @@ const NEW_AVATAR_FILES = [
   "Genri sayo.png",
   "Ginro.png",
   "iwao gogo.png",
-  "Jaxon cross.png",
+  "Blader X.png",
   "Jian strong.png",
   "karla konjiki.png",
   "Khrome Ryugu.png",
@@ -744,7 +756,17 @@ const NEW_AVATAR_FILES = [
   "Warden.png",
   "yoko kyubi.png",
   "Zero Cross.png",
-  "zonamos nekoyama.png"
+  "zonamos nekoyama.png",
+  "Yuni Naniwa.png",
+  "Quinn Manju.png",
+  "Rex Jura.png",
+  "Pris Manju.png",
+  "Prisse Manju.png",
+  "Joka Manju.png",
+  "Sue Manju.png",
+  "Nijiko.png",
+  "Carlo Maruko.png",
+  "Ai Nekki.png"
 ];
 
 const NEW_BEY_FILES = [
@@ -863,6 +885,10 @@ function getBeyStyleFromName(name, index) {
 
 function getCharacterStyleFromName(name, index) {
   const key = name.toLowerCase();
+  if (key.includes('blader x')) return 'ataque';
+  if (key.includes('rex') || key.includes('yuni') || key.includes('carlo') || key.includes('joka')) return 'ataque';
+  if (key.includes('quinn') || key.includes('sue') || key.includes('ai nekki')) return 'defensa';
+  if (key.includes('nijiko') || key.includes('pris') || key.includes('prisse')) return 'balance';
   if (key.includes('blaze') || key.includes('khrome') || key.includes('cross') || key.includes('ryu')) return 'ataque';
   if (key.includes('warden') || key.includes('strong') || key.includes('iwao') || key.includes('titus')) return 'defensa';
   if (key.includes('meiko') || key.includes('nanairo') || key.includes('sayo') || key.includes('yoko')) return 'estamina';
@@ -871,32 +897,141 @@ function getCharacterStyleFromName(name, index) {
 
 function getCharacterSpecialStats(id, stats) {
   const specialStats = {
+    bladerX: { attack: 100, defense: 96, stamina: 98, speed: 100, focus: 100 },
+    jaxonCross: { attack: 86, defense: 74, stamina: 78, speed: 91, focus: 84 },
     omegaShiroboshi: { attack: 88, defense: 84, stamina: 86, speed: 87, focus: 90 },
-    khromeRyugu: { attack: 96, defense: 89, stamina: 91, speed: 94, focus: 95 }
+    khromeRyugu: { attack: 96, defense: 89, stamina: 91, speed: 94, focus: 95 },
+    yuniNaniwa: { attack: 83, defense: 72, stamina: 78, speed: 86, focus: 88 },
+    quinnManju: { attack: 78, defense: 80, stamina: 82, speed: 84, focus: 90 },
+    rexJura: { attack: 94, defense: 82, stamina: 86, speed: 79, focus: 76 },
+    prisManju: { attack: 74, defense: 82, stamina: 80, speed: 72, focus: 78 },
+    prisseManju: { attack: 82, defense: 76, stamina: 78, speed: 86, focus: 80 },
+    jokaManju: { attack: 86, defense: 84, stamina: 78, speed: 76, focus: 83 },
+    sueManju: { attack: 72, defense: 86, stamina: 90, speed: 74, focus: 92 },
+    nijiko: { attack: 69, defense: 70, stamina: 76, speed: 82, focus: 88 },
+    carloMaruko: { attack: 76, defense: 72, stamina: 74, speed: 88, focus: 80 },
+    aiNekki: { attack: 82, defense: 82, stamina: 82, speed: 82, focus: 94 }
   };
   return specialStats[id] || stats;
 }
 
+function getCharacterDifficulty(id, index) {
+  const explicit = {
+    bladerX: 'legendaria',
+    jaxonCross: 'alta',
+    yuniNaniwa: 'alta',
+    quinnManju: 'alta',
+    rexJura: 'legendaria',
+    prisManju: 'media',
+    prisseManju: 'alta',
+    jokaManju: 'alta',
+    sueManju: 'legendaria',
+    nijiko: 'media',
+    carloMaruko: 'media',
+    aiNekki: 'legendaria'
+  };
+  if (explicit[id]) return explicit[id];
+  if (id === 'khromeRyugu' || id === 'omegaShiroboshi') return 'legendaria';
+  return index < 8 ? 'baja' : index < 22 ? 'media' : index < 40 ? 'alta' : 'legendaria';
+}
+
+const CHARACTER_CANON_METADATA = {
+  bladerX: { nombre: 'Blader X', equipo: 'Persona', afiliaciones: ['identidad de combate', 'X Tower'], canonStatus: 'especial' },
+  jaxonCross: { nombre: 'Jaxon Cross', equipo: 'Persona', afiliaciones: ['Pendragon', 'Cross / Kurosu Clan'] },
+  robinKazami: { nombre: 'Robin Kazami', equipo: 'Persona', afiliaciones: ['Albatross / Albatroz'] },
+  multiNanairo: { nombre: 'Multi Nana-iro', equipo: 'Persona' },
+  tenkaShiroboshi: { nombre: 'Tenka Shiroboshi', equipo: 'Persona', afiliaciones: ['ex Persona'] },
+  nineCross: { nombre: 'Nine Cross', equipo: 'Persona', afiliaciones: ['Cross / Kurosu Clan'] },
+
+  khromeRyugu: { nombre: 'Khrome Ryugu', equipo: 'Pendragon' },
+  shiguruNanairo: { nombre: 'Sigrid Nana-iro', equipo: 'Pendragon' },
+  cielKaminiari: { nombre: 'Ciel Kaminari', equipo: 'Pendragon' },
+
+  titusManju: { nombre: 'Titus Manju', equipo: 'Zooganic' },
+  toguroOkunaga: { nombre: 'Toguro Okunaga', equipo: 'Zooganic' },
+  jianStrong: { nombre: 'Jian Strong', equipo: 'Zooganic' },
+
+  takumiIshiyama: { nombre: 'Takumi Ishiyama', equipo: 'Phalanx' },
+  barikiJinnai: { nombre: 'Bariki Jinnai', equipo: 'Phalanx' },
+  genriSayo: { nombre: 'Genri Sayo', equipo: 'Phalanx' },
+
+  blazeFujiwara: { nombre: 'Blaze Fujiwara', equipo: 'Yggdrasil' },
+  zonamosNekoyama: { nombre: 'Zonamos Nekoyama', equipo: 'Yggdrasil' },
+
+  packun: { nombre: 'Packun', equipo: 'Dreams / Los Sueños' },
+
+  omegaShiroboshi: { nombre: 'Omega Shiroboshi', equipo: 'Zodiac / Zodiaco' },
+  lantzRoji: { nombre: 'Lantz Roji', equipo: 'Zodiac / Zodiaco' },
+  millonMizu: { nombre: 'Million Mizu', equipo: 'Zodiac / Zodiaco' },
+
+  karlaKonjiki: { nombre: 'Karla Konjiki', equipo: 'Gordias' },
+  reiyuKuwabara: { nombre: 'Reiyu Kuwabara', equipo: 'Gordias' },
+  iwaoGogo: { nombre: 'Iwao Gogo', equipo: 'Gordias' },
+
+  yokoKyubi: { nombre: 'Yoko Kyubi', equipo: 'Misleaders / Los Desconocidos' },
+  engaFugazaru: { nombre: 'Enga Fugazaru', equipo: 'Misleaders / Los Desconocidos' },
+  ryuIsshin: { nombre: 'Ryu Isshin', equipo: 'Misleaders / Los Desconocidos' },
+
+  suzaki: { nombre: 'Suzaki', equipo: 'Albatross / Albatroz' },
+  tsuru: { nombre: 'Tsuru', equipo: 'Albatross / Albatroz' },
+
+  meikoMyoden: { nombre: 'Meiko Myoden', equipo: 'Komaba Sushi / entorno Persona' },
+  tishoSushiya: { nombre: 'Taisho Sushiya', equipo: 'Komaba Sushi / entorno Persona' },
+
+  zeroCross: { nombre: 'Zero Cross', equipo: 'Cross / Kurosu Clan' },
+  oneCross: { nombre: 'One Cross', equipo: 'Cross / Kurosu Clan' },
+  twoCross: { nombre: 'Two Cross', equipo: 'Cross / Kurosu Clan' },
+  threeCross: { nombre: 'Three Cross', equipo: 'Cross / Kurosu Clan' },
+  fourCross: { nombre: 'Four Cross', equipo: 'Cross / Kurosu Clan' },
+  fiveCross: { nombre: 'Five Cross', equipo: 'Cross / Kurosu Clan' },
+  sixCross: { nombre: 'Six Cross', equipo: 'Cross / Kurosu Clan' },
+  sevenCross: { nombre: 'Seven Cross', equipo: 'Cross / Kurosu Clan' },
+  eightCross: { nombre: 'Eight Cross', equipo: 'Cross / Kurosu Clan' },
+
+  numeroZero: { nombre: 'Number Zero', equipo: 'Otros / IA / secundarios' },
+  numberOne: { nombre: 'Number One', equipo: 'Otros / IA / secundarios' },
+  numberTwo: { nombre: 'Number Two', equipo: 'Otros / IA / secundarios' },
+  warden: { nombre: 'Warden', equipo: 'Otros / IA / secundarios' },
+  ginro: { nombre: 'Ginro', equipo: 'Otros / IA / secundarios' },
+  arce: { nombre: 'Arce', equipo: 'Otros / IA / secundarios' },
+  nanase: { nombre: 'Nanase', equipo: 'Otros / IA / secundarios' },
+  kiwamiMiyazukae: { nombre: 'Kiwami Miyazukae', equipo: 'Otros / IA / secundarios' },
+
+  yuniNaniwa: { nombre: 'Yuni Naniwa', equipo: 'Yggdrasil' },
+  quinnManju: { nombre: 'Quinn Manju', equipo: 'Dreams / Los Sueños' },
+  rexJura: { nombre: 'Rex Jura', equipo: 'Dreams / Los Sueños' },
+  prisManju: { nombre: 'Pris Manju', equipo: 'Zooganic', afiliaciones: ['miembro temporal'] },
+  prisseManju: { nombre: 'Prisse Manju', equipo: 'Zooganic', afiliaciones: ['miembro temporal'] },
+  jokaManju: { nombre: 'Joka Manju', equipo: 'Otros / IA / secundarios' },
+  sueManju: { nombre: 'Sue Manju', equipo: 'Otros / IA / secundarios' },
+  nijiko: { nombre: 'Nijiko', equipo: 'Otros / IA / secundarios' },
+  carloMaruko: { nombre: 'Carlo Maruko', equipo: 'Otros / IA / secundarios' },
+  aiNekki: { nombre: 'Ai Nekki', equipo: 'Otros / IA / secundarios' }
+};
+
 function buildAvatarCharactersFromFiles() {
-  const teams = ['X Tower', 'Team Persona', 'Pendragon', 'Zooganic', 'Liga Escolar'];
   const subjects = ['Matematicas', 'Lengua', 'Ingles', 'Medio', 'Arte', 'Movimiento', 'Retos mixtos'];
   const beys = NEW_BEY_FILES.map(file => titleCaseAssetName(file));
   return NEW_AVATAR_FILES.map((file, index) => {
     const name = titleCaseAssetName(file);
     const id = camelAssetId(file);
+    const canon = CHARACTER_CANON_METADATA[id] || {};
+    const isUnverifiedSpecial = id.startsWith('bladerEspecial');
     const style = getCharacterStyleFromName(name, index);
     const stats = getCharacterSpecialStats(id, statProfile(index, style, 56));
-    const difficulty = id === 'khromeRyugu' || id === 'omegaShiroboshi' ? 'legendaria' : index < 8 ? 'baja' : index < 22 ? 'media' : index < 40 ? 'alta' : 'legendaria';
+    const difficulty = getCharacterDifficulty(id, index);
     return {
       id,
-      nombre: name,
-      equipo: teams[index % teams.length],
+      nombre: canon.nombre || name,
+      equipo: canon.equipo || (isUnverifiedSpecial ? 'Otros / IA / secundarios' : 'Otros / IA / secundarios'),
+      afiliaciones: canon.afiliaciones || [],
+      canonStatus: canon.canonStatus || (isUnverifiedSpecial ? 'no_verificado' : 'canon'),
       rol: style === 'ataque' ? 'Rival ofensivo' : style === 'defensa' ? 'Muro tactico' : style === 'estamina' ? 'Especialista de resistencia' : 'Blader equilibrado',
       dificultad: difficulty,
       fraseEntrada: 'Mi avatar tambien tiene nivel. Demuestra lo que sabes.',
       fraseVictoria: 'Tu personaje ha subido un poco mas.',
       fraseDerrota: 'Aprende del choque y vuelve a lanzar.',
-      beyAsociado: beys[index % beys.length],
+      beyAsociado: LEGACY_CHARACTER_BEY_OVERRIDES[id] || beys[index % beys.length],
       materiaRecomendada: subjects[index % subjects.length],
       colorPrincipal: ['#00f0ff', '#ff0055', '#ffea00', '#00ff66', '#8b5cf6', '#f97316'][index % 6],
       image: `imagenes_limpias/avatares/${file}`,
@@ -904,6 +1039,30 @@ function buildAvatarCharactersFromFiles() {
       stats
     };
   });
+}
+
+function normalizeLegacyCharacter(character, index) {
+  const canon = CHARACTER_CANON_METADATA[character.id] || {};
+  const style = getCharacterStyleFromName(character.nombre, index);
+  return {
+    ...character,
+    nombre: canon.nombre || character.nombre,
+    equipo: canon.equipo || character.equipo,
+    afiliaciones: canon.afiliaciones || [],
+    canonStatus: canon.canonStatus || 'canon',
+    style,
+    beyAsociado: LEGACY_CHARACTER_BEY_OVERRIDES[character.id] || character.beyAsociado,
+    stats: getCharacterSpecialStats(character.id, statProfile(index, style, 56))
+  };
+}
+
+function buildCompleteCharacterRoster() {
+  const generatedCharacters = buildAvatarCharactersFromFiles();
+  const generatedIds = new Set(generatedCharacters.map(character => character.id));
+  const legacyFallbacks = LEGACY_BEYBLADE_CHARACTERS
+    .filter(character => LEGACY_CHARACTER_FALLBACK_IDS.includes(character.id) && !generatedIds.has(character.id))
+    .map((character, index) => normalizeLegacyCharacter(character, generatedCharacters.length + index));
+  return [...generatedCharacters, ...legacyFallbacks];
 }
 
 function buildBeysFromFiles() {
@@ -942,7 +1101,7 @@ function buildBeysFromFiles() {
   });
 }
 
-BEYBLADE_CHARACTERS.splice(0, BEYBLADE_CHARACTERS.length, ...buildAvatarCharactersFromFiles());
+BEYBLADE_CHARACTERS.splice(0, BEYBLADE_CHARACTERS.length, ...buildCompleteCharacterRoster());
 BEYBLADE_BEYS.splice(0, BEYBLADE_BEYS.length, ...buildBeysFromFiles());
 const STARTER_BEY_IDS = BEYBLADE_X_BEYS.slice(0, 4).map(bey => bey.id);
 
@@ -1125,7 +1284,7 @@ function buildTowerRivalPlan() {
   const finalBoss = BEYBLADE_X_CHARACTERS.find(character => character.id === "khromeRyugu")
     || BEYBLADE_X_CHARACTERS[BEYBLADE_X_CHARACTERS.length - 1];
   const sortedRivals = BEYBLADE_X_CHARACTERS
-    .filter(character => character && (!finalBoss || character.id !== finalBoss.id))
+    .filter(character => character && character.id !== "bladerX" && (!finalBoss || character.id !== finalBoss.id))
     .sort((a, b) => {
       const powerDiff = getCharacterPowerScore(a) - getCharacterPowerScore(b);
       if (powerDiff !== 0) return powerDiff;
