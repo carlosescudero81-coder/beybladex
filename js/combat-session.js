@@ -1440,18 +1440,6 @@ class CombatSession {
     this.updateTacticalPanel();
   }
 
-  getActionAdvice() {
-    const recommended = this.getRecommendedAction();
-    const labels = { attack: 'Ataque', defense: 'Defensa', charge: 'Carga' };
-    const intent = this.rivalIntent?.type || 'attack';
-    const rule = intent === 'attack'
-      ? 'Defensa bloquea Ataque.'
-      : intent === 'defense'
-        ? 'Carga supera Defensa.'
-        : 'Ataque corta Carga.';
-    return `Consejo: ${labels[recommended]}. ${rule}`;
-  }
-
   getRecommendedAction() {
     if (this.rivalIntent?.type === 'attack') return 'defense';
     if (this.rivalIntent?.type === 'defense') return 'charge';
@@ -1812,10 +1800,10 @@ class CombatSession {
             this.updateHpBars();
             this.updateXGauge();
             this.performAttackSequence('player', 'special');
-            this.app.showNotice("¡Lanzamiento perfecto! Tu Bey gana velocidad.", "Lanzamiento");
+            this.showAttackBanner('Lanzamiento perfecto', 'Tu Bey gana velocidad y carga energia', 'player', 'round-cleared');
           } else {
             this.performAttackSequence('player', 'dash');
-            this.app.showNotice("¡Xtreme Dash cargado!", "Lanzamiento");
+            this.showAttackBanner('Xtreme Dash cargado', 'Buen lanzamiento: empieza el combate', 'player', 'round-cleared');
           }
           if (this.companionStartMessage) {
             this.showAttackBanner('Apoyo inicial', this.companionStartMessage, 'player', 'round-cleared');
@@ -1828,7 +1816,7 @@ class CombatSession {
           overlay.style.display = 'none';
           this.playerHP -= 10;
           this.updateHpBars();
-          this.app.showNotice("Tu Bey se tambalea, pero puedes remontar.", "Lanzamiento");
+          this.showAttackBanner('Lanzamiento inestable', 'Tu Bey se tambalea, pero puedes remontar', 'rival', 'round-retry');
           if (this.companionStartMessage) {
             this.showAttackBanner('Apoyo inicial', this.companionStartMessage, 'player', 'round-cleared');
             this.companionStartMessage = '';
@@ -3266,7 +3254,8 @@ class CombatSession {
 
       // Presentacion real del nuevo enfrentamiento: personaje + peonza de ambos combatientes.
       this.playBattleIntro(this.getBattleIntroDetails('Nuevo rival'), () => {
-        this.nextQuestion();
+        this.playRoundStartAnimation(nextRound?.rivalName || this.rivalCharacter?.nombre || 'Rival')
+          .then(() => this.nextQuestion());
       }, { mode: 'round', durationMs: 1580 });
     });
   }
@@ -3430,7 +3419,10 @@ class CombatSession {
     this.showAttackBanner('Reintento de ronda', reason, 'rival', 'round-retry');
     this.persistTowerBattleState();
     this.app.saveState();
-    this.playBattleIntro(this.getBattleIntroDetails('Revancha'), () => this.nextQuestion(), { mode: 'retry', durationMs: 1500 });
+    this.playBattleIntro(this.getBattleIntroDetails('Revancha'), () => {
+      this.playRoundStartAnimation(round?.rivalName || this.rivalCharacter?.nombre || 'Rival')
+        .then(() => this.nextQuestion());
+    }, { mode: 'retry', durationMs: 1500 });
   }
 
   getMaxRoundAttempts() {

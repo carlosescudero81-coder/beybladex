@@ -543,7 +543,12 @@ class LearningEngine {
         questions = this.uniqueQuestions([...guidedQuestions, ...questions]).slice(0, Math.max(0, count));
       }
     }
-    const resolvedQuestions = questions.map(q => this.resolveDynamicQuestion(q, state));
+    // Las plantillas pueden tener ids y textos fuente distintos pero terminar
+    // mostrando exactamente la misma pregunta tras resolver sus variables.
+    // La segunda deduplicacion evita repeticiones semanticas en una misma mision.
+    const resolvedQuestions = this.uniqueQuestionsBySignature(
+      questions.map(q => this.resolveDynamicQuestion(q, state)).filter(Boolean)
+    );
     return this.applyGuidedIntroFlag(resolvedQuestions, profile, mission.skill);
   }
 
@@ -875,7 +880,6 @@ class LearningEngine {
 
   static questionSignature(question) {
     const prompt = typeof question === 'string' ? question : question?.prompt;
-    const skill = typeof question === 'object' && question ? question.skill || 'skill' : 'skill';
     const normalizedPrompt = String(prompt || '')
       .toLowerCase()
       .normalize('NFD')
@@ -897,7 +901,9 @@ class LearningEngine {
       [/i like|i do not like|my favorite|do you like/, 'english-like-pattern']
     ];
     const family = genericFamilies.find(([pattern]) => pattern.test(normalizedPrompt));
-    return `${skill}:${family ? family[1] : normalizedPrompt}`;
+    // La firma representa lo que ve el jugador, no el identificador interno.
+    // Una misma pregunta copiada en dos habilidades sigue siendo un duplicado.
+    return family ? family[1] : normalizedPrompt;
   }
 
   static uniqueQuestionsBySignature(questions) {
@@ -913,8 +919,13 @@ class LearningEngine {
   static getSeenQuestionSignatures(profile) {
     const ids = new Set(Object.keys(profile.questionHistory || {}));
     const signatures = new Set();
-    this.allowedQuestionBank().forEach(question => {
-      if (ids.has(question.id)) signatures.add(this.questionSignature(question));
+    if (ids.size === 0) return signatures;
+    // El historial suele contener pocas preguntas. Recorrer y filtrar todo el
+    // banco (miles de entradas) en cada paso de selección hacía que las
+    // batallas de torre agotaran el tiempo de ejecución.
+    ids.forEach(id => {
+      const question = CurriculumData.questionBank.find(item => item.id === id);
+      if (question && this.isQuestionAllowed(question)) signatures.add(this.questionSignature(question));
     });
     return signatures;
   }

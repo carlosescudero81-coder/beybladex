@@ -606,7 +606,7 @@ const ATTACK_NAMES = [
 ];
 
 const BEYBLADE_ASSETS = {
-  torre: "assets/optimized/torre-x-900.jpg",
+  torre: "assets/torre/torre_x_del_conocimiento.png",
   personajesDir: "assets/personajes/",
   peonzasDir: "assets/peonzas/",
   estadiosDir: "assets/estadios/",
@@ -721,7 +721,7 @@ const NEW_AVATAR_FILES = [
   "Genri sayo.png",
   "Ginro.png",
   "iwao gogo.png",
-  "Blader X.png",
+  "Jaxon cross.png",
   "Jian strong.png",
   "karla konjiki.png",
   "Khrome Ryugu.png",

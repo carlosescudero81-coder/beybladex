@@ -4,6 +4,11 @@
 
 const CURRICULUM_VERSION = 1;
 
+// Politica curricular actual: el puente de 2º a 3º no introduce division.
+// Se conserva la limpieza de contenido legado al final del archivo para que
+// bancos antiguos no puedan reactivar ejercicios fuera del alcance previsto.
+const DISABLED_SKILL_IDS = new Set(['math_division_intro']);
+
 const DYNAMIC_WORDS = {
   names: ['Leo', 'Marta', 'Carlitos', 'Sara', 'Nico', 'Luna', 'Pablo', 'Iris', 'Carla', 'Dani', 'Ana', 'Ekusu', 'Bird', 'Multi', 'Valt', 'Aiger', 'Dante', 'Bell', 'Pri'],
   beys: ['Dran Sword', 'Hell Scythe', 'Wizard Arrow', 'Knight Shield', 'Cobalt Drake', 'Viper Tail', 'Leon Claw', 'Rhino Horn', 'Shark Edge', 'Dran Dagger', 'Hells Chain', 'Phoenix Wing'],
@@ -84,7 +89,6 @@ const SKILLS = {
     { id: 'math_word_problems', name: 'Problemas de una operacion', gradeBand: 'puente', masteryTarget: 75 },
     { id: 'math_tables_groups', name: 'Tablas desde grupos y cuadriculas', gradeBand: '3-inicio', masteryTarget: 80 },
     { id: 'math_multiply_fast', name: 'Automatizacion de tablas', gradeBand: '3-inicio', masteryTarget: 85 },
-    { id: 'math_division_intro', name: 'Reparto y division inicial', gradeBand: '3-inicio', masteryTarget: 70 },
     { id: 'math_measure_time_money', name: 'Medidas, tiempo y dinero', gradeBand: 'puente', masteryTarget: 75 },
     { id: 'math_geometry_data', name: 'Geometria, perimetro y datos', gradeBand: '3-inicio', masteryTarget: 70 }
   ],
@@ -6380,7 +6384,7 @@ function appendEnglishEverydayFluencyPack() {
 appendEnglishEverydayFluencyPack();
 
 function getAllSkills() {
-  return Object.values(SKILLS).flat();
+  return Object.values(SKILLS).flat().filter(skill => !DISABLED_SKILL_IDS.has(skill.id));
 }
 
 function getSkill(skillId) {

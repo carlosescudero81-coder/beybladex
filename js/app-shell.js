@@ -5,6 +5,8 @@ const AppShellConfig = {
   navigationTargets: {
     map: 'btn-goto-map',
     language: 'btn-goto-language',
+    english: 'btn-goto-english',
+    science: 'btn-goto-science',
     workshop: 'btn-goto-workshop',
     cards: 'btn-goto-cards',
     parents: 'btn-goto-parents',

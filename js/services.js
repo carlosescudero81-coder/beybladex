@@ -76,7 +76,7 @@ const INITIAL_STATE = {
     soundEnabled: true,
     musicVolume: 0.5,
     difficulty: 'auto',
-    dailyTimeLimitMinutes: 15,
+    dailyTimeLimitMinutes: 999,
     parentalSecurity: {
       pinHash: "",
       failedAttempts: 0,
@@ -348,7 +348,9 @@ class StorageService {
     });
     math.lastPlayedDate = today;
 
-    state.config.dailyTimeLimitMinutes = parseInt(state.config.dailyTimeLimitMinutes, 10) || INITIAL_STATE.config.dailyTimeLimitMinutes;
+    // Compatibilidad con partidas antiguas: cualquier límite previamente
+    // guardado se migra automáticamente a juego sin límite.
+    state.config.dailyTimeLimitMinutes = 999;
     state.config.soundEnabled = state.config.soundEnabled !== false;
     state.config.difficulty = state.config.difficulty || 'auto';
     state.config.parentalSecurity = ParentalSecurityService.normalize(state.config.parentalSecurity);
@@ -360,7 +362,6 @@ class StorageService {
 }
 
 class ParentalSecurityService {
-  static DEFAULT_PIN = '2468';
   static MAX_ATTEMPTS = 5;
   static LOCK_MINUTES = 5;
   static SESSION_MINUTES = 10;
@@ -379,12 +380,16 @@ class ParentalSecurityService {
   static normalize(security) {
     const src = security && typeof security === 'object' ? security : {};
     return {
-      pinHash: typeof src.pinHash === 'string' && src.pinHash ? src.pinHash : this.hashPin(this.DEFAULT_PIN),
+      pinHash: typeof src.pinHash === 'string' ? src.pinHash : '',
       failedAttempts: Math.max(0, parseInt(src.failedAttempts, 10) || 0),
       lockedUntil: Math.max(0, parseInt(src.lockedUntil, 10) || 0),
       sessionUntil: Math.max(0, parseInt(src.sessionUntil, 10) || 0),
       auditLog: Array.isArray(src.auditLog) ? src.auditLog.slice(0, this.MAX_LOG_ITEMS) : []
     };
+  }
+
+  static needsSetup(state) {
+    return !state?.config?.parentalSecurity?.pinHash;
   }
 
   static isSessionActive(state) {
@@ -397,6 +402,9 @@ class ParentalSecurityService {
 
   static verifyPin(state, pin) {
     const security = state.config.parentalSecurity;
+    if (this.needsSetup(state)) {
+      return { ok: false, locked: false, setupRequired: true, message: 'Configura primero un PIN parental.' };
+    }
     const remaining = this.lockRemainingMs(state);
     if (remaining > 0) {
       return {
