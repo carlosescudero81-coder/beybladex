@@ -3070,6 +3070,28 @@ body {
 }
 .parent-actionable-summary p { margin: 0.45rem 0; line-height: 1.35; }
 
+.reward-choice-panel { display:grid; gap:.55rem; margin:.75rem 0 1rem; }
+.reward-choice-panel > div { display:grid; grid-template-columns:repeat(3,1fr); gap:.45rem; }
+.reward-choice-panel button { min-height:44px; border:1px solid rgba(0,240,255,.35); border-radius:8px; background:rgba(255,255,255,.05); color:#fff; font-weight:800; }
+.reward-choice-panel button.selected { border-color:var(--yellow); color:var(--yellow); box-shadow:0 0 12px rgba(255,234,0,.28); }
+
+.workshop-layer-labels { position:absolute; inset:0; pointer-events:none; font-size:.68rem; font-weight:900; text-transform:uppercase; }
+.workshop-layer-labels span { position:absolute; padding:.2rem .35rem; border-radius:5px; background:rgba(2,8,22,.84); border:1px solid rgba(0,240,255,.45); }
+.workshop-layer-labels .layer-ring { top:10%; right:0; }
+.workshop-layer-labels .layer-core { top:43%; left:0; }
+.workshop-layer-labels .layer-driver { bottom:6%; right:8%; }
+
+.workshop-team-strip { display:grid; grid-template-columns:repeat(3,1fr); gap:.45rem; margin:.65rem 0; }
+.workshop-team-strip > div { display:flex; align-items:center; gap:.4rem; min-width:0; padding:.4rem; border-radius:8px; background:rgba(255,255,255,.045); }
+.workshop-team-strip img { width:38px; height:38px; object-fit:contain; }
+.workshop-team-strip span { display:grid; min-width:0; }
+.workshop-team-strip small { opacity:.65; font-size:.65rem; }
+.workshop-team-strip strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.72rem; }
+.fragment-icon { color:var(--yellow); font-size:1.7rem; }
+
+.bond-progress { height:6px; border-radius:9px; overflow:hidden; background:rgba(255,255,255,.1); }
+.bond-progress i { display:block; width:var(--bond-progress); height:100%; background:linear-gradient(90deg,var(--purple),var(--cyan)); }
+
 .avatar-feature-panel {
   display: flex;
   flex-direction: column;

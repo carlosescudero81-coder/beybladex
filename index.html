@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Beyblade X Academy: Torneo del Conocimiento</title>
-  <link rel="stylesheet" href="index.css?v=20260812-gameplay6">
+  <link rel="stylesheet" href="index.css?v=20260812-garage7">
   <style>
     /* ── FIX: tower screen no debe recortar su contenido ── */
     #screen-map {
@@ -849,6 +849,7 @@
           <div class="visual-reference-panel compact">
             <img src="assets/peonzas/04_scythe_incendio.png" alt="Scythe Incendio" loading="lazy" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/peonzas/04_scythe_incendio.png'}))">
           </div>
+          <div id="workshop-team-strip" class="workshop-team-strip" aria-label="Equipo del garaje"></div>
           
           <div class="workshop-top-viewer">
             <div class="top-large-sprite" id="workshop-top-preview">
@@ -999,6 +1000,14 @@
           <h2 style="font-family: var(--font-display); font-size: 3rem; color: var(--yellow); text-shadow: var(--glow-yellow); margin-bottom: 8px;" id="reward-header-text">¡VICTORIA EN LA ARENA!</h2>
           <p style="margin-bottom: 24px; font-weight: 600;" id="reward-desc-text">Has derrotado al rival. ¡Abre tu capsula de piezas!</p>
           <div id="reward-boss-summary" class="reward-boss-summary" style="display: none;"></div>
+          <div id="reward-choice-panel" class="reward-choice-panel" aria-label="Elige el tipo de premio">
+            <strong>Elige tu premio</strong>
+            <div>
+              <button type="button" data-reward-choice="power">Potencia</button>
+              <button type="button" data-reward-choice="movement">Movimiento</button>
+              <button type="button" data-reward-choice="fragments">Fragmentos</button>
+            </div>
+          </div>
           
           <div class="chest-display" id="reward-chest-area">
             <div class="chest-icon" id="reward-chest-btn" style="font-size: 6rem;">&#x1F381;</div>
@@ -1242,13 +1251,13 @@
     </div>
   </div>
 
-  <script src="js/audio.js?v=20260812-gameplay6"></script>
-  <script src="js/assets.js?v=20260812-gameplay6"></script>
-  <script src="js/curriculum-data.js?v=20260812-gameplay6"></script>
-  <script src="js/learning-engine.js?v=20260812-gameplay6"></script>
-  <script src="js/services.js?v=20260812-gameplay6"></script>
-  <script src="js/combat-session.js?v=20260812-gameplay6"></script>
-  <script src="js/app-shell.js?v=20260812-gameplay6"></script>
-  <script src="index.js?v=20260812-gameplay6"></script>
+  <script src="js/audio.js?v=20260812-garage7"></script>
+  <script src="js/assets.js?v=20260812-garage7"></script>
+  <script src="js/curriculum-data.js?v=20260812-garage7"></script>
+  <script src="js/learning-engine.js?v=20260812-garage7"></script>
+  <script src="js/services.js?v=20260812-garage7"></script>
+  <script src="js/combat-session.js?v=20260812-garage7"></script>
+  <script src="js/app-shell.js?v=20260812-garage7"></script>
+  <script src="index.js?v=20260812-garage7"></script>
 </body>
 </html>

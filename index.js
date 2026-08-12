@@ -1775,12 +1775,23 @@ class App {
     viewer.classList.remove('workshop-spin-test', 'workshop-spin-attack', 'workshop-spin-defense', 'workshop-spin-stamina', 'workshop-spin-balance');
     void viewer.offsetWidth;
     viewer.classList.add('workshop-spin-test', `workshop-spin-${bey.tipo}`);
-    this.showNotice(`${bey.nombre}: ${bey.habilidad}. Ataque ${bey.ataque}, defensa ${bey.defensa}, giro ${bey.estamina}.`, 'Prueba de giro');
+    const trajectory = bey.tipo === 'ataque' ? 'recorre el borde y entra al choque' : bey.tipo === 'defensa' ? 'mantiene el centro y absorbe rebotes' : bey.tipo === 'estamina' ? 'gira estable y pierde poca velocidad' : 'alterna centro y Rail X';
+    const verdict = this.getWorkshopRecommendedType().recommendedType === bey.tipo ? 'Ventaja contra el próximo rival.' : 'Montaje versátil; revisa la recomendación del rival.';
+    this.showNotice(`${bey.nombre}: ${bey.habilidad}.\n\nTrayectoria: ${trajectory}.\nChoque ${bey.ataque} · Rebote ${bey.defensa} · Giro ${bey.estamina} · Velocidad ${bey.velocidad}.\n\n${verdict}`, 'Simulación de estadio');
     setTimeout(() => viewer.classList.remove('workshop-spin-test', 'workshop-spin-attack', 'workshop-spin-defense', 'workshop-spin-stamina', 'workshop-spin-balance'), 2600);
   }
 
   renderWorkshop() {
     this.renderTopPreview();
+    const teamStrip = document.getElementById('workshop-team-strip');
+    if (teamStrip) {
+      const blader = this.getSelectedCharacterAvatar();
+      const companion = this.getSelectedCompanionCharacter();
+      teamStrip.innerHTML = `
+        <div>${this.renderCharacterAvatar(blader, 'asset-image')}<span><small>Blader</small><strong>${blader.nombre}</strong></span></div>
+        <div>${this.renderCharacterAvatar(companion, 'asset-image')}<span><small>Compañero</small><strong>${companion.nombre}</strong></span></div>
+        <div><span class="fragment-icon">✦</span><span><small>Fragmentos</small><strong>${this.state.player.rewardFragments || 0}</strong></span></div>`;
+    }
     const nameInput = document.getElementById('custom-bey-name-input');
     if (nameInput) {
       nameInput.value = this.state.player.activeCombo?.name || 'Mi Peonza X';
@@ -1825,7 +1836,10 @@ class App {
     const activeBey = this.getWorkshopBey(this.state.player.activeCombo);
     const previewBey = this.getWorkshopBey(combo);
     const container = document.getElementById('workshop-top-preview');
-    container.innerHTML = generateTopSVG(combo.core, combo.ring, combo.driver, combo.color);
+    container.innerHTML = `${generateTopSVG(combo.core, combo.ring, combo.driver, combo.color)}
+      <div class="workshop-layer-labels" aria-hidden="true">
+        <span class="layer-core">Núcleo</span><span class="layer-ring">Anillo</span><span class="layer-driver">Punta</span>
+      </div>`;
     container.classList.toggle('previewing', !!this.workshopPreviewCombo);
 
     document.getElementById('stat-val-attack').innerText = previewBey.ataque;
@@ -2183,19 +2197,23 @@ class App {
 
   renderCharacterCard(character, { selectable = false } = {}) {
     const favorite = this.isAlbumFavorite('character', character.id);
-    const isEquipped = (this.state?.player?.companionCharacterId || this.state?.player?.characterAvatarId || 'jaxonCross') === character.id;
+    const isCompanion = (this.state?.player?.companionCharacterId || 'jaxonCross') === character.id;
+    const isBlader = (this.state?.player?.characterAvatarId || 'jaxonCross') === character.id;
     const bond = typeof getCompanionBond === 'function' ? getCompanionBond(this.state, character.id) : { bondLevel: 0, wins: 0 };
     const passive = typeof getCompanionPassive === 'function' ? getCompanionPassive(character, this.state) : null;
     const tutorPlan = selectable && typeof LearningEngine.getCompanionTutorPlan === 'function'
       ? LearningEngine.getCompanionTutorPlan(this.state, character)
       : null;
     const stats = typeof getCharacterBaseStats === 'function' ? getCharacterBaseStats(character) : character.stats || {};
+    const bondLevel = bond.bondLevel || 0;
+    const comboUnlock = bondLevel >= 8 ? 'Ataque combinado X desbloqueado' : bondLevel >= 5 ? 'Cinemática de rescate desbloqueada' : bondLevel >= 3 ? 'Consejo experto desbloqueado' : `Siguiente mejora en nivel ${bondLevel < 3 ? 3 : 5}`;
     const card = document.createElement('article');
-    card.className = `character-card ${isEquipped && selectable ? 'equipped' : ''}`;
+    card.className = `character-card ${(isCompanion || isBlader) && selectable ? 'equipped' : ''}`;
     card.style.setProperty('--character-color', character.colorPrincipal || '#00f0ff');
-    const equipBadge = selectable ? `<span class="collection-lock-badge">${isEquipped ? 'Tu compañero' : 'Disponible'}</span>` : '';
+    const equipBadge = selectable ? `<span class="collection-lock-badge">${isBlader ? 'Tu Blader' : isCompanion ? 'Tu compañero' : 'Disponible'}</span>` : '';
     const actionBtn = selectable
-      ? `<button class="btn-action collection-equip character-equip" type="button">${isEquipped ? 'Compañero actual' : 'Elegir compañero'}</button>`
+      ? `<button class="btn-action collection-equip character-player-equip" type="button">${isBlader ? 'Blader actual' : 'Elegir como Blader'}</button>
+         <button class="btn-action secondary character-equip" type="button">${isCompanion ? 'Compañero actual' : 'Elegir compañero'}</button>`
       : `<button class="btn-action collection-info" type="button">Ficha rival</button>`;
     card.innerHTML = `
       <div class="collection-card-media character-media">
@@ -2211,6 +2229,8 @@ class App {
           <strong>${passive ? passive.label : 'Apoyo de equipo'}</strong>
           <span>${passive ? passive.description : 'Ayuda en combate.'}</span>
           <em>Vinculo ${bond.bondLevel || 0} · ${bond.wins || 0} victorias juntos</em>
+          <div class="bond-progress"><i style="--bond-progress:${Math.min(100, bondLevel * 10)}%"></i></div>
+          <small>${comboUnlock}</small>
         </div>
         ${tutorPlan ? `
           <div class="companion-passive-box companion-tutor-box">
@@ -2227,14 +2247,14 @@ class App {
         </div>
         <div class="collection-card-actions">
           ${actionBtn}
-          ${selectable && isEquipped && tutorPlan ? '<button class="btn-action companion-train-btn" type="button">Entrenar juntos</button>' : ''}
+          ${selectable && isCompanion && tutorPlan ? '<button class="btn-action companion-train-btn" type="button">Entrenar juntos</button>' : ''}
           <button class="collection-icon-btn ${favorite ? 'active' : ''}" type="button" data-favorite-character="${character.id}" title="Favorito"></button>
         </div>
       </div>
     `;
     if (selectable) {
       const equipBtn = card.querySelector('.character-equip');
-      if (equipBtn && !isEquipped) {
+      if (equipBtn && !isCompanion) {
         equipBtn.onclick = () => {
           sounds.playClick();
           this.state.player.companionCharacterId = character.id;
@@ -2243,6 +2263,18 @@ class App {
           this.renderHeader();
           this.renderCards();
           this.showNotice(`${character.nombre} sera tu compañero en la proxima batalla.`, 'Compañero elegido');
+        };
+      }
+      const bladerBtn = card.querySelector('.character-player-equip');
+      if (bladerBtn && !isBlader) {
+        bladerBtn.onclick = () => {
+          sounds.playClick();
+          this.state.player.characterAvatarId = character.id;
+          this.state.player.avatar = character.id;
+          this.saveState();
+          this.renderHeader();
+          this.renderCards();
+          this.showNotice(`${character.nombre} será tu Blader. El compañero se elige por separado.`, 'Blader elegido');
         };
       }
       const trainBtn = card.querySelector('.companion-train-btn');
@@ -2317,7 +2349,7 @@ class App {
 
     const filterBar = document.createElement('div');
     filterBar.className = 'bey-filter-bar';
-    filterBar.style.display = this.albumTab === 'beys' ? 'flex' : 'none';
+    filterBar.style.display = ['beys', 'rivals'].includes(this.albumTab) ? 'flex' : 'none';
     filterBar.innerHTML = `
       <label>Buscar
         <input id="album-filter-search" type="search" value="${this.escapeHtml(this.albumSearch || '')}" placeholder="Nombre">
@@ -2393,7 +2425,9 @@ class App {
 
     if (this.albumTab === 'rivals') {
       addSubtitle('Rivales y entrenadores');
-      BEYBLADE_X_CHARACTERS.forEach(character => container.appendChild(this.renderCharacterCard(character, { selectable: true })));
+      BEYBLADE_X_CHARACTERS
+        .filter(character => !this.albumSearch || [character.nombre, character.equipo, character.rol, character.materiaRecomendada].some(value => String(value || '').toLowerCase().includes(this.albumSearch.toLowerCase())))
+        .forEach(character => container.appendChild(this.renderCharacterCard(character, { selectable: true })));
       return;
     }
 
@@ -2983,6 +3017,14 @@ class App {
     const floorRewardForModal = getTowerFloorData(this.rewardTowerFloor)?.reward || {};
     this.rewardCoins = Math.max(0, parseInt(stats?.coins ?? floorRewardForModal.coins ?? (isBoss ? 100 : 25), 10) || 0);
     this.rewardXp = Math.max(0, parseInt(stats?.xp ?? floorRewardForModal.xp ?? (isBoss ? 150 : 40), 10) || 0);
+    this.rewardChoice = 'power';
+    document.querySelectorAll('[data-reward-choice]').forEach(button => {
+      button.classList.toggle('selected', button.dataset.rewardChoice === this.rewardChoice);
+      button.onclick = () => {
+        this.rewardChoice = button.dataset.rewardChoice;
+        document.querySelectorAll('[data-reward-choice]').forEach(item => item.classList.toggle('selected', item === button));
+      };
+    });
 
     const isPostBossReview = weekNum === 'post-boss-review';
     const floorReward = getTowerFloorData(this.rewardTowerFloor)?.reward || null;
@@ -3148,19 +3190,20 @@ class App {
       // Determine what to reward
       let rewardedPart = null;
       let rewardedBey = null;
-      let partType = 'color';
+      let fragmentAmount = 0;
+      let partType = this.rewardChoice === 'movement' ? 'driver' : this.rewardChoice === 'fragments' ? 'fragments' : (this.rewardIsBoss ? 'core' : 'ring');
 
       if (rewardBey && !this.state.inventory.beys.includes(rewardBey.id)) {
         rewardedBey = rewardBey;
         partType = 'bey';
         this.state.inventory.beys.push(rewardedBey.id);
-      } else {
+      } else if (partType !== 'fragments') {
         // Choose part type based on week / boss
-        if (this.rewardIsBoss) {
+        if (!this.rewardChoice && this.rewardIsBoss) {
           // Boss gives Ring or Core (Epic/Legendary/Cosmic)
           const candidates = ['core', 'ring'];
           partType = candidates[Math.floor(Math.random() * candidates.length)];
-        } else {
+        } else if (!this.rewardChoice) {
           // Training gives Driver or Color
           const candidates = ['driver', 'color'];
           partType = candidates[Math.floor(Math.random() * candidates.length)];
@@ -3183,17 +3226,27 @@ class App {
 
       // Handle card reward
       let cardNum = 1;
-      if (partType !== 'bey' && (partType === 'card' || !rewardedPart)) {
+      if (partType === 'fragments') {
+        fragmentAmount = 25;
+        this.state.player.rewardFragments = Math.max(0, parseInt(this.state.player.rewardFragments, 10) || 0) + fragmentAmount;
+      } else if (partType !== 'bey' && (partType === 'card' || !rewardedPart)) {
         partType = 'card';
         // Unlock next chronologic card
         if (!this.state.inventory.cards) this.state.inventory.cards = [];
         const unlocked = this.state.inventory.cards;
+        let foundCard = false;
         for (let c = 1; c <= 30; c++) {
           if (!unlocked.includes(c)) {
             cardNum = c;
             this.state.inventory.cards.push(c);
+            foundCard = true;
             break;
           }
+        }
+        if (!foundCard) {
+          partType = 'fragments';
+          fragmentAmount = 15;
+          this.state.player.rewardFragments = Math.max(0, parseInt(this.state.player.rewardFragments, 10) || 0) + fragmentAmount;
         }
       }
 
@@ -3238,6 +3291,12 @@ class App {
         revealRarity.innerText = rewardedBey.rareza.toUpperCase();
         revealRarity.className = `rarity-${rewardedBey.rareza}`;
         revealDesc.innerText = `Nueva Bey desbloqueada para tus combates. Tipo: ${rewardedBey.tipo.toUpperCase()} (+${gainedCoins} chips de energia / +${gainedXp} puntos de giro)`;
+      } else if (partType === 'fragments') {
+        revealIcon.innerText = '✦';
+        revealName.innerText = 'Fragmentos de energía';
+        revealRarity.innerText = 'MEJORA';
+        revealRarity.className = 'rarity-epica';
+        revealDesc.innerText = `${fragmentAmount} fragmentos para futuras mejoras. Total: ${this.state.player.rewardFragments}.`;
       } else if (partType === 'card') {
         revealIcon.innerText = 'B';
         revealName.innerText = `Emblema de arena #${cardNum}`;
