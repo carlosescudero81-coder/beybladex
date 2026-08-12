@@ -1174,6 +1174,30 @@ class CombatSession {
     screen.setAttribute('aria-busy', nextPhase === 'resolving' ? 'true' : 'false');
   }
 
+  setAnswerControlsLocked(locked) {
+    const answers = document.getElementById('combat-answers');
+    if (!answers) return;
+    answers.setAttribute('aria-busy', locked ? 'true' : 'false');
+    answers.querySelectorAll('.btn-answer').forEach(button => {
+      button.disabled = !!locked;
+      button.setAttribute('aria-disabled', locked ? 'true' : 'false');
+    });
+  }
+
+  setLaunchAccessibility(active) {
+    const overlay = document.getElementById('launch-overlay');
+    const turnPanel = document.getElementById('combat-turn-panel');
+    if (overlay) {
+      overlay.hidden = !active;
+      overlay.style.display = active ? 'flex' : 'none';
+      overlay.setAttribute('aria-hidden', active ? 'false' : 'true');
+    }
+    if (turnPanel) {
+      turnPanel.inert = !!active;
+      turnPanel.setAttribute('aria-hidden', active ? 'true' : 'false');
+    }
+  }
+
   switchPlayerBeyManually() {
     if (this.actionLocked || this.manualSwitchUsedThisRound || !Array.isArray(this.playerDeck) || this.playerDeck.length < 2) return;
     const previous = this.playerBey;
@@ -1739,8 +1763,7 @@ class CombatSession {
       battleIntro.hidden = true;
       battleIntro.setAttribute('aria-hidden', 'true');
     }
-    const launchOverlay = document.getElementById('launch-overlay');
-    if (launchOverlay) launchOverlay.style.display = 'none';
+    this.setLaunchAccessibility(false);
     const feedbackOverlay = document.getElementById('combat-feedback');
     if (feedbackOverlay) feedbackOverlay.style.display = 'none';
     this.setCombatPhase('finished');
@@ -1751,7 +1774,7 @@ class CombatSession {
     this.setCombatPhase('launch');
     sounds.playLaunch();
     const overlay = document.getElementById('launch-overlay');
-    overlay.style.display = 'flex';
+    this.setLaunchAccessibility(true);
 
     // Bar animation
     const bar = document.getElementById('launch-gauge-bar');
@@ -1789,7 +1812,7 @@ class CombatSession {
 
         if (parseInt(opt) === launchQ.answer) {
           sounds.playCorrect();
-          overlay.style.display = 'none';
+          this.setLaunchAccessibility(false);
           
           if (isSweetSpot) {
             // Perfect launch bonus!
@@ -1813,7 +1836,7 @@ class CombatSession {
           this.nextQuestion();
         } else {
           sounds.playIncorrect();
-          overlay.style.display = 'none';
+          this.setLaunchAccessibility(false);
           this.playerHP -= 10;
           this.updateHpBars();
           this.showAttackBanner('Lanzamiento inestable', 'Tu Bey se tambalea, pero puedes remontar', 'rival', 'round-retry');
@@ -2228,6 +2251,7 @@ class CombatSession {
     this.currentQuestion = this.questionsList[this.currentQuestionIdx];
     this.setCombatPhase('question');
     this.actionLocked = false;
+    this.setAnswerControlsLocked(false);
     this.setRivalIntent(this.chooseRivalIntent());
     this.selectCombatAction(this.selectedAction || 'attack', false);
     this.showCombatTutorialNudge();
@@ -2287,10 +2311,8 @@ class CombatSession {
     if (!this.currentQuestion || !this.companionCharacter) return;
     const isCurriculum = String(this.currentQuestion.type || '').startsWith('curriculum');
     if (!isCurriculum) return;
-    const hint = this.companionTutorPlan?.skillId === this.currentQuestion.skill
-      ? this.companionTutorPlan.preHint
-      : typeof LearningEngine.buildCompanionHintForSkill === 'function'
-        ? LearningEngine.buildCompanionHintForSkill(
+    const contextualHint = typeof LearningEngine.buildCompanionHintForSkill === 'function'
+      ? LearningEngine.buildCompanionHintForSkill(
             CurriculumData.getSkill(this.currentQuestion.skill),
             CurriculumData.subjects[this.currentQuestion.subject],
             LearningEngine.inferQuestionErrorTags({
@@ -2301,7 +2323,10 @@ class CombatSession {
               errorTags: this.currentQuestion.errorTags
             })
           )
-        : this.currentQuestion.hint;
+      : '';
+    const hint = contextualHint || (this.companionTutorPlan?.skillId === this.currentQuestion.skill
+      ? this.companionTutorPlan.preHint
+      : this.currentQuestion.hint);
     if (!hint) return;
     const localIndex = this.currentQuestionIdx - (this.getCurrentRound()?.start || 0);
     if (localIndex === 0 || this.currentQuestion.isGuidedIntro || this.companionTutorPlan) {
@@ -2379,6 +2404,7 @@ class CombatSession {
       if (this.actionLocked) return; // Ya respondio, nos cruzamos en el tiempo
       // Bloquear respuestas durante el ataque rival
       this.actionLocked = true;
+      this.setAnswerControlsLocked(true);
 
       rivalTop.classList.remove('rival-charge-low', 'rival-charge-mid', 'rival-charge-high');
       if (this.rivalCombatant) this.rivalCombatant.status = 'attacking';
@@ -2397,6 +2423,7 @@ class CombatSession {
       // Tras el ataque: si el jugador no ha muerto, desbloquear respuestas
       setTimeout(() => {
         this.actionLocked = false;
+        this.setAnswerControlsLocked(false);
         rivalTop.classList.remove('rival-charge-low', 'rival-charge-mid', 'rival-charge-high');
         if (this.rivalCombatant) this.rivalCombatant.status = 'orbiting';
         // Si el jugador quedo a 0 HP, gestionar derrota
@@ -2427,6 +2454,7 @@ class CombatSession {
   handleAnswer(selectedAnswer) {
     if (this.actionLocked) return;
     this.actionLocked = true;
+    this.setAnswerControlsLocked(true);
     this.setCombatPhase('resolving');
     // MEJORA 3: cancelar el buildup del rival en cuanto el jugador responde
     this.cancelRivalChargeBuildup();

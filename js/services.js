@@ -475,10 +475,9 @@ class ParentalSecurityService {
 }
 
 class ProgressService {
-  // Numero maximo de plantas NUEVAS (nunca completadas antes) que se pueden
-  // desbloquear/jugar en un mismo dia. Las plantas ya completadas se pueden
-  // repetir sin limite.
-  static DAILY_NEW_FLOOR_LIMIT = 1;
+  // No hay límite diario de progresión: el valor cubre toda la torre y se
+  // conserva únicamente para normalizar partidas antiguas.
+  static DAILY_NEW_FLOOR_LIMIT = 50;
 
   static normalize(progress, player) {
     const normalized = {
@@ -764,9 +763,6 @@ class ProgressService {
     const completed = new Set(tower.completedFloors || []);
     if (completed.has(floor) || floor < tower.highestUnlockedFloor) return { ok: true, replay: true };
     if (floor > tower.highestUnlockedFloor) return { ok: false, reason: 'Gana la planta anterior para desbloquear esta.' };
-    const today = StorageService.todayKey();
-    const winsToday = Math.max(0, parseInt(tower.dailyNewFloors?.[today], 10) || 0);
-    if (winsToday >= this.DAILY_NEW_FLOOR_LIMIT) return { ok: false, reason: `Hoy ya has ganado ${this.DAILY_NEW_FLOOR_LIMIT} plantas nuevas. Puedes repetir combates o volver manana para subir mas.` };
     return { ok: true, replay: false };
   }
 

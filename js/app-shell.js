@@ -1,7 +1,7 @@
 // App shell configuration for classic-script navigation.
 // Keep this file free of App instance state so it can be tested and reused.
 const AppShellConfig = {
-  headerHiddenScreens: ['start', 'avatar'],
+  headerHiddenScreens: ['start', 'avatar', 'diagnostic'],
   navigationTargets: {
     map: 'btn-goto-map',
     language: 'btn-goto-language',
