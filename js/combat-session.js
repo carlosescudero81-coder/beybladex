@@ -484,6 +484,12 @@ class CombatSession {
   applyCompanionPlayerDamageBonus(damage, isCorrect, isFastAnswer) {
     if (!this.companionPassive || !isCorrect || damage <= 0) return { damage, message: '' };
     const passive = this.companionPassive;
+    const bond = typeof getCompanionBond === 'function' ? getCompanionBond(this.state, this.companionCharacter?.id) : { bondLevel: 0 };
+    if ((bond.bondLevel || 0) >= 8 && isFastAnswer && !this.companionPassiveUsed.teamCombo) {
+      this.companionPassiveUsed.teamCombo = true;
+      this.playCompanionCutin('Ataque combinado X', `${this.playerCharacter?.nombre || 'Blader'} + ${this.companionCharacter?.nombre || 'compañero'}`, 'dash');
+      return { damage: damage + 15, message: 'Ataque combinado X: +15' };
+    }
     if (passive.type === 'strike' && !this.companionPassiveUsed.strike) {
       this.companionPassiveUsed.strike = true;
       this.playCompanionCutin('Ataque de apoyo', passive.label, 'strike');

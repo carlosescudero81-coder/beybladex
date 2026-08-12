@@ -31,6 +31,7 @@ const INITIAL_STATE = {
     characterProgress: {},
     companionBonds: {},
     dailyStreak: 0,
+    rewardFragments: 0,
     lastGreetingDate: ''
   },
   inventory: {
@@ -262,6 +263,7 @@ class StorageService {
             : INITIAL_STATE.player.activeCombo.name
         }))
       : [];
+    state.player.rewardFragments = Math.max(0, parseInt(state.player.rewardFragments, 10) || 0);
     Object.keys(state.player.characterProgress).forEach(characterId => {
       const progress = state.player.characterProgress[characterId] || {};
       state.player.characterProgress[characterId] = {
