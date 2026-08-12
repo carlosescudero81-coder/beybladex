@@ -705,6 +705,18 @@ class App {
         this.saveState();
       };
     }
+    const avatarSearch = document.getElementById('avatar-search-input');
+    if (avatarSearch) {
+      avatarSearch.oninput = (event) => {
+        this.avatarSearchQuery = event.target.value;
+        this.renderAvatarCustomizer();
+        const refreshedSearch = document.getElementById('avatar-search-input');
+        if (refreshedSearch) {
+          refreshedSearch.focus();
+          refreshedSearch.setSelectionRange(refreshedSearch.value.length, refreshedSearch.value.length);
+        }
+      };
+    }
   }
 
   bindWorkshopEvents() {
@@ -746,6 +758,8 @@ class App {
       : 'Introduce tu PIN parental.';
     document.getElementById('btn-parent-gate-submit').innerText = needsSetup ? 'Crear y entrar' : 'Entrar';
     document.getElementById('parent-gate-input').value = '';
+    document.getElementById('parent-gate-input').removeAttribute('aria-invalid');
+    document.getElementById('parent-gate-error').innerText = '';
     document.getElementById('parent-gate-modal').style.display = 'flex';
     document.getElementById('parent-gate-input').focus();
   }
@@ -774,8 +788,11 @@ class App {
       document.getElementById('parent-gate-question').innerText = result.locked
         ? `Bloqueado ${Math.ceil(ParentalSecurityService.lockRemainingMs(this.state) / 60000)} minuto(s)`
         : needsSetup ? 'Crea un PIN parental' : 'PIN parental';
-      this.showNotice(result.message, "Acceso denegado");
-      document.getElementById('parent-gate-modal').style.display = 'none';
+      const error = document.getElementById('parent-gate-error');
+      error.innerText = result.message;
+      const input = document.getElementById('parent-gate-input');
+      input.setAttribute('aria-invalid', 'true');
+      input.focus();
     }
   }
 
@@ -833,6 +850,7 @@ class App {
         btn.className = 'diagnostic-option';
         btn.type = 'button';
         btn.innerText = option;
+        btn.disabled = this.diagnosticCompletedInView;
         btn.onclick = () => this.handleDiagnosticAnswer(questionIndex, option);
         options.appendChild(btn);
       });
@@ -842,6 +860,7 @@ class App {
   }
 
   handleDiagnosticAnswer(questionIndex, selectedOption) {
+    if (this.diagnosticCompletedInView || LearningEngine.isDiagnosticComplete(this.state)) return;
     const question = this.diagnosticQuestions[questionIndex];
     if (!question || this.diagnosticAnswers[questionIndex]) return;
 
@@ -965,8 +984,16 @@ class App {
     if (!container) return;
     container.innerHTML = '';
     container.classList.add('avatar-character-grid');
+    const searchInput = document.getElementById('avatar-search-input');
+    const searchQuery = String(this.avatarSearchQuery || '').trim().toLowerCase();
+    if (searchInput && searchInput.value !== (this.avatarSearchQuery || '')) searchInput.value = this.avatarSearchQuery || '';
+    const visibleCharacters = BEYBLADE_X_CHARACTERS.filter(character => {
+      if (!searchQuery) return true;
+      return [character.nombre, character.equipo, character.rol, character.materiaRecomendada]
+        .some(value => String(value || '').toLowerCase().includes(searchQuery));
+    });
 
-    BEYBLADE_X_CHARACTERS.forEach(character => {
+    visibleCharacters.forEach(character => {
       const isSelected = selectedCharacter.id === character.id;
       const card = document.createElement('div');
       card.className = `workshop-item-card character-select-card ${isSelected ? 'selected' : ''}`;
@@ -1004,15 +1031,18 @@ class App {
 
       container.appendChild(card);
     });
+    if (visibleCharacters.length === 0) {
+      container.innerHTML = '<p class="empty-state">No hay Bladers que coincidan con la búsqueda.</p>';
+    }
   }
 
   getAvatarStatCards(stats = {}) {
     return [
-      { key: 'attack', label: 'Ataque', icon: '?', color: '#ff2b3d', value: stats.attack || 0, meaning: 'Golpea fuerte' },
-      { key: 'defense', label: 'Defensa', icon: '?', color: '#3aa7ff', value: stats.defense || 0, meaning: 'Aguanta mejor' },
-      { key: 'stamina', label: 'Estamina', icon: '?', color: '#ffd33d', value: stats.stamina || 0, meaning: 'Gira mas tiempo' },
-      { key: 'speed', label: 'Velocidad', icon: '?', color: '#00e5ff', value: stats.speed || 0, meaning: 'Corre como un rayo' },
-      { key: 'focus', label: 'Foco', icon: '?', color: '#9cff3a', value: stats.focus || 0, meaning: 'Mantiene la calma' }
+      { key: 'attack', label: 'Ataque', icon: '&#x1F4A5;', color: '#ff2b3d', value: stats.attack || 0, meaning: 'Golpea fuerte' },
+      { key: 'defense', label: 'Defensa', icon: '&#x1F6E1;&#xFE0F;', color: '#3aa7ff', value: stats.defense || 0, meaning: 'Aguanta mejor' },
+      { key: 'stamina', label: 'Estamina', icon: '&#x1F300;', color: '#ffd33d', value: stats.stamina || 0, meaning: 'Gira más tiempo' },
+      { key: 'speed', label: 'Velocidad', icon: '&#x26A1;', color: '#00e5ff', value: stats.speed || 0, meaning: 'Corre como un rayo' },
+      { key: 'focus', label: 'Foco', icon: '&#x1F3AF;', color: '#9cff3a', value: stats.focus || 0, meaning: 'Mantiene la calma' }
     ];
   }
 
@@ -1023,7 +1053,7 @@ class App {
       attack: ['Atacante X', 'Fuerte', 'Entra al choque y hace mas daño cuando aciertas.'],
       defense: ['Muro Blader', 'Resistente', 'Aguanta golpes y perdona mejor los fallos.'],
       stamina: ['Giro eterno', 'Constante', 'Mantiene la peonza viva durante duelos largos.'],
-      speed: ['Rayo X', 'Rapido', 'Se mueve rapido y aprovecha respuestas veloces.'],
+      speed: ['Rayo X', 'Rápido', 'Se mueve rápido y aprovecha respuestas veloces.'],
       focus: ['Mente X', 'Preciso', 'Se concentra y convierte la calma en ventaja.']
     };
     const [label, shortLabel, description] = map[strongest.key] || map.attack;
@@ -1116,18 +1146,13 @@ class App {
     if (progressFill) progressFill.style.width = `${Math.max(2, Math.round((currentFloor / 50) * 100))}%`;
     if (nextStepLabel) nextStepLabel.innerText = currentFloor >= 50
       ? 'Estas en la cima de la torre.'
-      : !currentGate.ok
-        ? `Planta ${currentFloor} desbloqueada para manana. Hoy puedes repetir combates para practicar.`
-        : `Gana esta planta para abrir la ${currentFloor + 1}.`;
+      : `Gana esta planta para abrir la ${currentFloor + 1}.`;
 
     const enterBtn = document.getElementById('btn-tower-enter');
     if (enterBtn) {
       const isCurrentFloorCompleted = (this.state.progress.tower?.completedFloors || []).includes(currentFloor);
-      const isDailyBlocked = !isCurrentFloorCompleted && !currentGate.ok;
-      enterBtn.disabled = isDailyBlocked;
-      enterBtn.innerText = isDailyBlocked
-        ? 'Vuelve manana'
-        : isCurrentFloorCompleted
+      enterBtn.disabled = false;
+      enterBtn.innerText = isCurrentFloorCompleted
         ? 'Repetir combate'
         : currentData.type === 'diagnostic' && !LearningEngine.isDiagnosticComplete(this.state)
         ? 'Empezar revision'
@@ -1144,13 +1169,12 @@ class App {
     this.getVisibleTowerFloors(currentFloor).forEach(floorData => {
       const towerGate = ProgressService.canStartTowerFloor(this.state, floorData.floor);
       const isCompleted = (this.state.progress.tower?.completedFloors || []).includes(floorData.floor) || floorData.floor < currentFloor;
-      const isDailyBlocked = !isCompleted && floorData.floor === currentFloor && !towerGate.ok;
       const isAvailable = floorData.floor === currentFloor && towerGate.ok;
-      const isLocked = floorData.floor > currentFloor || isDailyBlocked;
+      const isLocked = floorData.floor > currentFloor;
       const statusClass = isCompleted ? 'completed' : isAvailable ? 'available' : 'locked';
       const typeClass = floorData.type === 'tower-rival' || floorData.type === 'final' ? 'boss' : floorData.type === 'ascension' ? 'ascension' : '';
-      const statusText = isCompleted ? 'Ya ganada' : isDailyBlocked ? 'Manana' : isAvailable ? 'Estoy aqui' : 'Luego';
-      const actionText = isCompleted ? 'Repetir' : isDailyBlocked ? 'Vuelve manana' : isAvailable ? 'Jugar' : 'Bloqueada';
+      const statusText = isCompleted ? 'Ya ganada' : isAvailable ? 'Estoy aqui' : 'Luego';
+      const actionText = isCompleted ? 'Repetir' : isAvailable ? 'Jugar' : 'Bloqueada';
       const node = document.createElement('article');
       node.className = `tower-floor-node ${statusClass} ${typeClass}`;
       node.dataset.floor = floorData.floor;
@@ -1160,7 +1184,7 @@ class App {
           <span class="tower-floor-status">${statusText}</span>
         </div>
         <h3>${floorData.rivalName}</h3>
-        <div class="tower-floor-meta">${isDailyBlocked ? towerGate.reason : isLocked ? 'Gana la planta anterior para abrirla.' : this.getKidFloorGoal(floorData)}</div>
+        <div class="tower-floor-meta">${isLocked ? 'Gana la planta anterior para abrirla.' : this.getKidFloorGoal(floorData)}</div>
         <div class="tower-floor-meta">Dificultad: ${this.getTowerDifficultyLabel(floorData)} · Objetivo: ${floorData.secondaryObjective || 'Gana el duelo'}</div>
         <div class="tower-floor-reward">Premio: ${floorData.reward.label}</div>
         <button class="btn-action ${isLocked ? 'secondary' : ''}" type="button" ${isLocked ? 'disabled' : ''}>${actionText}</button>
@@ -1812,7 +1836,7 @@ class App {
       if (!isUnlocked) {
         itemCard.style.opacity = '0.35';
         itemCard.innerHTML = `
-          <div class="workshop-item-icon" style="font-size: 2.2rem; text-align:center;">??</div>
+          <div class="workshop-item-icon" style="font-size: 2.2rem; text-align:center;" aria-hidden="true">&#x1F512;</div>
           <div class="workshop-item-name">${part.name}</div>
           <div class="workshop-item-rarity rarity-${part.rarity}">${part.rarity}</div>
           <div class="workshop-item-meta">${this.getWorkshopUnlockHint(partType, index)}</div>
@@ -3045,7 +3069,7 @@ class App {
           this.state.progress.pendingReward = null;
         }
         this.saveState();
-        document.getElementById('reward-item-icon').innerText = '?';
+        document.getElementById('reward-item-icon').innerText = '✓';
         document.getElementById('reward-item-name').innerText = 'Capsula ya recogida';
         document.getElementById('reward-rarity-badge').innerText = 'COMPLETADO';
         document.getElementById('reward-rarity-badge').className = 'rarity-comun';

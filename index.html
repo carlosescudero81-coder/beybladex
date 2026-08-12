@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Beyblade X Academy: Torneo del Conocimiento</title>
-  <link rel="stylesheet" href="index.css?v=20260812-cinematics3">
+  <link rel="stylesheet" href="index.css?v=20260812-unlimited5">
   <style>
     /* ── FIX: tower screen no debe recortar su contenido ── */
     #screen-map {
@@ -195,7 +195,8 @@
       <h3 id="parent-gate-title" style="font-family: var(--font-display); font-size: 2rem; margin-bottom: 12px; color: var(--pink);">ÁREA DE PADRES</h3>
       <p id="parent-gate-help" style="margin-bottom: 20px; font-size: 0.95rem; color: rgba(255,255,255,0.7);">Introduce tu PIN parental.</p>
       <div id="parent-gate-question" style="font-size: 0.95rem; font-weight: bold; margin-bottom: 16px; color: var(--yellow);">PIN parental</div>
-      <input type="password" inputmode="numeric" autocomplete="current-password" maxlength="8" id="parent-gate-input" placeholder="PIN" aria-describedby="parent-gate-help" style="width: 100%; padding: 12px; border-radius: 8px; border: 2px solid var(--border-neon); background: rgba(0,0,0,0.4); color: white; font-size: 1.2rem; text-align: center; margin-bottom: 20px; outline: none;">
+      <input type="password" inputmode="numeric" autocomplete="current-password" maxlength="8" id="parent-gate-input" placeholder="PIN" aria-describedby="parent-gate-help parent-gate-error" style="width: 100%; padding: 12px; border-radius: 8px; border: 2px solid var(--border-neon); background: rgba(0,0,0,0.4); color: white; font-size: 1.2rem; text-align: center; margin-bottom: 8px; outline: none;">
+      <p id="parent-gate-error" role="alert" aria-live="polite" style="min-height: 1.25rem; margin: 0 0 12px; color: #ff8ca8; font-weight: 700;"></p>
       <div style="display: flex; gap: 12px;">
         <button id="btn-parent-gate-cancel" class="btn-action secondary" style="flex: 1;">Cancelar</button>
         <button id="btn-parent-gate-submit" class="btn-action" style="flex: 1;">Entrar</button>
@@ -220,7 +221,7 @@
       <div class="header-center">Beyblade X Academy</div>
       <div class="header-right">
         <div class="stat-pill coins">
-          <span style="font-size: 1.2rem;">?</span>
+          <span style="font-size: 1.2rem;" aria-hidden="true">&#x1FA99;</span>
           <span id="header-coins">0</span>
         </div>
         <div class="stat-pill xp">
@@ -329,6 +330,10 @@
             </label>
           </section>
           <section class="avatar-grid-panel" aria-label="Lista de personajes">
+            <label class="avatar-search-field" for="avatar-search-input">
+              <span>Buscar Blader</span>
+              <input id="avatar-search-input" type="search" placeholder="Nombre, materia o estilo" autocomplete="off">
+            </label>
             <div class="workshop-tabs" id="avatar-customizer-tabs" hidden>
               <button class="workshop-tab active" data-part="expression">ROSTRO</button>
               <button class="workshop-tab" data-part="hairStyle">PEINADO</button>
@@ -537,8 +542,8 @@
           <div class="stadium-wrapper">
             <img class="battle-stadium-img" src="assets/estadios/01_estadio_de_entrenamiento.png" alt="Estadio de Entrenamiento" loading="lazy" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/estadios/01_estadio_de_entrenamiento.png'}))">
             <!-- Perfect Launch Overlay -->
-            <div class="launch-gauge-overlay" id="launch-overlay">
-              <h2 style="font-family: var(--font-display); font-size: 3rem; color: var(--cyan); margin-bottom: 24px; text-shadow: var(--glow-cyan);">LANZAMIENTO PERFECTO</h2>
+            <div class="launch-gauge-overlay" id="launch-overlay" role="dialog" aria-modal="true" aria-labelledby="launch-overlay-title" aria-hidden="true" hidden>
+              <h2 id="launch-overlay-title" style="font-family: var(--font-display); font-size: 3rem; color: var(--cyan); margin-bottom: 24px; text-shadow: var(--glow-cyan);">LANZAMIENTO PERFECTO</h2>
               <p style="margin-bottom: 20px; font-weight: 600; text-align: center;">Resuelve rápido para conseguir el máximo poder de giro</p>
               <div class="gauge-bar-outer" style="margin-bottom: 30px;">
                 <div class="gauge-sweet-spot"></div>
@@ -678,7 +683,7 @@
         </div>
 
         <!-- Math Input / Answer Selection Panel (Right) -->
-        <div class="arena-right-pane" aria-label="Panel de turno">
+        <div class="arena-right-pane" id="combat-turn-panel" aria-label="Panel de turno">
           <!-- Question display -->
           <div class="question-card combat-turn-primary" data-combat-priority="primary">
             <div class="question-meta" id="question-index-label">Reto 1 de 10</div>
@@ -995,13 +1000,13 @@
           <div id="reward-boss-summary" class="reward-boss-summary" style="display: none;"></div>
           
           <div class="chest-display" id="reward-chest-area">
-            <div class="chest-icon" id="reward-chest-btn" style="font-size: 6rem;">??</div>
+            <div class="chest-icon" id="reward-chest-btn" style="font-size: 6rem;">&#x1F381;</div>
             <p style="color: var(--cyan); font-weight: 800; animation: pulse-glow 1s infinite alternate;">¡ABRE LA CAPSULA!</p>
           </div>
 
           <div class="reward-card-reveal" id="reward-reveal-area" style="display: none;">
             <div style="font-size: 1.1rem; font-weight: 800; color: var(--yellow);" id="reward-rarity-badge">LEGENDARIO</div>
-            <div style="font-size: 4rem;" id="reward-item-icon">??</div>
+            <div style="font-size: 4rem;" id="reward-item-icon">&#x2728;</div>
             <h3 style="font-family: var(--font-display); font-size: 1.8rem; color: white;" id="reward-item-name">Núcleo Ígneo</h3>
             <p style="font-size: 0.9rem; color: rgba(255,255,255,0.6);" id="reward-item-desc">Desbloqueado para tu taller</p>
             <button id="btn-reward-collect" class="btn-action" style="width: 100%; margin-top: 10px;">¡Añadir a mi Colección!</button>
@@ -1150,7 +1155,7 @@
           <!-- Active Module -->
           <div class="module-card active-module">
             <span class="module-badge ready">DISPONIBLE</span>
-            <div class="module-icon">??</div>
+            <div class="module-icon" aria-hidden="true">&#x1F9EE;</div>
             <h3>Matemáticas</h3>
             <p>Liga de Multiplicación, series lógicas y problemas de cálculo mental.</p>
             <button class="btn-action" style="width: 100%; margin-top: 8px; font-size: 0.9rem;" onclick="app.showScreen('map')">Entrar</button>
@@ -1158,7 +1163,7 @@
 
           <div class="module-card active-module">
             <span class="module-badge ready">DISPONIBLE</span>
-            <div class="module-icon">??</div>
+            <div class="module-icon" aria-hidden="true">&#x1F4DA;</div>
             <h3>Lengua y Ortografía</h3>
             <p>Combates de palabras, corrección ortográfica y comprensión de lectura.</p>
             <button class="btn-action" style="width: 100%; margin-top: 8px; font-size: 0.9rem;" onclick="app.showScreen('language')">Entrar</button>
@@ -1166,7 +1171,7 @@
 
           <div class="module-card active-module">
             <span class="module-badge ready">DISPONIBLE</span>
-            <div class="module-icon">????</div>
+            <div class="module-icon" aria-hidden="true">&#x1F30D;</div>
             <h3>Inglés Astral</h3>
             <p>Vocabulario elemental, listening de combate y traducción de conjuros.</p>
             <button class="btn-action" style="width: 100%; margin-top: 8px; font-size: 0.9rem;" onclick="app.openSubjectMission('english')">Entrar</button>
@@ -1174,7 +1179,7 @@
 
           <div class="module-card active-module">
             <span class="module-badge ready">DISPONIBLE</span>
-            <div class="module-icon">??</div>
+            <div class="module-icon" aria-hidden="true">&#x1F52C;</div>
             <h3>Ciencias y Naturaleza</h3>
             <p>Misiones de laboratorio elemental, ecosistemas y geografía galáctica.</p>
             <button class="btn-action" style="width: 100%; margin-top: 8px; font-size: 0.9rem;" onclick="app.openSubjectMission('science')">Entrar</button>
@@ -1182,15 +1187,15 @@
 
           <div class="module-card active-module">
             <span class="module-badge ready">DISPONIBLE</span>
-            <div class="module-icon">??</div>
+            <div class="module-icon" aria-hidden="true">&#x1F3A8;</div>
             <h3>Creatividad y Arte</h3>
             <p>Taller de diseño de estandartes, pintura digital y forja de avatares.</p>
-            <button class="btn-action" style="width: 100%; margin-top: 8px; font-size: 0.9rem;" onclick="app.handleMissionAction({ subjectId: 'arts' })">Entrar</button>
+            <button class="btn-action" style="width: 100%; margin-top: 8px; font-size: 0.9rem;" onclick="app.openSubjectMission('arts')">Entrar</button>
           </div>
 
           <div class="module-card locked-module">
             <span class="module-badge upcoming">MUNDO 6</span>
-            <div class="module-icon">??</div>
+            <div class="module-icon" aria-hidden="true">&#x1F5FA;&#xFE0F;</div>
             <h3>Sociales e Historia</h3>
             <p>Preguntas sobre mapas, historia y cultura general del mundo.</p>
             <button class="btn-action secondary" style="width: 100%; margin-top: 8px; font-size: 0.9rem; cursor: not-allowed;" disabled>Cerrado</button>
@@ -1212,13 +1217,13 @@
     </div>
   </div>
 
-  <script src="js/audio.js?v=20260812-cinematics3"></script>
-  <script src="js/assets.js?v=20260812-cinematics3"></script>
-  <script src="js/curriculum-data.js?v=20260812-cinematics3"></script>
-  <script src="js/learning-engine.js?v=20260812-cinematics3"></script>
-  <script src="js/services.js?v=20260812-cinematics3"></script>
-  <script src="js/combat-session.js?v=20260812-cinematics3"></script>
-  <script src="js/app-shell.js?v=20260812-cinematics3"></script>
-  <script src="index.js?v=20260812-cinematics3"></script>
+  <script src="js/audio.js?v=20260812-unlimited5"></script>
+  <script src="js/assets.js?v=20260812-unlimited5"></script>
+  <script src="js/curriculum-data.js?v=20260812-unlimited5"></script>
+  <script src="js/learning-engine.js?v=20260812-unlimited5"></script>
+  <script src="js/services.js?v=20260812-unlimited5"></script>
+  <script src="js/combat-session.js?v=20260812-unlimited5"></script>
+  <script src="js/app-shell.js?v=20260812-unlimited5"></script>
+  <script src="index.js?v=20260812-unlimited5"></script>
 </body>
 </html>
