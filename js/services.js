@@ -76,6 +76,9 @@ const INITIAL_STATE = {
     soundEnabled: true,
     musicVolume: 0.5,
     difficulty: 'auto',
+    battleDifficulty: 'normal',
+    combatLength: 'normal',
+    narrationEnabled: false,
     dailyTimeLimitMinutes: 999,
     parentalSecurity: {
       pinHash: "",
@@ -353,6 +356,9 @@ class StorageService {
     state.config.dailyTimeLimitMinutes = 999;
     state.config.soundEnabled = state.config.soundEnabled !== false;
     state.config.difficulty = state.config.difficulty || 'auto';
+    state.config.battleDifficulty = ['relaxed', 'normal', 'challenge'].includes(state.config.battleDifficulty) ? state.config.battleDifficulty : 'normal';
+    state.config.combatLength = ['quick', 'normal', 'tournament'].includes(state.config.combatLength) ? state.config.combatLength : 'normal';
+    state.config.narrationEnabled = state.config.narrationEnabled === true;
     state.config.parentalSecurity = ParentalSecurityService.normalize(state.config.parentalSecurity);
     state.pedagogy.learning = LearningEngine.normalizeProfile(state.pedagogy.learning);
     state.progress = ProgressService.normalize(state.progress, state.player);

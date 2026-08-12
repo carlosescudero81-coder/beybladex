@@ -9,8 +9,14 @@ class CombatSession {
     this.towerFloor = appController?.currentTowerFloor || getCurrentTowerFloor(playerState);
     this.floorData = getTowerFloorData(this.towerFloor);
     this.difficulty = this.floorData?.difficulty || Math.ceil((this.towerFloor || 1) / 6);
+    const battleDifficulty = playerState?.config?.battleDifficulty || 'normal';
+    if (battleDifficulty === 'relaxed') this.difficulty = Math.max(1, this.difficulty - 1);
+    if (battleDifficulty === 'challenge') this.difficulty = Math.min(10, this.difficulty + 1);
     this.difficultyTier = this.floorData?.difficultyTier || this.getDifficultyTierName(this.difficulty);
     this.questionCount = this.floorData?.questionCount || this.getTowerQuestionCount(this.towerFloor, this.difficulty);
+    const combatLength = playerState?.config?.combatLength || 'normal';
+    if (combatLength === 'quick') this.questionCount = Math.min(this.questionCount, 12);
+    if (combatLength === 'normal') this.questionCount = Math.min(this.questionCount, 24);
     this.currentQuestionIdx = 0;
     
     this.playerHP = 100;
@@ -2282,6 +2288,13 @@ class CombatSession {
       }
       questionTextEl.innerText = this.currentQuestion.text;
     }
+    if (this.state?.config?.narrationEnabled && typeof window !== 'undefined' && window.speechSynthesis && typeof SpeechSynthesisUtterance !== 'undefined') {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(String(this.currentQuestion.text || ''));
+      utterance.lang = this.currentQuestion.subject === 'english' ? 'en-US' : 'es-ES';
+      utterance.rate = 0.9;
+      window.speechSynthesis.speak(utterance);
+    }
     if (this.currentQuestion.isLightning) {
       this.showAttackBanner('Reto relampago', 'Acierta rapido para cargar energia', 'player');
     }
@@ -2335,14 +2348,18 @@ class CombatSession {
   }
 
   showCombatTutorialNudge() {
-    if (this.tutorialFlags?.triangle || this.currentQuestionIdx > 0 || this.currentRoundIndex > 0) return;
-    this.tutorialFlags.triangle = true;
-    this.updateTacticalPanel({
-      title: 'Regla Beyblade X',
-      rival: 'Defensa vence Ataque · Ataque vence Carga',
-      choice: 'Carga vence Defensa',
-      risk: 'Elige antes de responder: tu boton cambia el combate'
-    });
+    if (this.currentRoundIndex > 0) return;
+    const localIndex = this.currentQuestionIdx - (this.getCurrentRound()?.start || 0);
+    if (localIndex === 0 && !this.tutorialFlags.triangle) {
+      this.tutorialFlags.triangle = true;
+      this.updateTacticalPanel({ title: 'Paso 1 · Elige tu acción', rival: 'Defensa vence Ataque · Ataque vence Carga', choice: 'Carga vence Defensa', risk: 'El botón elegido cambia el choque cuando respondas' });
+    } else if (localIndex === 1 && !this.tutorialFlags.energy) {
+      this.tutorialFlags.energy = true;
+      this.updateTacticalPanel({ title: 'Paso 2 · Carga Energía X', rival: 'Los aciertos y Carga llenan el medidor', choice: 'La energía se conserva entre rondas', risk: 'Con 3 puntos podrás usar tu especial' });
+    } else if (localIndex === 2 && !this.tutorialFlags.special) {
+      this.tutorialFlags.special = true;
+      this.updateTacticalPanel({ title: 'Paso 3 · Ataque especial', rival: 'Cuando el botón se ilumine estará listo', choice: 'Ármalo antes de responder', risk: 'Un acierto activará la cinemática especial' });
+    }
   }
 
   // MEJORA 3: Rival acumula carga mientras el jugador piensa
@@ -2491,11 +2508,18 @@ class CombatSession {
         this.showAttackBanner('Relampago X', '+1 Energia X y golpe reforzado');
       }
       ProgressService.recordAnswer(this.state, this.currentQuestion, true);
+      this.showAttackBanner(
+        isFastAnswer ? 'Acierto rápido' : 'Acierto razonado',
+        isFastAnswer ? 'Respuesta correcta: ganas impulso y presión.' : 'Respuesta correcta: mantienes el control del duelo.',
+        'player',
+        isFastAnswer ? 'round-cleared' : ''
+      );
       this.recordCurriculumAnswer(true, selectedAnswer);
       const todayStats = this.app.getTodayStats();
       todayStats.answers += 1;
       todayStats.correct += 1;
     } else {
+      this.showAttackBanner('Error recuperable', 'Mira la explicación y vuelve al duelo con una nueva estrategia.', 'rival', 'round-retry');
       sounds.playIncorrect();
       this.correctStreak = 0;
       if (this.currentQuestion.type === 'mult') {
