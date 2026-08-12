@@ -193,7 +193,7 @@
   <div id="parent-gate-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="parent-gate-title" style="display: none;">
     <div class="modal-content" style="max-width: 400px; text-align: center;">
       <h3 id="parent-gate-title" style="font-family: var(--font-display); font-size: 2rem; margin-bottom: 12px; color: var(--pink);">ÁREA DE PADRES</h3>
-      <p id="parent-gate-help" style="margin-bottom: 20px; font-size: 0.95rem; color: rgba(255,255,255,0.7);">Introduce el PIN parental. PIN inicial: 2468.</p>
+      <p id="parent-gate-help" style="margin-bottom: 20px; font-size: 0.95rem; color: rgba(255,255,255,0.7);">Introduce tu PIN parental.</p>
       <div id="parent-gate-question" style="font-size: 0.95rem; font-weight: bold; margin-bottom: 16px; color: var(--yellow);">PIN parental</div>
       <input type="password" inputmode="numeric" autocomplete="current-password" maxlength="8" id="parent-gate-input" placeholder="PIN" aria-describedby="parent-gate-help" style="width: 100%; padding: 12px; border-radius: 8px; border: 2px solid var(--border-neon); background: rgba(0,0,0,0.4); color: white; font-size: 1.2rem; text-align: center; margin-bottom: 20px; outline: none;">
       <div style="display: flex; gap: 12px;">
@@ -245,7 +245,7 @@
       <section id="screen-start" class="screen active">
 
         <div class="hero-bg">
-          <img src="assets/optimized/portada-1280.jpg" width="1280" height="720" alt="" class="hero-bg-img" aria-hidden="true" fetchpriority="high" decoding="async">
+          <img src="PORTADA.png" width="1280" height="720" alt="" class="hero-bg-img" aria-hidden="true" fetchpriority="high" decoding="async">
           <div class="hero-overlay-bottom"></div>
           <div class="hero-overlay-top"></div>
           <div class="hero-scan-lines" aria-hidden="true"></div>
@@ -398,7 +398,7 @@
               <button class="btn-action tower-main-action" id="btn-tower-enter" type="button">Empezar mi reto</button>
             </div>
             <figure class="tower-command-art">
-              <img class="tower-image" src="assets/optimized/torre-x-900.jpg" width="900" height="1125" alt="X Tower del Conocimiento" loading="lazy" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'asset-fallback',textContent:'Imagen pendiente: coloca assets/optimized/torre-x-900.jpg'}))">
+              <img class="tower-image" src="assets/torre/torre_x_del_conocimiento.png" width="900" height="1125" alt="X Tower del Conocimiento" loading="lazy" decoding="async">
             </figure>
           </section>
 
@@ -1101,14 +1101,8 @@
             </div>
 
             <div class="parents-config-row">
-              <label for="select-parent-timelimit">Límite diario de juego</label>
-              <select id="select-parent-timelimit" style="background: rgba(0,0,0,0.4); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 8px; outline: none;">
-                <option value="10">10 minutos</option>
-                <option value="15" selected>15 minutos</option>
-                <option value="20">20 minutos</option>
-                <option value="30">30 minutos</option>
-                <option value="999">Sin límite</option>
-              </select>
+              <span>Tiempo diario de juego</span>
+              <strong>Sin límite</strong>
             </div>
 
             <div style="margin-top: 24px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px;">
@@ -1162,37 +1156,36 @@
             <button class="btn-action" style="width: 100%; margin-top: 8px; font-size: 0.9rem;" onclick="app.showScreen('map')">Entrar</button>
           </div>
 
-          <!-- Locked Modules -->
-          <div class="module-card locked-module">
-            <span class="module-badge upcoming">MUNDO 2</span>
+          <div class="module-card active-module">
+            <span class="module-badge ready">DISPONIBLE</span>
             <div class="module-icon">??</div>
             <h3>Lengua y Ortografía</h3>
             <p>Combates de palabras, corrección ortográfica y comprensión de lectura.</p>
-            <button class="btn-action secondary" style="width: 100%; margin-top: 8px; font-size: 0.9rem; cursor: not-allowed;" disabled>Cerrado</button>
+            <button class="btn-action" style="width: 100%; margin-top: 8px; font-size: 0.9rem;" onclick="app.showScreen('language')">Entrar</button>
           </div>
 
-          <div class="module-card locked-module">
-            <span class="module-badge upcoming">MUNDO 3</span>
+          <div class="module-card active-module">
+            <span class="module-badge ready">DISPONIBLE</span>
             <div class="module-icon">????</div>
             <h3>Inglés Astral</h3>
             <p>Vocabulario elemental, listening de combate y traducción de conjuros.</p>
-            <button class="btn-action secondary" style="width: 100%; margin-top: 8px; font-size: 0.9rem; cursor: not-allowed;" disabled>Cerrado</button>
+            <button class="btn-action" style="width: 100%; margin-top: 8px; font-size: 0.9rem;" onclick="app.openSubjectMission('english')">Entrar</button>
           </div>
 
-          <div class="module-card locked-module">
-            <span class="module-badge upcoming">MUNDO 4</span>
+          <div class="module-card active-module">
+            <span class="module-badge ready">DISPONIBLE</span>
             <div class="module-icon">??</div>
             <h3>Ciencias y Naturaleza</h3>
             <p>Misiones de laboratorio elemental, ecosistemas y geografía galáctica.</p>
-            <button class="btn-action secondary" style="width: 100%; margin-top: 8px; font-size: 0.9rem; cursor: not-allowed;" disabled>Cerrado</button>
+            <button class="btn-action" style="width: 100%; margin-top: 8px; font-size: 0.9rem;" onclick="app.openSubjectMission('science')">Entrar</button>
           </div>
 
-          <div class="module-card locked-module">
-            <span class="module-badge upcoming">MUNDO 5</span>
+          <div class="module-card active-module">
+            <span class="module-badge ready">DISPONIBLE</span>
             <div class="module-icon">??</div>
             <h3>Creatividad y Arte</h3>
             <p>Taller de diseño de estandartes, pintura digital y forja de avatares.</p>
-            <button class="btn-action secondary" style="width: 100%; margin-top: 8px; font-size: 0.9rem; cursor: not-allowed;" disabled>Cerrado</button>
+            <button class="btn-action" style="width: 100%; margin-top: 8px; font-size: 0.9rem;" onclick="app.handleMissionAction({ subjectId: 'arts' })">Entrar</button>
           </div>
 
           <div class="module-card locked-module">

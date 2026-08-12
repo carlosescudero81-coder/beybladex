@@ -409,14 +409,8 @@ class App {
         this.secondsSinceLastSave = 0;
       }
 
-      // Check daily limit (Parents setting)
-      const minutesSpentToday = Math.floor(todayStats.seconds / 60);
-      if (minutesSpentToday >= this.state.config.dailyTimeLimitMinutes && this.state.config.dailyTimeLimitMinutes < 900) {
-        clearInterval(this.sessionTimer);
-        this.saveState();
-        this.showNotice("Has alcanzado tu limite de juego diario para hoy. Es hora de descansar y jugar fuera.", "Limite diario alcanzado");
-        this.showScreen('start');
-      }
+      // El tiempo se registra para el informe familiar, pero nunca interrumpe
+      // ni bloquea la partida.
     }, 1000);
   }
 
@@ -513,7 +507,8 @@ class App {
     }
 
     document.querySelectorAll('.btn-header').forEach(button => button.removeAttribute('aria-current'));
-    const activeNavigationId = shell.navigationTargets?.[screenId];
+    const navigationKey = screenId === 'subject' ? this.subjectMissionType : screenId;
+    const activeNavigationId = shell.navigationTargets?.[navigationKey];
     const activeNavigation = activeNavigationId ? document.getElementById(activeNavigationId) : null;
     if (activeNavigation) activeNavigation.setAttribute('aria-current', 'page');
 
@@ -686,13 +681,6 @@ class App {
       this.renderParentsPanel();
     };
 
-    document.getElementById('select-parent-timelimit').onchange = (e) => {
-      if (!this.requireParentSession()) return;
-      this.state.config.dailyTimeLimitMinutes = parseInt(e.target.value);
-      ParentalSecurityService.audit(this.state, `Limite diario cambiado a ${e.target.value} minutos`);
-      this.saveState();
-      this.renderParentsPanel();
-    };
   }
 
   bindAvatarEvents() {
@@ -749,9 +737,14 @@ class App {
     }
 
     const remaining = ParentalSecurityService.lockRemainingMs(this.state);
+    const needsSetup = ParentalSecurityService.needsSetup(this.state);
     document.getElementById('parent-gate-question').innerText = remaining > 0
       ? `Bloqueado ${Math.ceil(remaining / 60000)} minuto(s)`
-      : 'PIN parental';
+      : needsSetup ? 'Crea un PIN parental' : 'PIN parental';
+    document.getElementById('parent-gate-help').innerText = needsSetup
+      ? 'Primera configuracion: crea un PIN numerico de 4 a 8 digitos que solo conozca un adulto.'
+      : 'Introduce tu PIN parental.';
+    document.getElementById('btn-parent-gate-submit').innerText = needsSetup ? 'Crear y entrar' : 'Entrar';
     document.getElementById('parent-gate-input').value = '';
     document.getElementById('parent-gate-modal').style.display = 'flex';
     document.getElementById('parent-gate-input').focus();
@@ -767,7 +760,10 @@ class App {
 
   verifyParentGate() {
     const inputVal = document.getElementById('parent-gate-input').value;
-    const result = ParentalSecurityService.verifyPin(this.state, inputVal);
+    const needsSetup = ParentalSecurityService.needsSetup(this.state);
+    const result = needsSetup
+      ? ParentalSecurityService.updatePin(this.state, inputVal)
+      : ParentalSecurityService.verifyPin(this.state, inputVal);
     this.saveState();
     if (result.ok) {
       sounds.playCorrect();
@@ -777,7 +773,7 @@ class App {
       sounds.playIncorrect();
       document.getElementById('parent-gate-question').innerText = result.locked
         ? `Bloqueado ${Math.ceil(ParentalSecurityService.lockRemainingMs(this.state) / 60000)} minuto(s)`
-        : 'PIN parental';
+        : needsSetup ? 'Crea un PIN parental' : 'PIN parental';
       this.showNotice(result.message, "Acceso denegado");
       document.getElementById('parent-gate-modal').style.display = 'none';
     }
@@ -1506,15 +1502,13 @@ class App {
     };
   }
 
-  getWorkshopBey(combo = this.state.player.activeCombo) {
+  getWorkshopBey(combo = {}) {
+    const resolvedCombo = this.getWorkshopCombo(combo);
     return buildCustomBeyFromCombo({
       ...this.state,
       player: {
         ...this.state.player,
-        activeCombo: {
-          ...this.state.player.activeCombo,
-          ...(combo || {})
-        }
+        activeCombo: resolvedCombo
       }
     });
   }
@@ -2737,11 +2731,14 @@ class App {
     const fallbackQuestions = typeof LearningEngine.allowedQuestionBank === 'function'
       ? LearningEngine.allowedQuestionBank().filter(q => q.subject === subjectId)
       : CurriculumData.questionBank.filter(q => q.subject === subjectId && q.skill !== 'math_division_intro');
-    this.subjectQuestions = questions.length > 0 ? questions : fallbackQuestions.slice(0, 4);
+    const selectedQuestions = questions.length > 0 ? questions : fallbackQuestions.slice(0, 4);
+    this.subjectQuestions = typeof LearningEngine.uniqueQuestionsBySignature === 'function'
+      ? LearningEngine.uniqueQuestionsBySignature(selectedQuestions)
+      : selectedQuestions;
 
     document.getElementById('subject-mission-world').innerText = mission.subject.worldName;
     document.getElementById('subject-mission-title').innerText = `${mission.subject.name}: ${mission.skill.name}`;
-    document.getElementById('subject-mission-focus').innerText = mission.focus;
+    document.getElementById('subject-mission-focus').innerText = this.subjectMissionFocusText(mission);
     document.getElementById('subject-mission-evidence').innerText = this.subjectMissionEvidenceText(mission);
     document.getElementById('subject-evidence-input').value = '';
     this.renderSubjectQuestionList();
@@ -2757,6 +2754,27 @@ class App {
       return offline ? `${offline.title}: ${offline.instructions}` : 'Objetivo: observar, clasificar y explicar con tus palabras.';
     }
     return 'Objetivo: observar el mundo cercano, elegir la respuesta y explicar una conclusion breve.';
+  }
+
+  subjectMissionFocusText(mission) {
+    if (!mission?.subject || !mission?.skill) return mission?.focus || '';
+    const subjectGoals = {
+      english: {
+        eng_greetings: 'Practicar saludos, presentaciones y respuestas breves en situaciones cotidianas.',
+        eng_vocabulary: 'Reconocer vocabulario basico y relacionarlo con su significado y contexto.',
+        eng_like_routines: 'Expresar gustos y rutinas con frases modelo sencillas.',
+        eng_short_dialogue: 'Comprender y completar intercambios breves usando respuestas adecuadas.'
+      },
+      science: {
+        sci_living_things: 'Distinguir seres vivos, objetos inertes y formas sencillas de clasificacion.',
+        sci_health: 'Reconocer habitos que protegen la salud, el descanso y la higiene.',
+        sci_materials: 'Identificar materiales, propiedades y cambios observables.',
+        sci_time_history: 'Ordenar hechos en el tiempo y reconocer etapas historicas iniciales.',
+        sci_environment: 'Comprender acciones concretas para cuidar el entorno.'
+      }
+    };
+    return subjectGoals[mission.subject.id]?.[mission.skill.id]
+      || `${mission.skill.name}: ${mission.subject.goal}`;
   }
 
   renderSubjectQuestionList() {
@@ -3249,7 +3267,6 @@ class App {
     // Load configs
     document.getElementById('toggle-parent-sounds').checked = this.state.config.soundEnabled;
     document.getElementById('select-parent-difficulty').value = this.state.config.difficulty || 'auto';
-    document.getElementById('select-parent-timelimit').value = this.state.config.dailyTimeLimitMinutes.toString();
     document.getElementById('parent-security-log').innerText = ParentalSecurityService.formatAuditLog(this.state);
     this.renderParentWeeklyEvidence();
     this.renderParentSpacedAlerts();

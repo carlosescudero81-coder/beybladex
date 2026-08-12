@@ -11,7 +11,8 @@ const APP_SHELL = [
   './js/combat-session.js?v=20260812-cinematics3',
   './js/app-shell.js?v=20260812-cinematics3',
   './index.js?v=20260812-cinematics3',
-  './assets/optimized/portada-1280.jpg'
+  './PORTADA.png',
+  './assets/torre/torre_x_del_conocimiento.png'
 ];
 
 self.addEventListener('install', event => {
