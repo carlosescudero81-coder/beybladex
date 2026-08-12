@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Beyblade X Academy: Torneo del Conocimiento</title>
-  <link rel="stylesheet" href="index.css?v=20260812-unlimited5">
+  <link rel="stylesheet" href="index.css?v=20260812-gameplay6">
   <style>
     /* ── FIX: tower screen no debe recortar su contenido ── */
     #screen-map {
@@ -420,6 +420,7 @@
                 <button class="btn-action secondary" id="btn-tower-beys" type="button">Mis Beys</button>
               </div>
             </div>
+            <div class="tower-progress-panel tower-achievement-panel" id="tower-achievement-panel" aria-live="polite"></div>
           </aside>
 
           <div class="summer-planner-panel" id="summer-planner-panel">
@@ -1082,6 +1083,7 @@
               </ul>
             </div>
             <button id="btn-parent-generate-reinforcement" class="btn-action" style="width: 100%; margin-top: 24px; font-size: 0.9rem;">Crear Sesión de Refuerzo</button>
+            <div id="parent-actionable-summary" class="parent-actionable-summary"></div>
           </div>
 
           <!-- Column 3: Configuration settings -->
@@ -1103,6 +1105,29 @@
                 <option value="normal">Normal</option>
                 <option value="hard">Modo Desafío (Veloz)</option>
               </select>
+            </div>
+            <div class="parents-config-row">
+              <label for="select-battle-difficulty">Intensidad del combate</label>
+              <select id="select-battle-difficulty">
+                <option value="relaxed">Relajada</option>
+                <option value="normal">Normal</option>
+                <option value="challenge">Desafío</option>
+              </select>
+            </div>
+            <div class="parents-config-row">
+              <label for="select-combat-length">Duración de batalla</label>
+              <select id="select-combat-length">
+                <option value="quick">Rápida</option>
+                <option value="normal">Normal</option>
+                <option value="tournament">Torneo</option>
+              </select>
+            </div>
+            <div class="parents-config-row">
+              <label for="toggle-parent-narration">Lectura en voz alta</label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggle-parent-narration">
+                <span class="toggle-slider"></span>
+              </label>
             </div>
 
             <div class="parents-config-row">
@@ -1217,13 +1242,13 @@
     </div>
   </div>
 
-  <script src="js/audio.js?v=20260812-unlimited5"></script>
-  <script src="js/assets.js?v=20260812-unlimited5"></script>
-  <script src="js/curriculum-data.js?v=20260812-unlimited5"></script>
-  <script src="js/learning-engine.js?v=20260812-unlimited5"></script>
-  <script src="js/services.js?v=20260812-unlimited5"></script>
-  <script src="js/combat-session.js?v=20260812-unlimited5"></script>
-  <script src="js/app-shell.js?v=20260812-unlimited5"></script>
-  <script src="index.js?v=20260812-unlimited5"></script>
+  <script src="js/audio.js?v=20260812-gameplay6"></script>
+  <script src="js/assets.js?v=20260812-gameplay6"></script>
+  <script src="js/curriculum-data.js?v=20260812-gameplay6"></script>
+  <script src="js/learning-engine.js?v=20260812-gameplay6"></script>
+  <script src="js/services.js?v=20260812-gameplay6"></script>
+  <script src="js/combat-session.js?v=20260812-gameplay6"></script>
+  <script src="js/app-shell.js?v=20260812-gameplay6"></script>
+  <script src="index.js?v=20260812-gameplay6"></script>
 </body>
 </html>

@@ -680,6 +680,24 @@ class App {
       this.saveState();
       this.renderParentsPanel();
     };
+    document.getElementById('select-battle-difficulty').onchange = (e) => {
+      if (!this.requireParentSession()) return;
+      this.state.config.battleDifficulty = e.target.value;
+      this.saveState();
+      this.renderParentsPanel();
+    };
+    document.getElementById('select-combat-length').onchange = (e) => {
+      if (!this.requireParentSession()) return;
+      this.state.config.combatLength = e.target.value;
+      this.saveState();
+      this.renderParentsPanel();
+    };
+    document.getElementById('toggle-parent-narration').onchange = (e) => {
+      if (!this.requireParentSession()) return;
+      this.state.config.narrationEnabled = e.target.checked;
+      this.saveState();
+      this.renderParentsPanel();
+    };
 
   }
 
@@ -1147,6 +1165,7 @@ class App {
     if (nextStepLabel) nextStepLabel.innerText = currentFloor >= 50
       ? 'Estas en la cima de la torre.'
       : `Gana esta planta para abrir la ${currentFloor + 1}.`;
+    this.renderGameObjectives();
 
     const enterBtn = document.getElementById('btn-tower-enter');
     if (enterBtn) {
@@ -1193,6 +1212,27 @@ class App {
       if (!isLocked && action) action.onclick = () => this.openTowerFloor(floorData.floor);
       content.appendChild(node);
     });
+  }
+
+  renderGameObjectives() {
+    const panel = document.getElementById('tower-achievement-panel');
+    if (!panel) return;
+    const completed = this.state.progress.tower?.completedFloors?.length || 0;
+    const answers = (this.state.pedagogy.math.correctAnswers || 0) + (this.state.pedagogy.math.incorrectAnswers || 0);
+    const correct = this.state.pedagogy.math.correctAnswers || 0;
+    const owned = this.state.inventory.beys?.length || 0;
+    const objectives = [
+      { label: 'Primer choque', value: Math.min(completed, 1), target: 1, reward: 'Insignia de inicio' },
+      { label: 'Mente precisa', value: Math.min(correct, 25), target: 25, reward: '25 XP de dominio' },
+      { label: 'Coleccionista', value: Math.min(owned, 8), target: 8, reward: 'Cromo especial' },
+      { label: 'Blader constante', value: Math.min(answers, 50), target: 50, reward: 'Efecto Rail X' }
+    ];
+    panel.innerHTML = `<div class="tower-kicker">Misiones y logros</div>${objectives.map(item => `
+      <div class="game-objective ${item.value >= item.target ? 'complete' : ''}">
+        <strong>${item.value >= item.target ? '✓ ' : ''}${item.label}</strong>
+        <span>${item.value}/${item.target} · ${item.reward}</span>
+        <i style="--objective-progress:${Math.round(item.value / item.target * 100)}%"></i>
+      </div>`).join('')}`;
   }
 
   openBeySelection() {
@@ -2279,6 +2319,9 @@ class App {
     filterBar.className = 'bey-filter-bar';
     filterBar.style.display = this.albumTab === 'beys' ? 'flex' : 'none';
     filterBar.innerHTML = `
+      <label>Buscar
+        <input id="album-filter-search" type="search" value="${this.escapeHtml(this.albumSearch || '')}" placeholder="Nombre">
+      </label>
       <label>Tipo
         <select id="bey-filter-type">
           <option value="all">Todos</option>
@@ -2291,6 +2334,13 @@ class App {
           ${['comun', 'rara', 'epica', 'legendaria'].map(rarity => `<option value="${rarity}" ${this.beyRarityFilter === rarity ? 'selected' : ''}>${rarity}</option>`).join('')}
         </select>
       </label>
+      <label>Estado
+        <select id="bey-filter-owned">
+          <option value="all">Todos</option>
+          <option value="owned" ${this.beyOwnedFilter === 'owned' ? 'selected' : ''}>Desbloqueados</option>
+          <option value="locked" ${this.beyOwnedFilter === 'locked' ? 'selected' : ''}>Por conseguir</option>
+        </select>
+      </label>
     `;
     container.appendChild(filterBar);
     filterBar.querySelector('#bey-filter-type').onchange = (e) => {
@@ -2300,6 +2350,16 @@ class App {
     filterBar.querySelector('#bey-filter-rarity').onchange = (e) => {
       this.beyRarityFilter = e.target.value;
       this.renderCards();
+    };
+    filterBar.querySelector('#bey-filter-owned').onchange = (e) => {
+      this.beyOwnedFilter = e.target.value;
+      this.renderCards();
+    };
+    filterBar.querySelector('#album-filter-search').oninput = (e) => {
+      this.albumSearch = e.target.value;
+      this.renderCards();
+      const input = document.getElementById('album-filter-search');
+      if (input) input.focus();
     };
 
     const addSubtitle = text => {
@@ -2323,8 +2383,10 @@ class App {
     if (this.albumTab === 'beys') {
       addSubtitle('Beys de combate');
       BEYBLADE_X_BEYS
+        .filter(bey => !this.albumSearch || bey.nombre.toLowerCase().includes(this.albumSearch.toLowerCase()))
         .filter(bey => !this.beyTypeFilter || this.beyTypeFilter === 'all' || bey.tipo === this.beyTypeFilter)
         .filter(bey => !this.beyRarityFilter || this.beyRarityFilter === 'all' || bey.rareza === this.beyRarityFilter)
+        .filter(bey => !this.beyOwnedFilter || this.beyOwnedFilter === 'all' || (this.beyOwnedFilter === 'owned') === isBeyUnlocked(this.state, bey))
         .forEach(bey => container.appendChild(this.renderBeyCard(bey)));
       return;
     }
@@ -3287,10 +3349,24 @@ class App {
         `;
       });
     }
+    const actionable = document.getElementById('parent-actionable-summary');
+    if (actionable) {
+      const weakest = learningSummary.slice().sort((a, b) => a.mastery - b.mastery)[0];
+      const strongest = learningSummary.slice().sort((a, b) => b.mastery - a.mastery)[0];
+      actionable.innerHTML = `
+        <h4>Siguiente decisión recomendada</h4>
+        <p><strong>Está mejorando:</strong> ${strongest ? `${strongest.name} (${strongest.mastery}%)` : 'primeros entrenamientos'}.</p>
+        <p><strong>Conviene practicar:</strong> ${weakest ? `${weakest.name} (${weakest.mastery}%)` : 'una misión corta'}.</p>
+        <p><strong>Plan:</strong> ${dueReviews.length ? `resolver ${Math.min(3, dueReviews.length)} repasos pendientes` : 'hacer un reto y una lectura breve'}.</p>
+        <p><strong>Configuración:</strong> batalla ${this.state.config.battleDifficulty}, duración ${this.state.config.combatLength}${this.state.config.narrationEnabled ? ', narración activa' : ''}.</p>`;
+    }
 
     // Load configs
     document.getElementById('toggle-parent-sounds').checked = this.state.config.soundEnabled;
     document.getElementById('select-parent-difficulty').value = this.state.config.difficulty || 'auto';
+    document.getElementById('select-battle-difficulty').value = this.state.config.battleDifficulty || 'normal';
+    document.getElementById('select-combat-length').value = this.state.config.combatLength || 'normal';
+    document.getElementById('toggle-parent-narration').checked = this.state.config.narrationEnabled === true;
     document.getElementById('parent-security-log').innerText = ParentalSecurityService.formatAuditLog(this.state);
     this.renderParentWeeklyEvidence();
     this.renderParentSpacedAlerts();

@@ -3033,6 +3033,43 @@ body {
   transform: none !important;
 }
 
+.parents-config-row select,
+.bey-filter-bar input,
+.bey-filter-bar select {
+  min-height: 42px;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid rgba(0, 240, 255, 0.38);
+  border-radius: 8px;
+  background: rgba(3, 10, 24, 0.94);
+  color: #fff;
+}
+
+.tower-achievement-panel {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.game-objective {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.55rem;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.045);
+}
+
+.game-objective span { font-size: 0.76rem; opacity: 0.76; }
+.game-objective i { height: 5px; border-radius: 9px; background: linear-gradient(90deg, var(--cyan) var(--objective-progress), rgba(255,255,255,.1) var(--objective-progress)); }
+.game-objective.complete { border: 1px solid rgba(156,255,58,.5); color: #baff75; }
+
+.parent-actionable-summary {
+  margin-top: 1rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(0,240,255,.26);
+  border-radius: 10px;
+  background: rgba(0,240,255,.045);
+}
+.parent-actionable-summary p { margin: 0.45rem 0; line-height: 1.35; }
+
 .avatar-feature-panel {
   display: flex;
   flex-direction: column;

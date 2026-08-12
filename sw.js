@@ -1,16 +1,16 @@
-const CACHE_VERSION = 'spin-academy-v20260812-unlimited5';
+const CACHE_VERSION = 'spin-academy-v20260812-gameplay6';
 const APP_SHELL = [
   './',
   './index.html',
-  './index.css?v=20260812-unlimited5',
-  './js/audio.js?v=20260812-unlimited5',
-  './js/assets.js?v=20260812-unlimited5',
-  './js/curriculum-data.js?v=20260812-unlimited5',
-  './js/learning-engine.js?v=20260812-unlimited5',
-  './js/services.js?v=20260812-unlimited5',
-  './js/combat-session.js?v=20260812-unlimited5',
-  './js/app-shell.js?v=20260812-unlimited5',
-  './index.js?v=20260812-unlimited5',
+  './index.css?v=20260812-gameplay6',
+  './js/audio.js?v=20260812-gameplay6',
+  './js/assets.js?v=20260812-gameplay6',
+  './js/curriculum-data.js?v=20260812-gameplay6',
+  './js/learning-engine.js?v=20260812-gameplay6',
+  './js/services.js?v=20260812-gameplay6',
+  './js/combat-session.js?v=20260812-gameplay6',
+  './js/app-shell.js?v=20260812-gameplay6',
+  './index.js?v=20260812-gameplay6',
   './PORTADA.png',
   './assets/torre/torre_x_del_conocimiento.png'
 ];
