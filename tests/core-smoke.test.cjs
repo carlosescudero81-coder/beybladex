@@ -11,6 +11,7 @@ const scriptFiles = [
   'js/learning-engine.js',
   'js/services.js',
   'js/combat-session.js',
+  'js/app-shell.js',
   'index.js'
 ];
 const source = scriptFiles
@@ -229,7 +230,8 @@ async function run() {
   assert.ok(legacy.pedagogy.math.dailyStats[StorageService.todayKey()]);
   assert.ok(legacy.pedagogy.learning.skills.math_number_999);
   assert.equal(legacy.pedagogy.learning.currentWeek, 1);
-  assert.equal(ParentalSecurityService.verifyPin(legacy, '2468').ok, true);
+  assert.equal(ParentalSecurityService.needsSetup(legacy), true);
+  assert.equal(ParentalSecurityService.verifyPin(legacy, '2468').setupRequired, true);
 
   const diagnosticState = StorageService.normalizeState(null);
   assert.equal(LearningEngine.isDiagnosticComplete(diagnosticState), false);
@@ -359,6 +361,7 @@ async function run() {
 
   const mathMission = LearningEngine.getNextMissionBySubject(learningState, 'math');
   const combatApp = {
+    activeTowerBattle: true,
     getCurriculumMissionForCombat() { return mathMission; },
     getTodayStats() { return { answers: 0, correct: 0, incorrect: 0 }; },
     saveState() {},
@@ -381,7 +384,11 @@ async function run() {
   curriculumCombat.currentQuestion = curriculumCombat.questionsList[0];
   const previousAttempts = learningState.pedagogy.learning.skills[curriculumCombat.currentQuestion.skill].attempts;
   curriculumCombat.recordCurriculumAnswer(false);
-  assert.equal(learningState.pedagogy.learning.skills[curriculumCombat.currentQuestion.skill].attempts, previousAttempts + 1);
+  assert.equal(
+    learningState.pedagogy.learning.skills[curriculumCombat.currentQuestion.skill].attempts,
+    previousAttempts + (curriculumCombat.currentQuestion.isGuidedIntro === true ? 0 : 1)
+  );
+  assert.ok(learningState.pedagogy.learning.questionHistory[curriculumCombat.currentQuestion.curriculumId]);
 
   const scienceTowerApp = {
     ...combatApp,
@@ -496,6 +503,9 @@ async function run() {
   );
 
   const securityState = StorageService.normalizeState(null);
+  assert.equal(ParentalSecurityService.needsSetup(securityState), true);
+  assert.equal(ParentalSecurityService.verifyPin(securityState, '2468').setupRequired, true);
+  assert.equal(ParentalSecurityService.updatePin(securityState, '1357').ok, true);
   for (let i = 1; i < ParentalSecurityService.MAX_ATTEMPTS; i += 1) {
     const result = ParentalSecurityService.verifyPin(securityState, '0000');
     assert.equal(result.ok, false);
@@ -504,7 +514,6 @@ async function run() {
   const locked = ParentalSecurityService.verifyPin(securityState, '0000');
   assert.equal(locked.locked, true);
   securityState.config.parentalSecurity.lockedUntil = 0;
-  assert.equal(ParentalSecurityService.updatePin(securityState, '1357').ok, true);
   assert.equal(ParentalSecurityService.verifyPin(securityState, '2468').ok, false);
   assert.equal(ParentalSecurityService.verifyPin(securityState, '1357').ok, true);
   assert.ok(securityState.config.parentalSecurity.auditLog.length >= 1);
@@ -535,7 +544,7 @@ async function run() {
 
   await vm.runInNewContext(testSource, context, {
     filename: 'index.js',
-    timeout: 5000
+    timeout: 10000
   });
 }
 

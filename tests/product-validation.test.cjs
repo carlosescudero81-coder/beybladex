@@ -13,6 +13,7 @@ const scriptFiles = [
   'js/learning-engine.js',
   'js/services.js',
   'js/combat-session.js',
+  'js/app-shell.js',
   'index.js'
 ];
 const source = scriptFiles
@@ -24,7 +25,7 @@ function extractIds(markup) {
 }
 
 function extractScriptSrcs(markup) {
-  return [...markup.matchAll(/<script\s+src="([^"]+)"><\/script>/g)].map(match => match[1]);
+  return [...markup.matchAll(/<script\s+src="([^"]+)"><\/script>/g)].map(match => match[1].split('?')[0]);
 }
 
 function createDomFromHtml(markup) {
@@ -207,6 +208,12 @@ function runStaticValidation() {
   scriptFiles.forEach(file => {
     assert.ok(fs.existsSync(path.join(root, file)), `${file} exists`);
   });
+
+  const css = fs.readFileSync(path.join(root, 'index.css'), 'utf8');
+  assert.ok(
+    !/#screen-combat\s+#(?:player|rival)-top\s*\{[^}]*\b(?:left|top)\s*:[^;]+!important/s.test(css),
+    'portrait combat must not pin Bey positions over the physics engine'
+  );
 
   [
     'btn-start-game',
@@ -547,7 +554,8 @@ async function runRuntimeValidation() {
 
   app.showParentGate();
   assert.equal(document.getElementById('parent-gate-modal').style.display, 'flex');
-  document.getElementById('parent-gate-input').value = '2468';
+  assert.ok(document.getElementById('parent-gate-help').innerText.includes('crea un PIN'));
+  document.getElementById('parent-gate-input').value = '1357';
   app.verifyParentGate();
   assert.equal(app.currentScreen, 'parents');
   assert.equal(document.getElementById('parent-gate-modal').style.display, 'none');
