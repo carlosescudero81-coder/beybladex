@@ -157,6 +157,30 @@ class SoundFX {
     osc.stop(now + 0.6);
   }
 
+  playCinematicRise(intensity = 1) {
+    this.init();
+    if (!this.canPlay()) return;
+    const now = this.ctx.currentTime;
+    [110, 165, 247].forEach((base, index) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = index === 2 ? 'sawtooth' : 'triangle';
+      osc.frequency.setValueAtTime(base, now + index * 0.08);
+      osc.frequency.exponentialRampToValueAtTime(base * 3.2, now + 0.62);
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(0.045 * intensity, now + 0.3);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.72);
+      osc.connect(gain); gain.connect(this.ctx.destination);
+      osc.start(now + index * 0.08); osc.stop(now + 0.74);
+    });
+  }
+
+  playFinish(type = 'spin') {
+    if (type === 'xtreme' || type === 'burst') this.playSpecial();
+    else if (type === 'over') this.playClash();
+    else this.playCorrect();
+  }
+
   playVictory() {
     this.init();
     if (!this.canPlay()) return;

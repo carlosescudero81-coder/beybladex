@@ -373,6 +373,7 @@ class CombatSession {
     if (detailEl) detailEl.innerText = detail || this.companionPassive?.label || 'Te cubre en el duelo';
     overlay.hidden = false;
     overlay.setAttribute('aria-hidden', 'false');
+    overlay.style.display = 'grid';
     overlay.classList.remove('is-active', 'is-exiting', 'is-strike', 'is-dash', 'is-guard', 'is-focus', 'is-rescue');
     overlay.classList.add(`is-${variant || 'support'}`);
     this.pulseCompanionAssist(variant);
@@ -383,6 +384,7 @@ class CombatSession {
       overlay.classList.add('is-exiting');
       setTimeout(() => {
         overlay.hidden = true;
+        overlay.style.display = 'none';
         overlay.setAttribute('aria-hidden', 'true');
         overlay.classList.remove('is-exiting');
       }, 220);
@@ -410,6 +412,31 @@ class CombatSession {
     if (type === 'defensa' || type === 'defense') return 'defensa';
     if (type === 'estamina' || type === 'stamina') return 'estamina';
     return 'balance';
+  }
+
+  prefersReducedCinematics() {
+    return Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  vibrate(pattern) {
+    if (this.prefersReducedCinematics() || typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
+    try { navigator.vibrate(pattern); } catch (_) {}
+  }
+
+  playTypeChoreography(attackerId, action, attacker) {
+    const top = document.getElementById(`${attackerId}-top`);
+    const arena = document.getElementById('battle-field');
+    if (!top || !attacker) return;
+    const type = this.getBeyType(attacker.bey);
+    const className = `choreo-${type}`;
+    top.classList.remove('choreo-ataque', 'choreo-defensa', 'choreo-estamina', 'choreo-balance');
+    void top.offsetWidth;
+    top.classList.add(className);
+    if (arena) arena.dataset.choreography = `${type}-${action}`;
+    setTimeout(() => {
+      top.classList.remove(className);
+      if (arena?.dataset.choreography === `${type}-${action}`) delete arena.dataset.choreography;
+    }, action === 'special' ? 980 : 720);
   }
 
   calculateTypeMatchupModifier(attackerBey, defenderBey) {
@@ -747,6 +774,7 @@ class CombatSession {
   }
 
   playBattleIntro(details, onComplete, options = {}) {
+    this.setCombatPhase('intro');
     const overlay = document.getElementById('battle-intro');
     if (!overlay) {
       onComplete();
@@ -804,6 +832,7 @@ class CombatSession {
     overlay.classList.toggle('is-retry-intro', introMode === 'retry');
     overlay.classList.toggle('is-final-intro', details.roundStage === 'topCut' || details.isFinal === true);
     overlay.classList.add('is-active');
+    if (typeof sounds !== 'undefined' && sounds.playCinematicRise) sounds.playCinematicRise(details.isFinal ? 1.25 : 0.8);
 
     const finish = () => {
       if (this.battleIntroFinish !== finish) return;
@@ -833,7 +862,12 @@ class CombatSession {
   getRoundIntroFlavor(details = {}) {
     if (details.roundStage === 'topCut' || details.isFinal) return 'Top Cut: duelo decisivo';
     if (details.mode === 'retry') return 'Revancha: ajusta la estrategia';
-    if (details.mode === 'round') return 'Nuevo rival: lee su tipo de Bey';
+    if (details.mode === 'round') {
+      const rival = details.rivalCharacter?.nombre || details.rivalName || 'El nuevo rival';
+      const type = this.getBeyType(details.rivalBey);
+      const warning = type === 'ataque' ? 'viene directo' : type === 'defensa' ? 'levantara su guardia' : type === 'estamina' ? 'intentara alargar el giro' : 'cambiara de estrategia';
+      return `${rival}: ${warning}. Tu compañero: observa y responde.`;
+    }
     return 'Combate X Tower';
   }
 
@@ -1127,6 +1161,17 @@ class CombatSession {
     const switchBtn = document.getElementById('btn-switch-bey');
     if (switchBtn) switchBtn.onclick = () => this.switchPlayerBeyManually();
     this.selectCombatAction(this.selectedAction || 'attack', false);
+  }
+
+  setCombatPhase(phase = 'question') {
+    const screen = document.getElementById('screen-combat');
+    if (!screen) return;
+    const allowed = ['intro', 'launch', 'question', 'resolving', 'feedback', 'finished'];
+    const nextPhase = allowed.includes(phase) ? phase : 'question';
+    screen.dataset.combatPhase = nextPhase;
+    screen.classList.remove(...allowed.map(name => `combat-phase-${name}`));
+    screen.classList.add(`combat-phase-${nextPhase}`);
+    screen.setAttribute('aria-busy', nextPhase === 'resolving' ? 'true' : 'false');
   }
 
   switchPlayerBeyManually() {
@@ -1710,10 +1755,12 @@ class CombatSession {
     if (launchOverlay) launchOverlay.style.display = 'none';
     const feedbackOverlay = document.getElementById('combat-feedback');
     if (feedbackOverlay) feedbackOverlay.style.display = 'none';
+    this.setCombatPhase('finished');
   }
 
   // 1. LAUNCH GAUGE PHASE
   startLaunchPhase() {
+    this.setCombatPhase('launch');
     sounds.playLaunch();
     const overlay = document.getElementById('launch-overlay');
     overlay.style.display = 'flex';
@@ -2191,6 +2238,7 @@ class CombatSession {
     }
 
     this.currentQuestion = this.questionsList[this.currentQuestionIdx];
+    this.setCombatPhase('question');
     this.actionLocked = false;
     this.setRivalIntent(this.chooseRivalIntent());
     this.selectCombatAction(this.selectedAction || 'attack', false);
@@ -2391,6 +2439,7 @@ class CombatSession {
   handleAnswer(selectedAnswer) {
     if (this.actionLocked) return;
     this.actionLocked = true;
+    this.setCombatPhase('resolving');
     // MEJORA 3: cancelar el buildup del rival en cuanto el jugador responde
     this.cancelRivalChargeBuildup();
     // MEJORA 3 (xtreme): si el dash estaba armado, el resultado lo resolverá en applyTurnOutcome;
@@ -3454,6 +3503,8 @@ class CombatSession {
     if (finish.type !== 'spin') this.spawnShockwave(zone.x, zone.y, zone.color, zone.special, `finish-${finish.type}`);
     this.spawnParticles(zone.x, zone.y, zone.color, finish.type === 'xtreme' ? 22 : 14);
     if (finish.type === 'xtreme') this.triggerScreenFlash('xtreme');
+    const haptics = { spin: 35, over: [45, 35, 80], burst: [55, 25, 55, 25, 110], xtreme: [35, 20, 35, 20, 150] };
+    this.vibrate(haptics[finish.type] || 35);
   }
 
   playFinishTopReaction(type = 'spin', attackerId = 'player') {
@@ -3477,11 +3528,9 @@ class CombatSession {
 
   playFinishFeedback(finish) {
     if (!finish || typeof sounds === 'undefined') return;
-    if (finish.type === 'xtreme' || finish.type === 'burst') {
-      sounds.playSpecial();
-    } else {
-      sounds.playCorrect();
-    }
+    if (sounds.playFinish) sounds.playFinish(finish.type);
+    else if (finish.type === 'xtreme' || finish.type === 'burst') sounds.playSpecial();
+    else sounds.playCorrect();
   }
 
   triggerScreenFlash(variant = 'xtreme') {
@@ -3508,6 +3557,8 @@ class CombatSession {
     topEl.classList.remove('action-attack-strike', 'action-counter-strike', 'action-defense-guard', 'action-charge-build', 'action-special-smash');
     void topEl.offsetWidth;
     topEl.classList.add(cueClass);
+    this.playTypeChoreography(attackerId, action, attacker);
+    if (action === 'special') this.vibrate([25, 18, 45]);
     setTimeout(() => topEl.classList.remove(cueClass), action === 'charge' ? 780 : action === 'defense' ? 620 : 520);
 
     if (action === 'defense') {
@@ -3535,8 +3586,16 @@ class CombatSession {
     const defender = attackerId === 'player' ? this.rivalCombatant : this.playerCombatant;
     if (!attacker || !defender) return;
 
+    const isXtremeSpecial = action === 'special' && (options.xtremeDash || (attackerId === 'player' && this.xtremeDashArmed));
+    if (action === 'special' && !isXtremeSpecial && !options.cinematicPlayed) {
+      this.playXtremeDashCry(attackerId, () => {
+        this.performAttackSequence(attackerId, action, damage, { ...options, cinematicPlayed: true });
+      });
+      return;
+    }
+
     // MEJORA 2: Xtreme Dash con trayectoria circular real por el rail
-    if (action === 'special' && (options.xtremeDash || (attackerId === 'player' && this.xtremeDashArmed))) {
+    if (isXtremeSpecial) {
       this.performXtremeDashSequence(attackerId, attacker, defender, damage);
       return;
     }
@@ -3652,6 +3711,7 @@ class CombatSession {
 
     overlay.hidden = false;
     overlay.setAttribute('aria-hidden', 'false');
+    overlay.style.display = 'grid';
     overlay.classList.remove('is-active', 'is-exiting', 'is-rival');
     overlay.classList.toggle('is-rival', isRival);
     void overlay.offsetWidth;
@@ -3663,6 +3723,7 @@ class CombatSession {
       overlay.classList.add('is-exiting');
       setTimeout(() => {
         overlay.hidden = true;
+        overlay.style.display = 'none';
         overlay.setAttribute('aria-hidden', 'true');
         overlay.classList.remove('is-exiting');
         if (typeof onComplete === 'function') onComplete();
@@ -3790,6 +3851,9 @@ class CombatSession {
   spawnParticles(x, y, color = '#ffffff', count = 12) {
     const layer = document.getElementById('particle-layer');
     if (!layer) return;
+    const lowMemory = typeof navigator !== 'undefined' && Number(navigator.deviceMemory || 8) <= 4;
+    if (this.prefersReducedCinematics()) count = Math.min(count, 4);
+    else if (lowMemory) count = Math.min(count, 10);
     for (let i = 0; i < count; i += 1) {
       const particle = document.createElement('span');
       particle.className = 'impact-particle';
@@ -3894,6 +3958,7 @@ class CombatSession {
 
   showPedagogicalExplanation() {
     this.stopPhysicsSimulation();
+    this.setCombatPhase('feedback');
     
     // Format visual aid message
     let expl = "";
