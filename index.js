@@ -500,7 +500,12 @@ class App {
 
     // Header visibility rules
     const header = document.getElementById('app-header');
-    const headerHiddenScreens = shell.headerHiddenScreens || ['start', 'avatar'];
+    // Combat needs every available pixel on touch devices. Navigation remains
+    // available from the dedicated pause/exit control inside the arena.
+    const headerHiddenScreens = [...(shell.headerHiddenScreens || ['start', 'avatar'])];
+    if (screenId === 'combat' && !headerHiddenScreens.includes('combat')) {
+      headerHiddenScreens.push('combat');
+    }
     if (headerHiddenScreens.includes(screenId)) {
       header.style.display = 'none';
     } else {

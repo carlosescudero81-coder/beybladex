@@ -8726,6 +8726,44 @@ button,
     drop-shadow(0 0 34px rgba(255, 0, 85, 0.52));
 }
 
+/* Type-directed combat choreography. Position continues to come from the
+   physics engine; these short transforms provide a distinct visual language. */
+.top-sprite.choreo-ataque,
+.top-sprite.spinning.choreo-ataque {
+  animation: choreo-attack-lunge 620ms cubic-bezier(0.12, 1.3, 0.2, 1) both;
+}
+
+.top-sprite.choreo-defensa,
+.top-sprite.spinning.choreo-defensa {
+  animation: choreo-defense-brace 680ms ease-out both;
+}
+
+.top-sprite.choreo-estamina,
+.top-sprite.spinning.choreo-estamina {
+  animation: choreo-stamina-orbit 760ms ease-in-out both;
+}
+
+.top-sprite.choreo-balance,
+.top-sprite.spinning.choreo-balance {
+  animation: choreo-balance-feint 700ms cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+.battlefield-arena[data-choreography^="ataque"] {
+  box-shadow: inset 0 0 46px rgba(255, 0, 85, 0.3), inset 0 0 110px rgba(255, 234, 0, 0.1);
+}
+
+.battlefield-arena[data-choreography^="defensa"] {
+  box-shadow: inset 0 0 54px rgba(77, 255, 145, 0.28), inset 0 0 120px rgba(0, 240, 255, 0.12);
+}
+
+.battlefield-arena[data-choreography^="estamina"] {
+  box-shadow: inset 0 0 58px rgba(167, 139, 250, 0.3), inset 0 0 125px rgba(0, 240, 255, 0.1);
+}
+
+.battlefield-arena[data-choreography^="balance"] {
+  box-shadow: inset 0 0 50px rgba(255, 234, 0, 0.2), inset 0 0 115px rgba(255, 0, 85, 0.12);
+}
+
 .top-sprite.action-attack-strike::after,
 .top-sprite.action-counter-strike::after {
   content: "";
@@ -9376,6 +9414,34 @@ button,
   100% { filter: brightness(1); transform: translate(-50%, -50%) scale(var(--top-scale, 1)); }
 }
 
+@keyframes choreo-attack-lunge {
+  0% { transform: translate(-50%, -50%) scale(var(--top-scale, 1)); }
+  28% { transform: translate(-72%, -50%) scale(calc(var(--top-scale, 1) * 0.92)) rotate(-12deg); }
+  62% { transform: translate(-18%, -50%) scale(calc(var(--top-scale, 1) * 1.16)) rotate(18deg); }
+  100% { transform: translate(-50%, -50%) scale(var(--top-scale, 1)); }
+}
+
+@keyframes choreo-defense-brace {
+  0% { transform: translate(-50%, -50%) scale(var(--top-scale, 1)); }
+  42% { transform: translate(-50%, -50%) scale(calc(var(--top-scale, 1) * 1.18)) rotate(-9deg); }
+  68% { transform: translate(-50%, -50%) scale(calc(var(--top-scale, 1) * 0.96)) rotate(7deg); }
+  100% { transform: translate(-50%, -50%) scale(var(--top-scale, 1)); }
+}
+
+@keyframes choreo-stamina-orbit {
+  0% { transform: translate(-50%, -50%) rotate(0) scale(var(--top-scale, 1)); }
+  35% { transform: translate(-62%, -62%) rotate(160deg) scale(calc(var(--top-scale, 1) * 1.06)); }
+  70% { transform: translate(-38%, -42%) rotate(310deg) scale(calc(var(--top-scale, 1) * 1.1)); }
+  100% { transform: translate(-50%, -50%) rotate(360deg) scale(var(--top-scale, 1)); }
+}
+
+@keyframes choreo-balance-feint {
+  0%, 100% { transform: translate(-50%, -50%) scale(var(--top-scale, 1)); }
+  24% { transform: translate(-68%, -42%) rotate(-14deg) scale(calc(var(--top-scale, 1) * 0.94)); }
+  52% { transform: translate(-34%, -58%) rotate(12deg) scale(calc(var(--top-scale, 1) * 1.08)); }
+  76% { transform: translate(-56%, -46%) rotate(-6deg) scale(calc(var(--top-scale, 1) * 1.03)); }
+}
+
 @keyframes action-streak-out {
   0% { opacity: 0; transform: translateX(-22%) rotate(-18deg) scaleX(0.3); }
   20% { opacity: 1; }
@@ -9654,6 +9720,10 @@ button,
   .top-sprite.finish-reaction-burst,
   .top-sprite.finish-reaction-xtreme,
   .top-sprite.finish-attacker-surge,
+  .top-sprite.choreo-ataque,
+  .top-sprite.choreo-defensa,
+  .top-sprite.choreo-estamina,
+  .top-sprite.choreo-balance,
   .top-sprite.block-perfect-top::before,
   .top-sprite.block-partial-top::before,
   .top-sprite.block-miss-top,
@@ -9836,13 +9906,13 @@ button,
   }
 
   #screen-combat #player-top {
-    left: 19% !important;
-    top: 52% !important;
+    left: 19%;
+    top: 52%;
   }
 
   #screen-combat #rival-top {
-    left: 68% !important;
-    top: 37% !important;
+    left: 68%;
+    top: 37%;
   }
 
   #screen-combat .top-sprite[data-bey-type]::before {
@@ -9940,7 +10010,14 @@ button,
     gap: 10px;
   }
 
+  #screen-combat .arena-right-pane > * {
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+  }
+
   #screen-combat .question-card {
+    height: auto;
     padding: 12px;
     max-height: none;
   }
@@ -9954,7 +10031,8 @@ button,
   }
 
   #screen-combat .question-text.is-very-long {
-    max-height: 20vh;
+    max-height: none;
+    overflow: visible;
     font-size: clamp(0.98rem, 2.1vw, 1.22rem);
   }
 
@@ -10000,6 +10078,12 @@ button,
   #screen-combat .deck-switch-btn {
     min-height: 44px;
     font-size: clamp(0.74rem, 1.8vw, 0.9rem);
+  }
+
+  #screen-combat #btn-combat-hint,
+  #screen-combat #btn-combat-pause {
+    min-height: 48px;
+    white-space: nowrap;
   }
 }
 
@@ -10731,6 +10815,184 @@ button,
   }
 }
 
+/* Tablet landscape combat: the learning interaction must remain usable before
+   secondary battle telemetry. Kept as a final override so older responsive
+   rules cannot shrink question content into adjacent controls. */
+@media (min-width: 901px) and (max-width: 1366px) and (orientation: landscape) {
+  /* Modern tablet browsers support :has(). Outside combat the full navigation
+     keeps the existing tablet layout. */
+  #app-container:has(.screen.active#screen-combat) #app-header {
+    display: none;
+  }
+
+  #app-container:has(.screen.active#screen-combat) #screen-container {
+    min-height: 100dvh;
+  }
+
+  .screen.active#screen-combat {
+    grid-template-columns: minmax(0, 1.08fr) minmax(410px, 0.92fr);
+    gap: 10px;
+    padding:
+      max(8px, env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      max(8px, env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
+  }
+
+  #screen-combat .arena-left-pane,
+  #screen-combat .arena-right-pane {
+    min-width: 0;
+  }
+
+  #screen-combat .arena-right-pane {
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 10px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+  }
+
+  /* Never allow flex sizing to collapse text over the following component. */
+  #screen-combat .arena-right-pane > * {
+    flex: 0 0 auto;
+    min-width: 0;
+  }
+
+  #screen-combat .question-card {
+    min-height: 96px;
+    padding: 10px 12px;
+    overflow: visible;
+  }
+
+  #screen-combat .question-meta {
+    margin-bottom: 5px;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    letter-spacing: 1px;
+  }
+
+  #screen-combat .question-text,
+  #screen-combat .question-text.is-long,
+  #screen-combat .question-text.is-very-long {
+    max-height: none;
+    padding-right: 0;
+    overflow: visible;
+    font-size: clamp(1rem, 2.5vh, 1.4rem);
+    line-height: 1.22;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  #screen-combat .answer-grid {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  #screen-combat .btn-answer,
+  #screen-combat .combat-action-btn,
+  #screen-combat .special-command-btn,
+  #screen-combat .deck-switch-btn,
+  #screen-combat #btn-combat-hint,
+  #screen-combat #btn-combat-pause {
+    min-height: 48px;
+  }
+
+  #screen-combat .btn-answer {
+    padding: 9px 12px;
+    font-size: clamp(0.92rem, 2vh, 1.08rem);
+    line-height: 1.2;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  #screen-combat .combat-action-panel {
+    gap: 8px;
+  }
+
+  #screen-combat .combat-action-btn {
+    padding: 8px 6px;
+    line-height: 1.15;
+  }
+
+  #screen-combat .combat-action-copy {
+    font-size: 0.66rem;
+    line-height: 1.15;
+  }
+
+  #screen-combat .combat-tactic-grid span,
+  #screen-combat .combat-match-row span,
+  #screen-combat .combat-depth-row span {
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  #screen-combat .arena-right-pane > div:last-child {
+    flex: 0 0 auto !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(110px, 1fr));
+    gap: 8px !important;
+  }
+
+  #screen-combat #btn-combat-hint,
+  #screen-combat #btn-combat-pause {
+    width: 100%;
+    min-width: 0;
+    padding: 10px 12px !important;
+    font-size: 0.9rem !important;
+    white-space: nowrap;
+  }
+
+  #screen-combat .attack-banner {
+    max-width: min(76%, 470px);
+    padding: 7px 11px;
+    font-size: clamp(0.82rem, 2.1vh, 1.08rem);
+    line-height: 1.15;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1100px) and (orientation: landscape) {
+  .screen.active#screen-combat {
+    grid-template-columns: minmax(0, 1fr) minmax(390px, 0.96fr);
+  }
+
+  #screen-combat .battle-context-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #screen-combat .combat-companion-panel {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+
+  #screen-combat .combat-companion-bey {
+    display: none;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1366px) and (orientation: landscape) and (max-height: 700px) {
+  .screen.active#screen-combat {
+    grid-template-columns: minmax(0, 1.04fr) minmax(420px, 0.96fr);
+  }
+
+  #screen-combat .arena-left-pane {
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+
+  #screen-combat .combat-companion-panel {
+    display: none;
+  }
+
+  #screen-combat .question-card {
+    min-height: 88px;
+  }
+
+  #screen-combat .btn-answer {
+    min-height: 46px;
+  }
+}
+
 @media (pointer: coarse) {
   button,
   [role="button"],
@@ -11330,5 +11592,14 @@ select,
   .battle-intro__speedlines,
   .battle-intro__flash {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .top-sprite.spinning.choreo-ataque,
+  .top-sprite.spinning.choreo-defensa,
+  .top-sprite.spinning.choreo-estamina,
+  .top-sprite.spinning.choreo-balance {
+    animation: none !important;
   }
 }

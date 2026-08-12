@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Beyblade X Academy: Torneo del Conocimiento</title>
-  <link rel="stylesheet" href="index.css?v=20260630-battle-animations">
+  <link rel="stylesheet" href="index.css?v=20260812-cinematics3">
   <style>
     /* ── FIX: tower screen no debe recortar su contenido ── */
     #screen-map {
@@ -678,21 +678,21 @@
         </div>
 
         <!-- Math Input / Answer Selection Panel (Right) -->
-        <div class="arena-right-pane">
+        <div class="arena-right-pane" aria-label="Panel de turno">
           <!-- Question display -->
-          <div class="question-card">
+          <div class="question-card combat-turn-primary" data-combat-priority="primary">
             <div class="question-meta" id="question-index-label">Reto 1 de 10</div>
             <div class="question-text" id="combat-question-text">8 x 7</div>
           </div>
 
           <!-- Answer options -->
-          <div class="answer-grid" id="combat-answers">
+          <div class="answer-grid combat-turn-primary" id="combat-answers" data-combat-priority="primary">
             <button class="btn-answer">54</button>
             <button class="btn-answer">56</button>
             <button class="btn-answer">63</button>
           </div>
 
-          <div class="combat-tactic-card" id="combat-tactic-card" aria-live="polite">
+          <div class="combat-tactic-card combat-turn-support" id="combat-tactic-card" data-combat-priority="support" aria-live="polite">
             <div class="combat-tactic-head">
               <span class="combat-tactic-kicker">Turno tactico</span>
               <strong id="combat-tactic-title">Lee al rival</strong>
@@ -704,7 +704,7 @@
             </div>
           </div>
 
-          <div class="combat-action-panel" aria-label="Comandos de combate">
+          <div class="combat-action-panel combat-turn-primary" data-combat-priority="primary" aria-label="Comandos de combate">
             <button class="combat-action-btn" type="button" data-combat-action="attack">
               <span class="combat-action-title">Ataque</span>
               <span class="combat-action-copy" id="action-copy-attack">Golpe rapido</span>
@@ -718,9 +718,9 @@
               <span class="combat-action-copy" id="action-copy-charge">Sube el giro</span>
             </button>
           </div>
-          <div class="combat-action-readout" id="combat-action-readout" aria-live="polite">Ataque listo: si aciertas, embistes fuerte.</div>
+          <div class="combat-action-readout combat-turn-support" id="combat-action-readout" data-combat-priority="support" aria-live="polite">Ataque listo: si aciertas, embistes fuerte.</div>
 
-          <div class="x-gauge-panel" aria-label="Energia especial">
+          <div class="x-gauge-panel combat-turn-secondary" data-combat-priority="secondary" aria-label="Energia especial">
             <div class="x-gauge-copy">
               <strong>Energia X</strong>
               <span id="x-gauge-label">0/3 para especial</span>
@@ -741,7 +741,7 @@
             </div>
           </div>
 
-          <div class="special-attack-card" id="special-attack-card" aria-live="polite">
+          <div class="special-attack-card combat-turn-secondary" id="special-attack-card" data-combat-priority="secondary" aria-live="polite">
             <span class="special-attack-kicker">Ataque especial</span>
             <strong id="special-attack-name">Combo X</strong>
             <p id="special-attack-help">Consigue 3 aciertos seguidos o llena Energia X.</p>
@@ -756,17 +756,17 @@
               </button>
             </div>
           </div>
-          <button class="special-command-btn deck-switch-btn" id="btn-switch-bey" type="button">Cambiar Bey</button>
+          <button class="special-command-btn deck-switch-btn combat-turn-secondary" data-combat-priority="secondary" id="btn-switch-bey" type="button">Cambiar Bey</button>
 
           <!-- Attack Multiplier Combo Dots -->
-          <div class="combo-streak-container">
+          <div class="combo-streak-container combat-turn-secondary" data-combat-priority="secondary">
             <div class="combo-dot" id="dot-1"></div>
             <div class="combo-dot" id="dot-2"></div>
             <div class="combo-dot" id="dot-3"></div>
             <span style="font-size: 0.8rem; font-weight: 800; color: var(--yellow); margin-left: 6px;" id="combo-streak-label">Ataque Especial</span>
           </div>
           
-          <div style="display: flex; gap: 8px;">
+          <div class="combat-utility-actions" data-combat-priority="utility" style="display: flex; gap: 8px;">
             <button id="btn-combat-hint" class="btn-action" style="flex: 1; padding: 10px; font-size: 0.85rem;">Pista</button>
             <button id="btn-combat-pause" class="btn-action secondary" style="flex: 1; padding: 10px; font-size: 0.85rem;">Salir</button>
           </div>
@@ -1219,13 +1219,13 @@
     </div>
   </div>
 
-  <script src="js/audio.js?v=20260630-battle-animations"></script>
-  <script src="js/assets.js?v=20260630-battle-animations"></script>
-  <script src="js/curriculum-data.js?v=20260630-battle-animations"></script>
-  <script src="js/learning-engine.js?v=20260630-battle-animations"></script>
-  <script src="js/services.js?v=20260630-battle-animations"></script>
-  <script src="js/combat-session.js?v=20260630-battle-animations"></script>
-  <script src="js/app-shell.js?v=20260630-battle-animations"></script>
-  <script src="index.js?v=20260630-battle-animations"></script>
+  <script src="js/audio.js?v=20260812-cinematics3"></script>
+  <script src="js/assets.js?v=20260812-cinematics3"></script>
+  <script src="js/curriculum-data.js?v=20260812-cinematics3"></script>
+  <script src="js/learning-engine.js?v=20260812-cinematics3"></script>
+  <script src="js/services.js?v=20260812-cinematics3"></script>
+  <script src="js/combat-session.js?v=20260812-cinematics3"></script>
+  <script src="js/app-shell.js?v=20260812-cinematics3"></script>
+  <script src="index.js?v=20260812-cinematics3"></script>
 </body>
 </html>
